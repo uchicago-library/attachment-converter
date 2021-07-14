@@ -1,0 +1,12 @@
+# attachment-converter				-*- makefile -*-
+# Makefile.dldc
+# Matt Teichman <https://elucidations.now.sh>
+
+# "cross-compilation"
+.PHONY: freebsd
+freebsd: clean
+	ssh $(FREEBSDHOST) gmake -C `pwd | sed "s;$$HOME;~;"` release
+
+# HELP
+#
+# make freebsd : ssh $(FREEBSDHOST) gmake -C $PWD release

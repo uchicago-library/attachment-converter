@@ -1,0 +1,40 @@
+# attachment-converter					-*-
+# Makefile.debug
+# Matt Teichman <https://elucidations.now.sh>
+
+MAXHELPCOLWIDTH := 32
+
+.ONESHELL:
+
+# idea from: https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
+# code much modified by KW
+help:
+	@: do not assume Gnu Awk
+	(
+	  awk '/.DEFAULT_GOAL *:?= */ {print "$$FILENAME:.DEFAULT_GOAL: ## $(MAKE) " $$NF}' /dev/null $(MAKEFILE_LIST)
+	  egrep '^[^#'$$'\t''][^:]+:.*?## .*$$' /dev/null $(MAKEFILE_LIST)
+	) |
+	awk -v make="$(MAKE)" -v dir="$(CURDIR)" -v maxwidth="$(MAXHELPCOLWIDTH)" '
+	     BEGIN { FS = ":" };
+	     {
+		makefile[$$1] = makefile[$$1] "\n" $$2
+		d = $$0
+		sub("^.*## *", "", d)
+		target[$$2] = d
+	     }
+	     END {
+		for ( t in target ) if (length(t) > w) w = length(t);	# compute max length of target names
+		if ((w + (length(make)+1)) > maxwidth) w = maxwidth;	# ... but let us not go nuts!
+		printf "\nHelp for %s -C %s\n", make, dir;
+		for ( m in makefile ) {
+		  print ""
+		  sub("^.", "", makefile[m])		# trim leading newline separator
+		  split(makefile[m], ts, "\n")
+		  for ( t in ts ) {
+		    tst = ts[t]
+		    sub(/^\.DEFAULT_GOAL$$/,"",tst)
+		    printf "%s %*s :  %s\n", make, -w, tst, target[ts[t]]
+		  }
+		}
+	 }'
+.PHONY: help

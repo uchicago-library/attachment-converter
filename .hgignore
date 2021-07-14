@@ -1,0 +1,12 @@
+,v$
+~$
+^\.\#
+^\#.*\#$
+_build/
+^TAGS$
+v\.ml$
+.*\.[12345678]$
+^\.automagic$
+^\.merlin$
+^qtest.targets.log$
+^test.ml$

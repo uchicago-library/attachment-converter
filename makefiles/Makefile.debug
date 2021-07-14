@@ -1,0 +1,10 @@
+# attachment-converter					-*-
+# Makefile.debug
+# Matt Teichman <https://elucidations.now.sh>
+
+# print any make variable
+# e.g. print the value of the variable DESTDIR
+# $ make debug-DESTDIR
+# see: https://blog.jgc.org/2015/04/the-one-line-you-should-add-to-every.html
+
+debug-%: ; @echo '$(subst ','\'',$*=$($*))'

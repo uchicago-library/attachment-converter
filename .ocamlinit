@@ -1,0 +1,3 @@
+#use "./use-output.top" ;;
+#use_output "opam exec -- dune top"  ;;
+open Prelude ;;
