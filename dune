@@ -5,7 +5,7 @@
 (executable
  (name main)
  (public_name attachment-converter)
- (libraries prelude versioj lib))
+ (libraries prelude versioj lib mrmime))
 
 (env
   (dev                                  ; make warnings non-fatal
