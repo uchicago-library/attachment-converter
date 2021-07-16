@@ -6,7 +6,7 @@
 * For Outside Users
 
   This project has just been started, and the code is highly in
-  progres/in flux.  We do not recommend trying it yet, but we will
+  progress/in flux.  We do not recommend trying it yet, but we will
   post updates here as soon as it is ready for alpha testing.
 
 
