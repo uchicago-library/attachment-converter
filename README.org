@@ -1,0 +1,32 @@
+#+TITLE: Attachment Converter
+#+AUTHOR: Matt Teichman
+#+DESCRIPTION: Command-line utility for batch-converting attachments in an email mailbox
+#+OPTIONS: toc:nil, num:nil
+
+* For Outside Users
+
+  This project has just been started, and the code is highly in
+  progres/in flux.  We do not recommend trying it yet, but we will
+  post updates here as soon as it is ready for alpha testing.
+
+
+* For UChicago Library Developers
+
+  Welcome on board the =attachment-converter= project!  We're pretty
+  excited to be getting it started.
+
+** Current State of the Project
+
+   Attachment Converter follows library-executable design.  That is,
+   it can be installed either as an OCaml library, or as an executable
+   that you run from the command line.  At the DLDC, we have
+   historically found that this design is useful for when we'd like to
+   have our command line tools overlap somewhat in the functionality
+   they offer.  If I want =tool2= to be able to do one of the things
+   that =tool= does, all I have to do is include the library for
+   =tool1= in =tool2= and I can start having =tool2= do it directly,
+   no sweat.
+
+   We are initializing this repository with the code begun by Owen
+   Price Skelly as part of an MPCS practicum research project during
+   the Winter 2021 quarter.  
