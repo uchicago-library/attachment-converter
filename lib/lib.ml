@@ -12,10 +12,11 @@ open Prelude
 
 open Mrmime
 
-let parse_mail_file fname =
-  readfile fname |>
+let parse_mail =
   Angstrom.(parse_string ~consume:All Mail.mail)
-
+   
+let parse_mail_file fname =
+  readfile fname |> parse_mail
 
 let unpack_root_header parsed =
   match parsed with
@@ -143,20 +144,20 @@ let leaf_to_file = Mail.(function
 
 
 (* ****************************************************************************** *)
-let example = parse_mail_file "3164_crlf"
-let message_example = parse_mail_file "digest"
+let example () = parse_mail_file "3164_crlf"
+let message_example () = parse_mail_file "digest"
 
-let leaftest = Result.((unpack_root_mail example) >>= (fun m -> Ok(leaf_list m)))
-let subject = Result.(unpack_root_header example >>= from_header Field_name.subject)
+let leaftest () = Result.((unpack_root_mail @@ example ()) >>= (fun m -> Ok(leaf_list m)))
+let subject () = Result.((unpack_root_header @@ example ()) >>= from_header Field_name.subject)
 
-let cont_type = Result.(unpack_root_header example >>= (fun h -> Ok(Header.content_type h)))
+let cont_type () = Result.(unpack_root_header (example ()) >>= (fun h -> Ok(Header.content_type h)))
 
-let print_ctypes_test = Result.(leaftest >>= (fun ls -> Ok(List.map (fun m -> unpack_content_type m |> Content_type.ty |> Content_type.Type.to_string ) ls)))
-let print_encoding_test = Result.(leaftest >>= (fun ls -> Ok(List.map (fun m -> unpack_content_encoding m ) ls)))
-let is_attachment_test = Result.(leaftest >>= (fun ls -> Ok(List.map is_attachment ls)))
+let print_ctypes_test () = Result.(leaftest () >>= (fun ls -> Ok(List.map (fun m -> unpack_content_type m |> Content_type.ty |> Content_type.Type.to_string ) ls)))
+let print_encoding_test () = Result.(leaftest () >>= (fun ls -> Ok(List.map (fun m -> unpack_content_encoding m ) ls)))
+let is_attachment_test () = Result.(leaftest () >>= (fun ls -> Ok(List.map is_attachment ls)))
 
 let b64_test () = Result.(
-    unpack_root_mail example
+    unpack_root_mail (example ())
     >>= (fun m ->
         Ok(attach_copy_map (fun leaf -> decode_leaf_body leaf |> leaf_to_file |> reencode_leaf_body) m)))
 
