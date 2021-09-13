@@ -18,10 +18,10 @@ let parse_mail =
 let parse_mail_file fname =
   readfile fname |> parse_mail
 
-let unpack_root_header parsed =
-  match parsed with
-    Ok(h, _) -> Ok(h)
-  | Error e -> Error e
+let unpack_root_header = Result.map fst
+  (* match parsed with
+   *   Ok(h, _) -> Ok(h)
+   * | Error e -> Error e *)
 
 let unpack_root_mail parsed =
   match parsed with
@@ -144,7 +144,7 @@ let leaf_to_file = Mail.(function
 
 
 (* ****************************************************************************** *)
-let example () = parse_mail_file "3164_crlf"
+let example () = parse_mail_file "lib/3164_crlf"
 let message_example () = parse_mail_file "digest"
 
 let leaftest () = Result.((unpack_root_mail @@ example ()) >>= (fun m -> Ok(leaf_list m)))
