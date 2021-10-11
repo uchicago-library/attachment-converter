@@ -7,6 +7,17 @@
 open Prelude
 
 (* library code for attachment converter goes here *)
+module type CONVERT =
+  sig
+    type filepath
+    type parsetree
+    val parse : string -> parsetree
+    val amap : ('a -> 'b) -> parsetree -> parsetree
+    val acopy : ('a -> 'b) -> parsetree -> parsetree
+    val to_string : parsetree -> string
+    val convert : filepath -> string -> string
+    val acopy_email : string -> (string -> string) -> string
+  end
 
 
 (*
