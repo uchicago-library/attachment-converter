@@ -1,8 +1,8 @@
 (*VERSIOJ_SENTINEL*)
 (* DO NOT EDIT; this file is automagically generated. *)
 let data = Versioj.all [
-  "compiled", "2021-09-13T19:34:18Z";
-  "ident", "b013a19ac226edd747fe47ca5fcd4cd6229e3e6b";
+  "compiled", "2021-10-04T19:25:58Z";
+  "ident", "eabd467f2c207e8741ce3afbf87c9866c6c2d910";
   "vcs", "git";
 ]
 
