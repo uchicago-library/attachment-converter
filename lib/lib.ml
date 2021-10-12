@@ -2,7 +2,7 @@
  * attachment-converter.ml
  * Copyright (c) 2021 Matt Teichman. All rights reserved.
  * Distributed under the ISC license, see terms at the end of the file.
- *)
+*)
 
 open Prelude
 
@@ -29,12 +29,11 @@ module Conversion_ocamlnet : CONVERT = struct
   type parsetree = Netmime.complex_mime_message
 
   let parse s =
-    s |>
-    new Netchannels.input_string |>
-    new Netstream.input_stream |>
-    Netmime_channels.read_mime_message
-
-  (* see http://projects.camlcity.org/projects/dl/ocamlnet-4.1.9/doc/html-main/Netmime_tut.html *)
+    Netchannels.with_in_obj_channel (new Netstream.input_stream (new Netchannels.input_string s))
+      Netmime_channels.read_mime_message
+  (* see http://projects.camlcity.org/projects/dl/ocamlnet-4.1.9/doc/html-main/Netmime_tut.html
+     -- I /think/ that with_in_obj_channel should close both the Netchannels and the Netstream input bits,
+    but it's worth keeping an eye on. *)
 
 
 
