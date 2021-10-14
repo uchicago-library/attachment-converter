@@ -29,11 +29,12 @@ module Conversion_ocamlnet : CONVERT = struct
   type parsetree = Netmime.complex_mime_message
 
   let parse s =
-    Netchannels.with_in_obj_channel (new Netstream.input_stream (new Netchannels.input_string s))
-      Netmime_channels.read_mime_message
+    let ch = (new Netstream.input_stream (new Netchannels.input_string s)) in
+    let f = (fun ch -> Netmime_channels.read_mime_message ~multipart_style:`Deep ch) in
+    Netchannels.with_in_obj_channel ch f
   (* see http://projects.camlcity.org/projects/dl/ocamlnet-4.1.9/doc/html-main/Netmime_tut.html
      -- I /think/ that with_in_obj_channel should close both the Netchannels and the Netstream input bits,
-    but it's worth keeping an eye on. *)
+     but it's worth keeping an eye on. *)
 
 
 
