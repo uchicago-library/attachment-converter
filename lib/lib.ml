@@ -52,7 +52,7 @@ module Conversion_ocamlnet : CONVERT = struct
 
     | (header, `Parts p_lst) ->
       let copy_or_skip part = (* NOTE: two of the three cases here are singleton lists, which might be a code smell.
-                                Worth reviewing in case there's a cleaner way to express this, especially since it's always exactly one or two things *)
+                                 Worth reviewing in case there's a cleaner way to express this, especially since it's always exactly one or two things *)
         match part with
           (header, `Body b) ->
           if f header = header   (* case where we want to modify/ make a copy *)
@@ -63,6 +63,8 @@ module Conversion_ocamlnet : CONVERT = struct
       in (header, `Parts List.(concat (map copy_or_skip p_lst)))
 
   let to_string = assert false
+  (* TODO: figure out easiest way to spit the contents of a channel into a plain string
+      see: http://projects.camlcity.org/projects/dl/ocamlnet-4.1.9/doc/html-main/Netmime_tut.html *)
   let convert = assert false
   let acopy_email = assert false
 end
