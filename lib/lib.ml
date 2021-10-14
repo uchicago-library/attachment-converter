@@ -60,11 +60,14 @@ module Conversion_ocamlnet : CONVERT = struct
           else [ (f header, `Body (g b)); part]
         | _ -> [acopy f g part]
 
-      in (header, `Parts List.(concat (map copy_or_skip p_lst)))
+      in (header, `Parts List.(concat_map copy_or_skip p_lst))
 
   let to_string = assert false
   (* TODO: figure out easiest way to spit the contents of a channel into a plain string
       see: http://projects.camlcity.org/projects/dl/ocamlnet-4.1.9/doc/html-main/Netmime_tut.html *)
+
+
+
   let convert = assert false
   let acopy_email = assert false
 end
