@@ -13,7 +13,7 @@ sig
   type parsetree
   val parse : string -> parsetree
   val amap : ('a -> 'a) -> ('b -> 'b) -> parsetree -> parsetree
-  val acopy : ('a -> 'b) -> parsetree -> parsetree
+  val acopy : ('a -> 'a) -> ('b -> 'b) -> parsetree -> parsetree
   val to_string : parsetree -> string
   val convert : filepath -> string -> string
   val acopy_email : string -> (string -> string) -> string
@@ -44,9 +44,24 @@ module Conversion_ocamlnet : CONVERT = struct
       else (f header, `Body (g b))
 
     | (header, `Parts p_lst) ->
-    (header, `Parts (List.map (amap f g) p_lst))
+      (header, `Parts (List.map (amap f g) p_lst))
 
-  let acopy = assert false
+  let rec acopy f g tree =
+    match tree with
+      (_, `Body _) -> tree (* TODO double check desired behavior for root messages without attachments *)
+
+    | (header, `Parts p_lst) ->
+      let copy_or_skip part = (* NOTE: two of the three cases here are singleton lists, which might be a code smell.
+                                Worth reviewing in case there's a cleaner way to express this, especially since it's always exactly one or two things *)
+        match part with
+          (header, `Body b) ->
+          if f header = header   (* case where we want to modify/ make a copy *)
+          then [part]
+          else [ (f header, `Body (g b)); part]
+        | _ -> [acopy f g part]
+
+      in (header, `Parts List.(concat (map copy_or_skip p_lst)))
+
   let to_string = assert false
   let convert = assert false
   let acopy_email = assert false
