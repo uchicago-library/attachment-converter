@@ -12,7 +12,7 @@ sig
   type filepath
   type parsetree
   val parse : string -> parsetree
-  val amap : ('a -> 'b) -> parsetree -> parsetree
+  val amap : ('a -> 'a) -> ('b -> 'b) -> parsetree -> parsetree
   val acopy : ('a -> 'b) -> parsetree -> parsetree
   val to_string : parsetree -> string
   val convert : filepath -> string -> string
@@ -36,10 +36,16 @@ module Conversion_ocamlnet : CONVERT = struct
      -- I /think/ that with_in_obj_channel should close both the Netchannels and the Netstream input bits,
      but it's worth keeping an eye on. *)
 
+  let rec amap f g (tree : parsetree) =
+    match tree with
+      (header, `Body b) ->
+      if f header = header   (* only invoke g (the converting function) if f converts the header *)
+      then tree
+      else (f header, `Body (g b))
 
+    | (header, `Parts p_lst) ->
+    (header, `Parts (List.map (amap f g) p_lst))
 
-
-  let amap = assert false
   let acopy = assert false
   let to_string = assert false
   let convert = assert false
