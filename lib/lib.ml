@@ -55,8 +55,11 @@ module Conversion_ocamlnet : CONVERT = struct
       (_, `Body _) -> tree (* TODO double check desired behavior for root messages without attachments *)
 
     | (header, `Parts p_lst) ->
-      let copy_or_skip part = (* NOTE: two of the three cases here are singleton lists, which might be a code smell.
-                                 Worth reviewing in case there's a cleaner way to express this, especially since it's always exactly one or two things *)
+      let copy_or_skip part = (* NOTE: two of the three cases here are singleton
+                                 lists, which might be a code smell.  Worth
+                                 reviewing in case there's a cleaner way to
+                                 express this, especially since it's always
+                                 *exactly* one or two things *)
         match part with
           (header, `Body b) ->
           if f header = header   (* case where we want to modify/ make a copy *)
@@ -70,7 +73,9 @@ module Conversion_ocamlnet : CONVERT = struct
 
   let to_string (tree : parsetree) =
     let (header, _) = tree in
-    let buf = header |> Netmime_header.get_content_length |>  Stdlib.Buffer.create in
+    let n = try Netmime_header.get_content_length header
+      with Not_found -> (1024 * 1024) in (* defaulting to a megabyte seems like a nice round number *)
+    let buf =  Stdlib.Buffer.create n in
     Netchannels.with_out_obj_channel
       (new Netchannels.output_buffer buf)
       (fun ch -> Netmime_channels.write_mime_message ch tree);
