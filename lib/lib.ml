@@ -24,9 +24,13 @@ module Conversion_ocamlnet : CONVERT = struct
   include Netmime_channels
   include Netchannels
   include Netstream
+  include Netmime_header
+  include Stdlib.Buffer
+
 
   type filepath = string (* String.t *)
   type parsetree = Netmime.complex_mime_message
+
 
   let parse s =
     let ch = (new Netstream.input_stream (new Netchannels.input_string s)) in
@@ -62,11 +66,15 @@ module Conversion_ocamlnet : CONVERT = struct
 
       in (header, `Parts List.(concat_map copy_or_skip p_lst))
 
-  let to_string = assert false
-  (* TODO: figure out easiest way to spit the contents of a channel into a plain string
-      see: http://projects.camlcity.org/projects/dl/ocamlnet-4.1.9/doc/html-main/Netmime_tut.html *)
 
 
+  let to_string (tree : parsetree) =
+    let (header, _) = tree in
+    let buf = header |> Netmime_header.get_content_length |>  Stdlib.Buffer.create in
+    Netchannels.with_out_obj_channel
+      (new Netchannels.output_buffer buf)
+      (fun ch -> Netmime_channels.write_mime_message ch tree);
+    Stdlib.Buffer.contents buf
 
   let convert = assert false
   let acopy_email = assert false
