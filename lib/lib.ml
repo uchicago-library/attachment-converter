@@ -15,7 +15,7 @@ sig
   val amap : ('a -> 'a) -> ('b -> 'b) -> parsetree -> parsetree
   val acopy : ('a -> 'a) -> ('b -> 'b) -> parsetree -> parsetree
   val to_string : parsetree -> string
-  val convert : filepath -> string -> string
+  val convert : filepath -> (string -> string)
   val acopy_email : string -> (string -> string) -> string
 end
 
@@ -81,7 +81,25 @@ module Conversion_ocamlnet : CONVERT = struct
       (fun ch -> Netmime_channels.write_mime_message ch tree);
     Stdlib.Buffer.contents buf
 
-  let convert = assert false
+  (* seems like it might be nice to have a function w/ the same signature as
+     convert for the headers, leaving convert to take care of the actual body
+     data  *)
+  (* let header_convert (h : #Netmime.mime_header) = *)
+  (*   if let (disposition, params_alist) = Netmime_header.(h#get_content_disposition) in *)
+  (*     String.lowercase_ascii disposition == "attachment" *)
+  (*   then Netmime.(h#field "filename" ^ ".copy" |> h#update_field "filename"); *)
+  (*   h *)
+
+  (* NOTE(s): the actual filename is absolutely something we're going to need to mess with, and it's not *)
+  (* as easily accessed as other fields -- the params_alist is going to list the parameters like [..., ("filename", p), ...] *)
+  (* where p has the type Netmime_string.s_param. *)
+  (* Looks like we could get the actual filename as a string by doing something like *)
+  (*  mk_param ((param_value p) ^ ".copy")  *)
+  (* which is great for just filenames, but it might be worth defining a param_map function that extracts a param val, applies a function to the string, and re-encodes it *)
+
+  (* TODO: should decide how this plays with config to determine e.g. new filename/extension *)
+  let convert _path_to_util = assert false
+
   let acopy_email = assert false
 end
 
