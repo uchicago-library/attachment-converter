@@ -40,13 +40,29 @@ module Conversion_ocamlnet : CONVERT = struct
      -- I /think/ that with_in_obj_channel should close both the Netchannels and the Netstream input bits,
      but it's worth keeping an eye on. *)
 
+  let header_to_string (h : mime_header) =
+    let buf = Stdlib.Buffer.create 1024 in
+    Netchannels.with_out_obj_channel
+      (new Netchannels.output_buffer buf)
+      (fun ch -> Netmime_string.write_header ch (h#fields));
+    Stdlib.Buffer.contents buf
+
+  let header_from_string s =
+    new basic_mime_header
+      (Netchannels.with_in_obj_channel
+         (new Netchannels.input_string s)
+         (fun ch -> Netmime_string.read_header (new Netstream.input_stream ch)))
+
+
+
   let rec amap f g (tree : parsetree) =
     match tree with
       (header, `Body b) ->
-      if f header = header   (* only invoke g (the converting function) if f converts the header *)
+      let h' = header |> header_to_string |> f |> header_from_string in
+      if header = h'
+      (* only invoke g (the converting function) if f converts the header *)
       then tree
-      else (f header, `Body (b#set_value (g b#value); b))
-
+      else (h', `Body (b#set_value (g b#value); b))
     | (header, `Parts p_lst) ->
       (header, `Parts (List.map (amap f g) p_lst))
 
@@ -62,9 +78,10 @@ module Conversion_ocamlnet : CONVERT = struct
                                  *exactly* one or two things *)
         match part with
           (header, `Body (b: mime_body)) ->
-          if f header = header   (* case where we want to modify/ make a copy *)
+          let h' = header |> header_to_string |> f |> header_from_string in
+          if header = h'
           then [part]
-          else [ (f header, `Body (b#set_value (g b#value); b)); part]
+          else [ (h', `Body (b#set_value (g b#value); b)); part]
         | _ -> [acopy f g part]
 
       in (header, `Parts List.(concat_map copy_or_skip p_lst))
