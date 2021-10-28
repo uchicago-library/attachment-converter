@@ -45,7 +45,7 @@ module Conversion_ocamlnet : CONVERT = struct
       (header, `Body b) ->
       if f header = header   (* only invoke g (the converting function) if f converts the header *)
       then tree
-      else (f header, `Body (g b))
+      else (f header, `Body (b#set_value (g b#value); b))
 
     | (header, `Parts p_lst) ->
       (header, `Parts (List.map (amap f g) p_lst))
@@ -61,10 +61,10 @@ module Conversion_ocamlnet : CONVERT = struct
                                  express this, especially since it's always
                                  *exactly* one or two things *)
         match part with
-          (header, `Body b) ->
+          (header, `Body (b: mime_body)) ->
           if f header = header   (* case where we want to modify/ make a copy *)
           then [part]
-          else [ (f header, `Body (g b)); part]
+          else [ (f header, `Body (b#set_value (g b#value); b)); part]
         | _ -> [acopy f g part]
 
       in (header, `Parts List.(concat_map copy_or_skip p_lst))
@@ -74,7 +74,7 @@ module Conversion_ocamlnet : CONVERT = struct
   let to_string (tree : parsetree) =
     let (header, _) = tree in
     let n = try Netmime_header.get_content_length header
-      with Not_found -> (1024 * 1024) in (* defaulting to a megabyte seems like a nice round number *)
+      with Not_found -> (1024 * 1024) in (* defaulting to a megabyte seems like a nice round number, might be overkill *)
     let buf =  Stdlib.Buffer.create n in
     Netchannels.with_out_obj_channel
       (new Netchannels.output_buffer buf)
