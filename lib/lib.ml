@@ -55,22 +55,21 @@ module Conversion_ocamlnet : CONVERT = struct
     new basic_mime_header
       (Netchannels.with_in_obj_channel
          (new Netchannels.input_string s)
-         (fun ch -> Netmime_string.read_header (new Netstream.input_stream ch)))
+         (fun ch -> Netmime_string.read_header ?downcase:(Some false) (new Netstream.input_stream ch)))
 
 
   let rec amap f g (tree : parsetree) =
     match tree with
       (header, `Body b) ->
       let h = header_to_string header in
-      let h' = f h in
-      if String.lowercase_ascii h = String.lowercase_ascii h'
+      if f h = h
       (* only invoke g (the converting function) if f converts the header *)
       then tree
-      else (header_from_string h', `Body (b#set_value (g b#value); b))
+      else (header_from_string (f h), `Body (b#set_value (g b#value); b))
     | (header, `Parts p_lst) ->
       (header, `Parts (List.map (amap f g) p_lst))
 
-  let rec acopy f g tree =
+  let rec acopy f g (tree : parsetree) =
     match tree with
       (_, `Body _) -> tree (* TODO double check desired behavior for root messages without attachments *)
 
@@ -106,6 +105,14 @@ module Conversion_ocamlnet : CONVERT = struct
   (* TODO *)
   let convert _path_to_util = assert false
   let acopy_email = assert false
+  (* let acopy_email = assert false *)
+  let sampletree = Prelude.readfile "../2843" |> parse
+  let upcased_and_deleted =
+    let f = String.uppercase_ascii in
+    let g = fun _ -> "" in
+    let tree = amap f g sampletree in
+    Prelude.writefile "../upcased_and_deleted" (to_string tree)
+
 end
 
 
@@ -113,165 +120,165 @@ end
 
 module Practicum = struct
 
-  (* including Owen's demo code from Winter 2021 below *)
+  (* (\* including Owen's demo code from Winter 2021 below *\) *)
 
-  open Mrmime
+  (* open Mrmime *)
 
-  let parse_mail =
-    Angstrom.(parse_string ~consume:All Mail.mail)
+  (* let parse_mail = *)
+  (*   Angstrom.(parse_string ~consume:All Mail.mail) *)
 
-  let parse_mail_file fname =
-    readfile fname |> parse_mail
+  (* let parse_mail_file fname = *)
+  (*   readfile fname |> parse_mail *)
 
-  let unpack_root_header = Result.map fst
-  (* match parsed with
-   *   Ok(h, _) -> Ok(h)
-   * | Error e -> Error e *)
+  (* let unpack_root_header = Result.map fst *)
+  (* (\* match parsed with *)
+  (*  *   Ok(h, _) -> Ok(h) *)
+  (*  * | Error e -> Error e *\) *)
 
-  let unpack_root_mail parsed =
-    match parsed with
-      Ok(_, m) -> Ok(m)
-    | Error e -> Error e
-
-
-  let from_header (key: Field_name.t) (h: Header.t) =
-    if Header.exists key h then
-      Ok (Header.assoc key h) else
-      Error "Missing field"
-
-  (*  Given a list of optional values, build a list of the contents of any the
-   *  non-None options (and ignore Nones) *)
-  let take_any opts =
-    let rec take_any' opts acc =
-      match opts with
-      | [] -> acc
-      | opt :: rest -> match opt with
-        | Some x -> take_any' rest (x :: acc)
-        | None -> take_any' rest acc
-    in List.rev (take_any' opts [])
-
-  (* DEPRECATED / for convenience writing tests only.
-   * Instead of directly accessing leaves, invoke [attach_copy_map] on the Mail tree
-   * with a function that wants to be called on an attachment-bearing leaf (and returns one)
-   *
-   * Given a parsed email (i.e. Mrmime.Mail.t), build a list of the bottom-level
-   * leaves, which contain the actual email and attachment content *)
-  let rec leaf_list m =
-    Mail.(
-      match m with
-        Leaf _ -> [m]
-      | Multipart {body; _} -> List.flatmap leaf_list (take_any body)
-      | Message {body; _} ->  leaf_list body
-    )
+  (* let unpack_root_mail parsed = *)
+  (*   match parsed with *)
+  (*     Ok(_, m) -> Ok(m) *)
+  (*   | Error e -> Error e *)
 
 
-  let unpack_content_type =
-    Mail.(
-      function
-        Leaf {header; _} | Multipart {header;_} | Message {header;_} -> Header.content_type header
-    )
+  (* let from_header (key: Field_name.t) (h: Header.t) = *)
+  (*   if Header.exists key h then *)
+  (*     Ok (Header.assoc key h) else *)
+  (*     Error "Missing field" *)
+
+  (* (\*  Given a list of optional values, build a list of the contents of any the *)
+  (*  *  non-None options (and ignore Nones) *\) *)
+  (* let take_any opts = *)
+  (*   let rec take_any' opts acc = *)
+  (*     match opts with *)
+  (*     | [] -> acc *)
+  (*     | opt :: rest -> match opt with *)
+  (*       | Some x -> take_any' rest (x :: acc) *)
+  (*       | None -> take_any' rest acc *)
+  (*   in List.rev (take_any' opts []) *)
+
+  (* (\* DEPRECATED / for convenience writing tests only. *)
+  (*  * Instead of directly accessing leaves, invoke [attach_copy_map] on the Mail tree *)
+  (*  * with a function that wants to be called on an attachment-bearing leaf (and returns one) *)
+  (*  * *)
+  (*  * Given a parsed email (i.e. Mrmime.Mail.t), build a list of the bottom-level *)
+  (*  * leaves, which contain the actual email and attachment content *\) *)
+  (* let rec leaf_list m = *)
+  (*   Mail.( *)
+  (*     match m with *)
+  (*       Leaf _ -> [m] *)
+  (*     | Multipart {body; _} -> List.flatmap leaf_list (take_any body) *)
+  (*     | Message {body; _} ->  leaf_list body *)
+  (*   ) *)
 
 
-  let unpack_content_encoding =
-    Mail.(
-      function
-        Leaf {header; _} | Multipart {header;_} | Message {header;_} -> Header.content_encoding header
-    )
-
-  let is_attachment m =
-    Content_type.(
-      let primary_type = ty (unpack_content_type m) in
-      Type.(is_discrete primary_type && not (equal text primary_type))
-    )
-
-  (* f should be a function from an attachment-bearing leaf to a better attachment-bearing leaf.
-   * See [decode_leaf_body] and [encode_leaf_body] examples.
-   *
-   * Not a "true" map, since we keep the leaf pre-images with us in the resulting Mail.t.
-   * *)
-  let rec attach_copy_map f m =
-    let rec multipart_body_map = function
-        [] -> []
-      |  x :: xs -> match x with
-          Some leaf ->
-          if is_attachment leaf
-          then x :: (Some (f leaf) :: multipart_body_map xs) (* Note the "duplicate" leaf *)
-          else x :: multipart_body_map xs
-        | _ -> multipart_body_map xs
-    in
-    Mail.(
-      match m with
-      | Multipart {header; body}
-        -> Multipart {header = header; body = multipart_body_map body}
-      | Message {header; body}
-        -> Message {header = header; body = attach_copy_map f body}
-      | Leaf _ -> assert false (* never descend to leaf level -- uses helper.
-                                * won't break because even for minimal "hello world" emails,
-                                * MrMime parses as multipart w/ a single leaf. - O *)
-    )
+  (* let unpack_content_type = *)
+  (*   Mail.( *)
+  (*     function *)
+  (*       Leaf {header; _} | Multipart {header;_} | Message {header;_} -> Header.content_type header *)
+  (*   ) *)
 
 
-  (* *)
-  let decode_leaf_body = Mail.(function
-      | Leaf {header;  body} ->
-        let decoded = String.split body |> String.concat "" |> Base64.decode_exn in
-        Leaf {header = header;
-              body = decoded }
-      | _ -> assert false
-    )
+  (* let unpack_content_encoding = *)
+  (*   Mail.( *)
+  (*     function *)
+  (*       Leaf {header; _} | Multipart {header;_} | Message {header;_} -> Header.content_encoding header *)
+  (*   ) *)
 
-  (* TODO: insert '\r\n' as appropriate, just in case MrMime needs that. *)
-  let reencode_leaf_body  = Mail.(function
-      | Leaf {header;  body} ->
-        let reencoded = Base64.encode_exn body in
-        Leaf {header = header;
-              body = reencoded }
-      | _ -> assert false
-    )
+  (* let is_attachment m = *)
+  (*   Content_type.( *)
+  (*     let primary_type = ty (unpack_content_type m) in *)
+  (*     Type.(is_discrete primary_type && not (equal text primary_type)) *)
+  (*   ) *)
 
-  (* Note: it is beyond me to extract the filename of an attachment from its
-   *  parameters, since content-disposition is "unstructured" to MrMime.
-   *  This is probably a suitable band-aid.
-   *
-   * maybe should also add a random number to the string so it's not all a bunch of 'application.pdf'
-   * writing over each other *)
-  let leaf_to_file = Mail.(function
-      | Leaf {header;  body} ->
-        let ctype = Header.content_type header in
-        let fname = Content_type.(
-            (ty ctype |> Type.to_string)
-            ^ "."
-            ^ (subty ctype |> function `Ietf_token token | `Iana_token token | `X_token token -> token))
-        in writefile ~fn:fname body;
-        Leaf {header;  body} (* return leaf, unchanged, so this composes a little more easily *)
-      | _ -> assert false
-    )
+  (* (\* f should be a function from an attachment-bearing leaf to a better attachment-bearing leaf. *)
+  (*  * See [decode_leaf_body] and [encode_leaf_body] examples. *)
+  (*  * *)
+  (*  * Not a "true" map, since we keep the leaf pre-images with us in the resulting Mail.t. *)
+  (*  * *\) *)
+  (* let rec attach_copy_map f m = *)
+  (*   let rec multipart_body_map = function *)
+  (*       [] -> [] *)
+  (*     |  x :: xs -> match x with *)
+  (*         Some leaf -> *)
+  (*         if is_attachment leaf *)
+  (*         then x :: (Some (f leaf) :: multipart_body_map xs) (\* Note the "duplicate" leaf *\) *)
+  (*         else x :: multipart_body_map xs *)
+  (*       | _ -> multipart_body_map xs *)
+  (*   in *)
+  (*   Mail.( *)
+  (*     match m with *)
+  (*     | Multipart {header; body} *)
+  (*       -> Multipart {header = header; body = multipart_body_map body} *)
+  (*     | Message {header; body} *)
+  (*       -> Message {header = header; body = attach_copy_map f body} *)
+  (*     | Leaf _ -> assert false (\* never descend to leaf level -- uses helper. *)
+  (*                               * won't break because even for minimal "hello world" emails, *)
+  (*                               * MrMime parses as multipart w/ a single leaf. - O *\) *)
+  (*   ) *)
 
 
-  (* ****************************************************************************** *)
-  let example () = parse_mail_file "lib/3164_crlf"
-  let message_example () = parse_mail_file "digest"
+  (* (\* *\) *)
+  (* let decode_leaf_body = Mail.(function *)
+  (*     | Leaf {header;  body} -> *)
+  (*       let decoded = String.split body |> String.concat "" |> Base64.decode_exn in *)
+  (*       Leaf {header = header; *)
+  (*             body = decoded } *)
+  (*     | _ -> assert false *)
+  (*   ) *)
 
-  let leaftest () = Result.((unpack_root_mail @@ example ()) >>= (fun m -> Ok(leaf_list m)))
-  let subject () = Result.((unpack_root_header @@ example ()) >>= from_header Field_name.subject)
+  (* (\* TODO: insert '\r\n' as appropriate, just in case MrMime needs that. *\) *)
+  (* let reencode_leaf_body  = Mail.(function *)
+  (*     | Leaf {header;  body} -> *)
+  (*       let reencoded = Base64.encode_exn body in *)
+  (*       Leaf {header = header; *)
+  (*             body = reencoded } *)
+  (*     | _ -> assert false *)
+  (*   ) *)
 
-  let cont_type () = Result.(unpack_root_header (example ()) >>= (fun h -> Ok(Header.content_type h)))
+  (* (\* Note: it is beyond me to extract the filename of an attachment from its *)
+  (*  *  parameters, since content-disposition is "unstructured" to MrMime. *)
+  (*  *  This is probably a suitable band-aid. *)
+  (*  * *)
+  (*  * maybe should also add a random number to the string so it's not all a bunch of 'application.pdf' *)
+  (*  * writing over each other *\) *)
+  (* let leaf_to_file = Mail.(function *)
+  (*     | Leaf {header;  body} -> *)
+  (*       let ctype = Header.content_type header in *)
+  (*       let fname = Content_type.( *)
+  (*           (ty ctype |> Type.to_string) *)
+  (*           ^ "." *)
+  (*           ^ (subty ctype |> function `Ietf_token token | `Iana_token token | `X_token token -> token)) *)
+  (*       in writefile ~fn:fname body; *)
+  (*       Leaf {header;  body} (\* return leaf, unchanged, so this composes a little more easily *\) *)
+  (*     | _ -> assert false *)
+  (*   ) *)
 
-  let print_ctypes_test () = Result.(leaftest () >>= (fun ls -> Ok(List.map (fun m -> unpack_content_type m |> Content_type.ty |> Content_type.Type.to_string ) ls)))
-  let print_encoding_test () = Result.(leaftest () >>= (fun ls -> Ok(List.map (fun m -> unpack_content_encoding m ) ls)))
-  let is_attachment_test () = Result.(leaftest () >>= (fun ls -> Ok(List.map is_attachment ls)))
 
-  let b64_test () = Result.(
-      unpack_root_mail (example ())
-      >>= (fun m ->
-          Ok(attach_copy_map (fun leaf -> decode_leaf_body leaf |> leaf_to_file |> reencode_leaf_body) m)))
+  (* (\* ****************************************************************************** *\) *)
+  (* let example () = parse_mail_file "lib/3164_crlf" *)
+  (* let message_example () = parse_mail_file "digest" *)
 
-  (* let difftest () =
-   *   readfile "application.pdf" |>
-   *   Base64.encode_exn |>
-   *   writefile ~fn:"b64test.txt"
-   *
-   * let doeswork () = (readfile "b64test_alt.txt") ^ "\n" |> Base64.decode_exn |> writefile ~fn:"clone" *)
+  (* let leaftest () = Result.((unpack_root_mail @@ example ()) >>= (fun m -> Ok(leaf_list m))) *)
+  (* let subject () = Result.((unpack_root_header @@ example ()) >>= from_header Field_name.subject) *)
+
+  (* let cont_type () = Result.(unpack_root_header (example ()) >>= (fun h -> Ok(Header.content_type h))) *)
+
+  (* let print_ctypes_test () = Result.(leaftest () >>= (fun ls -> Ok(List.map (fun m -> unpack_content_type m |> Content_type.ty |> Content_type.Type.to_string ) ls))) *)
+  (* let print_encoding_test () = Result.(leaftest () >>= (fun ls -> Ok(List.map (fun m -> unpack_content_encoding m ) ls))) *)
+  (* let is_attachment_test () = Result.(leaftest () >>= (fun ls -> Ok(List.map is_attachment ls))) *)
+
+  (* let b64_test () = Result.( *)
+  (*     unpack_root_mail (example ()) *)
+  (*     >>= (fun m -> *)
+  (*         Ok(attach_copy_map (fun leaf -> decode_leaf_body leaf |> leaf_to_file |> reencode_leaf_body) m))) *)
+
+  (* (\* let difftest () = *)
+  (*  *   readfile "application.pdf" |> *)
+  (*  *   Base64.encode_exn |> *)
+  (*  *   writefile ~fn:"b64test.txt" *)
+  (*  * *)
+  (*  * let doeswork () = (readfile "b64test_alt.txt") ^ "\n" |> Base64.decode_exn |> writefile ~fn:"clone" *\) *)
 end
 
 
