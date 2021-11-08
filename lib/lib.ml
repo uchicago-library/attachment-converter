@@ -21,18 +21,11 @@ sig
   val acopy_email : string -> (string -> string) -> string
 end
 
-module Conversion_ocamlnet : CONVERT = struct
-  include Netmime
-  include Netmime_channels
-  include Netchannels
-  include Netstream
-  include Netmime_header
-  include Stdlib.Buffer
-
+module Conversion_ocamlnet (*: CONVERT*) = struct
 
   type htransform = string -> string
   type btransform = string -> string
-  type filepath =  String.t
+  type filepath =  string
   type parsetree = Netmime.complex_mime_message
 
 
@@ -52,7 +45,7 @@ module Conversion_ocamlnet : CONVERT = struct
     Stdlib.Buffer.contents buf
 
   let header_from_string s =
-    new basic_mime_header
+    new Netmime.basic_mime_header
       (Netchannels.with_in_obj_channel
          (new Netchannels.input_string s)
          (fun ch -> Netmime_string.read_header ?downcase:(Some false) (new Netstream.input_stream ch)))
@@ -80,12 +73,11 @@ module Conversion_ocamlnet : CONVERT = struct
                                  express this, especially since it's always
                                  *exactly* one or two things *)
         match part with
-          (header, `Body (b: mime_body)) ->
+          (header, `Body (b: Netmime.mime_body)) ->
           let h = header_to_string header in
-          let h' = f h in
-          if String.lowercase_ascii h = String.lowercase_ascii h'
+          if f h = h
           then [part]
-          else [ (header_from_string h', `Body (b#set_value (g b#value); b)); part]
+          else [ (header_from_string (f h), `Body (b#set_value (g b#value); b)); part]
         | _ -> [acopy f g part]
 
       in (header, `Parts List.(concat_map copy_or_skip p_lst))
@@ -95,23 +87,26 @@ module Conversion_ocamlnet : CONVERT = struct
   let to_string (tree : parsetree) =
     let (header, _) = tree in
     let n = try Netmime_header.get_content_length header
-      with Not_found -> (1024 * 1024) in (* defaulting to a megabyte seems like a nice round number, might be overkill *)
+      with Not_found -> (1024 * 1024) in (* defaulting to a megabyte seems like a nice round number, if it isn't overkill *)
     let buf =  Stdlib.Buffer.create n in
     Netchannels.with_out_obj_channel
       (new Netchannels.output_buffer buf)
       (fun ch -> Netmime_channels.write_mime_message ch tree);
     Stdlib.Buffer.contents buf
 
-  (* TODO *)
-  let convert _path_to_util = assert false
-  let acopy_email = assert false
-  (* let acopy_email = assert false *)
-  let sampletree = Prelude.readfile "../2843" |> parse
-  let upcased_and_deleted =
+  (* returns a function that expects and returns binary attachment data as a string, not b64 encoded.
+     e.g. `body # set_value (convert ["/bin/cat" "-"] (body # value))` would be a noop, since the ocamlnet value access
+     methods handle the encoding themselves. *)
+  let convert =
+    Prelude.Unix.Proc.rw ?oknon0:(Some false)  ?env:None ?usepath:(Some true)
+
+  let upcase_header_and_delete_body fname =
     let f = String.uppercase_ascii in
     let g = fun _ -> "" in
-    let tree = amap f g sampletree in
-    Prelude.writefile "../upcased_and_deleted" (to_string tree)
+    let tree = parse (Prelude.readfile fname) in
+    Prelude.writefile ~fn:(fname ^ "_upcased_and_deleted") (tree |> (amap f g) |> to_string)
+
+    (* let acopy_email = assert false *)
 
 end
 
