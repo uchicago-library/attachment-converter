@@ -1,3 +1,4 @@
+#!/bin/sh
 opam switch create 4.12.0
 opam install ocamlbuild ocamlfind dune
 opam pin add -k hg prelude https://www.lib.uchicago.edu/keith/hg/prelude
