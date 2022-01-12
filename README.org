@@ -30,3 +30,29 @@
    We are initializing this repository with the code begun by Owen
    Price Skelly as part of an MPCS practicum research project during
    the Winter 2021 quarter.  
+
+* Background on the email format
+
+** Reading
+
+   I'm including a link to the RFC-s that define the email
+   specification here.  These are shamelessly pilfered from the
+   impressive [[https://github.com/mirage/mrmime][Mr. Mime]] GitHub README:
+   
+   - https://datatracker.ietf.org/doc/html/rfc822
+   - https://datatracker.ietf.org/doc/html/rfc2822
+   - https://datatracker.ietf.org/doc/html/rfc5321
+   - https://datatracker.ietf.org/doc/html/rfc5322
+   - https://datatracker.ietf.org/doc/html/rfc2045
+   - https://datatracker.ietf.org/doc/html/rfc2046
+   - https://datatracker.ietf.org/doc/html/rfc2047
+   - https://datatracker.ietf.org/doc/html/rfc2049
+   - https://datatracker.ietf.org/doc/html/rfc6532
+
+** Viewing
+
+   Romain Calascibetta's overview talk from [[https://icfp16.sigplan.org/program/program-icfp-2016/][ICFP 2016]] is truly
+   excellent and recommended to all.  You never knew email addresses
+   could be so complicated.
+
+   https://www.youtube.com/watch?v=kQkRsNEo25k
