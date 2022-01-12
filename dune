@@ -5,7 +5,7 @@
 (executable
  (name main)
  (public_name attachment-converter)
- (libraries prelude versioj lib mrmime threads netstring unix))
+ (libraries prelude lib mrmime threads netstring unix))
 
 (env
   (dev                                  ; make warnings non-fatal
