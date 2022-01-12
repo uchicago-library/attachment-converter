@@ -37,7 +37,7 @@ module Conversion_ocamlnet (*: CONVERT*) = struct
      -- I /think/ that with_in_obj_channel should close both the Netchannels and the Netstream input bits,
      but it's worth keeping an eye on. *)
 
-  let header_to_string (h : mime_header) =
+  let header_to_string (h : Netmime.mime_header) =
     let buf = Stdlib.Buffer.create 1024 in
     Netchannels.with_out_obj_channel
       (new Netchannels.output_buffer buf)
