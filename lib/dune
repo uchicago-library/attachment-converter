@@ -4,13 +4,8 @@
 
 (library
  (name lib)
- (libraries prelude versioj mrmime threads netstring unix)
+ (libraries prelude mrmime threads netstring unix)
  (inline_tests (backend qtest.lib)))
-
-(rule
- (targets v.ml)
- (mode promote-until-clean)             ; copies v.ml from _build to the source tree, clean deletes
- (action (system "versioj %{targets} || echo 'let data = []' > %{targets}")))
 
 (env
   (dev                                  ; make warnings non-fatal
