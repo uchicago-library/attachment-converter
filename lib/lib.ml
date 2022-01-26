@@ -60,7 +60,7 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
     new Netmime.basic_mime_header
       (Netchannels.with_in_obj_channel
          (new Netchannels.input_string s)
-         (fun ch -> Netmime_string.read_header ?downcase:(Some false) (new Netstream.input_stream ch)))
+         (fun ch -> Netmime_string.read_header ?downcase:(Some true) (new Netstream.input_stream ch)))
 
   (* param_map takes a builds a string -> string function from a specified header field (e.g. "Content-Disposition"),
    * a parameter that we might find in that field (e.g. "filename"), and a
@@ -120,11 +120,11 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
   let to_string (tree : parsetree) =
     let (header, _) = tree in
     let n = try Netmime_header.get_content_length header
-      with Not_found -> (1024 * 1024) in (* defaulting to a megabyte seems like a nice round number, if it isn't overkill *)
+      with Not_found -> (1024 * 1024) in (* defaulting to a megabyte seems like a nice round number *)
     let buf =  Stdlib.Buffer.create n in
     Netchannels.with_out_obj_channel
       (new Netchannels.output_buffer buf)
-      (fun ch -> Netmime_channels.write_mime_message ch tree);
+      (fun ch -> Netmime_channels.write_mime_message ?crlf:(Some false) ch tree);
     Stdlib.Buffer.contents buf
 
   (* returns a function that expects and returns binary attachment data as a string, not b64 encoded.
@@ -155,7 +155,16 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
       (_ :: attached :: _ ) -> attached
     | _ -> assert false
 
-  let update_filename hstr ?(ext="") =
+  let update_mimetype oldtype newtype hstr =
+    let open String in
+    let hdr = header_from_string hstr in
+    let s = try hdr # field "content-type" with Not_found -> "" in
+    if lowercase_ascii s = lowercase_ascii oldtype
+    then (hdr # update_field "content-type" newtype;
+          header_to_string hdr)
+    else hstr
+
+  let update_filename ?(ext="") hstr  =
     let open Strings in
     let open Filename in
     let timestamp () =
@@ -1114,18 +1123,19 @@ NTRiMWY1Yzg2PiBdID4+CnN0YXJ0eHJlZgo1MTQwNwolJUVPRgo=|}
 
   let replace_with_pdf _ = destination_file
 
-(* TODOs
- * 
- * - have pdf_convert_test update the Content-Type header
- * - put the line breaks back in the semicolon-separated header field
- *   parameters (i.e. filename=etc) in the output
- * - see if the result will open in Apple Mail
- * 
- * to make the output into an MBOX, put this at the top:
- * 
- * From root@gringotts.lib.uchicago.edu Fri Jan 21 11:48:27 2022                          *)
-                         
-  let pdf_convert_test fname =
+  (* TODOs
+   *
+   * - [x] have pdf_convert_test update the Content-Type header
+   * - [~] put the line breaks back in the semicolon-separated header field
+   *   parameters (i.e. filename=etc) in the output
+   * - [x] see if the result will open in Apple Mail
+   *
+   * to make the output into an MBOX, put this at the top:
+   *
+From root@gringotts.lib.uchicago.edu Fri Jan 21 11:48:27 2022
+   *)
+
+  let docx_convert_test fname =
     let header_func hstring =
       let hs = String.lowercase_ascii hstring in
       match Strings.(
@@ -1133,14 +1143,39 @@ NTRiMWY1Yzg2PiBdID4+CnN0YXJ0eHJlZgo1MTQwNwolJUVPRgo=|}
            substr "content-type: application/vnd.openxmlformats-officedocument.wordprocessingml.document" hs)
         )
       with
-        (Some _, Some _) ->
-        update_filename hstring ~ext:"pdf"
+        (Some _, Some _) -> update_mimetype
+                              "application/vnd.openxmlformats-officedocument.wordprocessingml.document" (* note: should we make this optional? how much could we infer from config etc *)
+                              "application/pdf"
+                              (update_filename ~ext:".pdf" hstring)
       | _ -> hstring (* noop when not a pdf and attachment *)
     in
-    let body_func = replace_with_pdf in
+    let body_func bstr =
+      let open Prelude.Unix.Proc in
+      let tmpname = fname ^ "_extracted_tmp.docx" in
+      (writefile ~fn:(tmpname) bstr; read ["pandoc"; "--from=docx"; "--to=pdf"; "--pdf-engine=xelatex"; tmpname])
+    in
     let tree = parse (readfile fname) in
     let converted_tree = amap header_func body_func tree
-    in writefile ~fn:(fname ^ "_xmas_cancelled") (to_string converted_tree)
+    in writefile ~fn:(fname ^ "_docxmas_saved") (to_string converted_tree)
+
+  (* let pdf_convert_test fname = *)
+  (*   let header_func hstring = *)
+  (*     let hs = String.lowercase_ascii hstring in *)
+  (*     match Strings.( *)
+  (*         (substr "content-disposition: attachment;" hs, *)
+  (*          substr "content-type: application/vnd.openxmlformats-officedocument.wordprocessingml.document" hs) *)
+  (*       ) *)
+  (*     with *)
+  (*       (Some _, Some _) -> update_mimetype *)
+  (*                             "application/vnd.openxmlformats-officedocument.wordprocessingml.document" (\* note: should we make this optional? how much could we infer from config etc *\) *)
+  (*                             "application/pdf" *)
+  (*                             (update_filename ~ext:".pdf" hstring) *)
+  (*     | _ -> hstring (\* noop when not a pdf and attachment *\) *)
+  (*   in *)
+  (*   let body_func = replace_with_pdf in *)
+  (*   let tree = parse (readfile fname) in *)
+  (*   let converted_tree = acopy header_func body_func tree *)
+  (*   in writefile ~fn:(fname ^ "_xmas_cancelled") (to_string converted_tree) *)
 
 
   let upcase_header_and_delete_body fname =
@@ -1158,8 +1193,8 @@ NTRiMWY1Yzg2PiBdID4+CnN0YXJ0eHJlZgo1MTQwNwolJUVPRgo=|}
 
   let acopy_email () = assert false
 
-  
-                     
+
+
 end
 
 
