@@ -47,7 +47,7 @@ where `ABSOLUTE/PATH/TO/CONFIG/user/registrymodifications.xcu` contains the foll
 * If any intermediate directories in the path `OUTPUT_DIR` do not exist, `soffice` will create them.
 * You cannot specify an output file name, only its directory. If no output directory is specified `.` is used. So the output directory should be specified to be something other than `.` in the case of converting PDFs if you don't want to lose the original version. *For all following LibreOffice conversions, the `--outdir` option is left out.*
 * In theory, we believe `soffice --convert-to pdf:writer_pdf_Export:SelectPdfVersion=1 INPUT_FILE` should do the same thing as above, but it doesn't seem to work, the output files are not PDF-A compliant.
-* The output for a `.pdf` file will occasionally be noncompliant according to `verapdf	`, but in the few cases we've checked, the output is compliant according to the veraPDF REST service. **Note: These two tools do not always agree on compliance.**
+* The output for a `.pdf` file will occasionally be noncompliant according to `verapdf`, but in the few cases we've checked, the output is compliant according to the veraPDF REST service. **Note: These two tools do not always agree on compliance.**
 * This should, in principle, also be possible for PDF-A 2b and 3b, but we have not determined how to do this.
 
 
@@ -155,6 +155,6 @@ $ pdftotext INPUT_FILE OUTPUT_FILE_NAME
 
 #### Notes
 
-* All directories in the path `OUTPUT_FILE_NAME` must exist; libvips does not create directories.
+* All directories in the path `OUTPUT_FILE_NAME` must exist; pdftotext does not create directories.
 * It seems to be included by default in many Linux distros, but is available for Windows in Xpdf.
 * The output file is not great, especially if the pdf is complex (e.g., has a lot of mathematical symbols or tables) but none of the other tools handle this conversion.
