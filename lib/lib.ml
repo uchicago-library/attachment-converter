@@ -60,7 +60,7 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
     new Netmime.basic_mime_header
       (Netchannels.with_in_obj_channel
          (new Netchannels.input_string s)
-         (fun ch -> Netmime_string.read_header ?downcase:(Some true) (new Netstream.input_stream ch)))
+         (fun ch -> Netmime_string.read_header ?downcase:(Some false) ?unfold:(Some false) (new Netstream.input_stream ch)))
 
   (* param_map takes a builds a string -> string function from a specified header field (e.g. "Content-Disposition"),
    * a parameter that we might find in that field (e.g. "filename"), and a
@@ -160,8 +160,7 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
     let hdr = header_from_string hstr in
     let s = try hdr # field "content-type" with Not_found -> "" in
     if lowercase_ascii s = lowercase_ascii oldtype
-    then (hdr # update_field "content-type" newtype;
-          header_to_string hdr)
+    then (header_to_string hdr)
     else hstr
 
   let update_filename ?(ext="") hstr  =
@@ -244,7 +243,8 @@ From root@gringotts.lib.uchicago.edu Fri Jan 21 11:48:27 2022
 
   let acopy_email () = assert false
 
-
+  let xtree = xmas_tree ()
+  let header = fst xtree
 
 end
 
