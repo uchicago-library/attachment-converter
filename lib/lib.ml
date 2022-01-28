@@ -228,25 +228,6 @@ From root@gringotts.lib.uchicago.edu Fri Jan 21 11:48:27 2022
     let converted_tree = amap header_func body_func tree
     in writefile ~fn:(fname ^ "_docxmas_saved") (to_string converted_tree)
 
-  (* let pdf_convert_test fname = *)
-  (*   let header_func hstring = *)
-  (*     let hs = String.lowercase_ascii hstring in *)
-  (*     match Strings.( *)
-  (*         (substr "content-disposition: attachment;" hs, *)
-  (*          substr "content-type: application/vnd.openxmlformats-officedocument.wordprocessingml.document" hs) *)
-  (*       ) *)
-  (*     with *)
-  (*       (Some _, Some _) -> update_mimetype *)
-  (*                             "application/vnd.openxmlformats-officedocument.wordprocessingml.document" (\* note: should we make this optional? how much could we infer from config etc *\) *)
-  (*                             "application/pdf" *)
-  (*                             (update_filename ~ext:".pdf" hstring) *)
-  (*     | _ -> hstring (\* noop when not a pdf and attachment *\) *)
-  (*   in *)
-  (*   let body_func = replace_with_pdf in *)
-  (*   let tree = parse (readfile fname) in *)
-  (*   let converted_tree = acopy header_func body_func tree *)
-  (*   in writefile ~fn:(fname ^ "_xmas_cancelled") (to_string converted_tree) *)
-
 
   let upcase_header_and_delete_body fname =
     let f = String.uppercase_ascii in
