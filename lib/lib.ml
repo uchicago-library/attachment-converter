@@ -130,8 +130,20 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
   (* returns a function that expects and returns binary attachment data as a string, not b64 encoded.
      e.g. `body # set_value (convert ["/bin/cat" "-"] (body # value))` would be a noop, since the ocamlnet value access
      methods handle the encoding themselves. *)
-  let convert =
-    Prelude.Unix.Proc.rw ?oknon0:(Some false)  ?env:None ?usepath:(Some true)
+  let convert command str =
+    let temp_path = "/tmp/cormac.docx" in
+    let temp_file = writefile ~fn:temp_path str in
+    let output = Prelude.Unix.Proc.run
+                   [ command ;
+                     temp_path ;
+                     "-o";
+                     "./output.txt" ]
+    in readfile "./output.txt"
+     
+    (* Prelude.Unix.Proc.rw
+     *   ?oknon0:(Some false)
+     *   ?env:None
+     *   ?usepath:(Some true) *)
 
   let is_attachment (tree : parsetree) =
     let (header, _) = tree in
@@ -242,9 +254,6 @@ From root@gringotts.lib.uchicago.edu Fri Jan 21 11:48:27 2022
     Prelude.writefile ~fn:(fname ^ "_contented") (tree |> (amap f g) |> to_string)
 
   let acopy_email () = assert false
-
-  let xtree = xmas_tree ()
-  let header = fst xtree
 
 end
 
