@@ -41,8 +41,6 @@
    maintaining the project on an ongoing basis, after the end of the
    grant period.  Matt is currently in charge of managing the project.
    
-* Background on the email format
-
 ** Collaborative Workflow
 
    We're using GitHub for collaboration.  This section will describe
@@ -119,6 +117,8 @@
     suggested changes left over after that can be written up into a
     new GitHub issue.
 
+* Background on the email format
+    
 ** Reading
 
    Here is a link to the RFC-s that define the email
