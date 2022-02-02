@@ -67,8 +67,7 @@
       to the issue until we decide it's time for it to be added to the
       project
     + once it's time, the author of the issue should then assign it to
-      whoever agreed to work on the new feature when we talked about
-      it
+      whoever agreed to work on the new feature
     + the person assigned to the issue should pull down the branch
       they want to fork the new feature branch from, and create a new
       branch starting with the number of the issue, followed by the
@@ -88,15 +87,15 @@
     + the group, presently, is Matt, Keith, Cormac, Owen, and Nathan
     + Keith won't necessarily have time to code review every issue,
       but he will have time to do some of them, and Matt will take
-      care of un-assigning him, where applicable
+      care of un-assigning him and others, where applicable
     + if you are assigned a PR, take an afternoon or morning at your
       earliest convenience to pull the code down, test it, and make
       any style suggestions you have
     + if the comments are minor, you can go ahead and approve the
       feature branch for changes
-    + if you have a substantial suggested change, such as uncovering a
-      runtime bug, you should probably request changes before
-      approving the pull request
+    + if you have a substantial suggested change, like 'fix this
+      runtime bug I discovered', you should probably request changes
+      before approving the pull request
     + the person in charge of the PR can then make the relevant
       changes, push them up to the feature branch, and notify us on
       Slack when the latest round of changes are in
@@ -121,9 +120,9 @@
 
 ** Reading
 
-   I'm including a link to the RFC-s that define the email
-   specification here.  These are shamelessly pilfered from the
-   impressive [[https://github.com/mirage/mrmime][Mr. Mime]] GitHub README:
+   Here is a link to the RFC-s that define the email specification
+   here.  These are shamelessly pilfered from the impressive [[https://github.com/mirage/mrmime][Mr. Mime]]
+   GitHub README:
    
    + https://datatracker.ietf.org/doc/html/rfc822
    + https://datatracker.ietf.org/doc/html/rfc2822
