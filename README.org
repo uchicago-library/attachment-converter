@@ -29,20 +29,18 @@
 
 ** Current Team
 
-   Our illustrious team of developers, funded by the [Email Archives:
-   Building Capacity and
-   Community](https://emailarchivesgrant.library.illinois.edu/) Mellon
-   project out of UIUC, currently includes:
+   Our illustrious team of developers, funded by the
+   [[https://emailarchivesgrant.library.illinois.edu/][Email Archives:
+   Building Capacity and Community]] Mellon project out of UIUC,
+   currently includes:
 
-   - [Owen Price Skelly](https://github.com/owenpriceskelly)
-   - [Nathan Mull](https://github.com/nmmull)
-   - [Cormac Duhamel](https://github.com/cormacd9818)
+   + [[https://github.com/owenpriceskelly][Owen Price Skelly]]
+   + [[https://github.com/nmmull][Nathan Mull]]
+   + [[https://github.com/cormacd9818][Cormac Duhamel]]
 
-   [Matt Teichman](https://elucidations.vercel.app/) and [Keith
-   Waclena](https://www2.lib.uchicago.edu/keith/) will be contributing
-   to and maintaining the project on an ongoing basis, after the end
-   of the grant period.  Matt is currently in charge of managing the
-   project.
+   [[https://elucidations.vercel.app/][Matt Teichman]] and [[https://www2.lib.uchicago.edu/keith/][Keith Waclena]] will be contributing to and
+   maintaining the project on an ongoing basis, after the end of the
+   grant period.  Matt is currently in charge of managing the project.
    
 * Background on the email format
 
@@ -78,14 +76,14 @@
     + 'slugified' means all lowercase and spaces are hyphens
     + for example, if issue number 12 is called "Delete All Emails For
       All Time", then the new branch should be called
-      `12-delete-all-emails-for-all-time`
+      =12-delete-all-emails-for-all-time=
     + while working on the feature, the person assigned to it should
       feel free to commit all the time, keep pushing the branch up to
       GitHub, pulling it down, etc.
     + when the assignee thinks it's ready for prime time, they should
-      create a new pull request merging the feature branch into
-      `main` , associate it with the relevant issue (GitHub should do
-      that automatically), and assign everyone else in the group as a
+      create a new pull request merging the feature branch into =main=
+      , associate it with the relevant issue (GitHub should do that
+      automatically), and assign everyone else in the group as a
       reviewer
     + the group, presently, is Matt, Keith, Cormac, Owen, and Nathan
     + Keith won't necessarily have time to code review every issue,
@@ -108,12 +106,12 @@
       into a new GitHub issue
     + once every reviewer has either approved the PR or been
       unassigned from it, Matt will take care of merging the feature
-      branch into `main` and re-assign developers to new issues
+      branch into =main= and re-assign developers to new issues
 
 *** Fast-Track Workflow
 
     Occasionally we'll be in a situation where we wanna fast track
-    some feature branch for merging into `main`.  If that happens,
+    some feature branch for merging into =main=.  If that happens,
     we'll follow the same workflow described above, with the
     difference that only one or two people will be assigned to the PR
     as reviewers, and the bar for merging the feature branch in will
@@ -127,15 +125,15 @@
    specification here.  These are shamelessly pilfered from the
    impressive [[https://github.com/mirage/mrmime][Mr. Mime]] GitHub README:
    
-   - https://datatracker.ietf.org/doc/html/rfc822
-   - https://datatracker.ietf.org/doc/html/rfc2822
-   - https://datatracker.ietf.org/doc/html/rfc5321
-   - https://datatracker.ietf.org/doc/html/rfc5322
-   - https://datatracker.ietf.org/doc/html/rfc2045
-   - https://datatracker.ietf.org/doc/html/rfc2046
-   - https://datatracker.ietf.org/doc/html/rfc2047
-   - https://datatracker.ietf.org/doc/html/rfc2049
-   - https://datatracker.ietf.org/doc/html/rfc6532
+   + https://datatracker.ietf.org/doc/html/rfc822
+   + https://datatracker.ietf.org/doc/html/rfc2822
+   + https://datatracker.ietf.org/doc/html/rfc5321
+   + https://datatracker.ietf.org/doc/html/rfc5322
+   + https://datatracker.ietf.org/doc/html/rfc2045
+   + https://datatracker.ietf.org/doc/html/rfc2046
+   + https://datatracker.ietf.org/doc/html/rfc2047
+   + https://datatracker.ietf.org/doc/html/rfc2049
+   + https://datatracker.ietf.org/doc/html/rfc6532
 
 ** Viewing
 
