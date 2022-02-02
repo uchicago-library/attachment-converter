@@ -29,9 +29,8 @@
 
 ** Current Team
 
-   Our illustrious team of developers, funded by the
-   [[https://emailarchivesgrant.library.illinois.edu/][Email Archives:
-   Building Capacity and Community]] Mellon project out of UIUC,
+   Our illustrious team of developers, funded by the [[https://emailarchivesgrant.library.illinois.edu/][Email Archives:
+   Building Capacity and Community]] Mellon project out of [[https://www.library.illinois.edu/][UIUC]],
    currently includes:
 
    + [[https://github.com/owenpriceskelly][Owen Price Skelly]]
