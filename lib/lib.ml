@@ -243,9 +243,6 @@ From root@gringotts.lib.uchicago.edu Fri Jan 21 11:48:27 2022
 
   let acopy_email () = assert false
 
-  let xtree = xmas_tree ()
-  let header = fst xtree
-
 end
 
 
