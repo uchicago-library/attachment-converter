@@ -148,62 +148,56 @@ module Conversion_ocamlnet = struct
     Stdlib.Buffer.contents buf
 
   (** putting this off till issues 7 and 9 *)
-  let convert = assert false
+  let convert () = assert false
 
-  let is_attachment (tree : parsetree) =
-    let (header, _) = tree in
+  (** predicate for email parts that are attachments *)
+  let is_attachment tree =
+    let header, _ = tree in
     let s = try header # field "content-disposition"
       with Not_found -> ""
     in Strings.prefix "attachment" (String.lowercase_ascii s)
 
-  module ForREPLTesting = struct
-    let unparts = function
-      | `Parts plist -> plist
-      | _ -> assert false
-           
-    let unbody = function
-      | `Body b -> b
-      | _ -> assert false
-
-    let xmas_tree () =
-      let (_, parts) = parse (readfile "../2843") in
-      match unparts parts with
-        (_ :: attached :: _ ) -> attached
-      | _ -> assert false
-  end
-
-  let update_mimetype oldtype newtype hstr =
+  (** updates the MIME type in a header string *)
+  let update_mimetype newtype hstr =
     let open String in
     let hdr = header_from_string hstr in
-    let s = try hdr # field "content-type" with Not_found -> "" in
-    if lowercase_ascii s = lowercase_ascii oldtype
-    then (header_to_string hdr)
-    else hstr
+    let s = try hdr # field "Content-Type" with Not_found -> "" in
+    if Stdlib.String.(trim s = trim newtype)
+    then hstr
+    else begin
+        hdr#update_field "Content-Type" newtype ;
+        header_to_string hdr
+      end
 
-  let update_filename ?(ext="") hstr  =
-    let open Strings in
+  (** updates the filename in a header string *)
+  let update_filename ?(ext="") hstr =
+    let open String in
     let open Filename in
     let timestamp () =
       Unix.time ()
       |> string_of_float
-      |> fun x -> String.(sub x 0 (length x - 1))
+      |> fun x -> sub x 0 (length x - 1)
     in
     match substr "filename=" hstr with
-      Some lo ->
+    | Some lo ->
        let hi = lo + try Option.get (substr "\r\n" hstr#.(lo,0)) with
                        Invalid_argument _ -> assert false (* should never happen if libpst does its job *)
        in
        let old_name =    (* offsets are for escaped quotation marks and/or a ';',
-                           which is only required if more params follow the filename param.*)
+                            which is only required if more params follow the filename param.*)
          if mem ';' hstr#.(lo, hi)
          then hstr#.(lo + 10, hi - 2)
          else hstr#.(lo + 10, hi - 1)
        in
-       let new_name = (remove_extension old_name)
-                      ^ ".CONVERTED"
-                      ^ timestamp ()
-                      ^ (extension old_name)
-                      ^ ext
+       let new_name =
+         String.join ~sep:"" [
+             (remove_extension old_name) ;
+             ".CONVERTED." ;
+             timestamp () ;
+             "." ;
+             (extension old_name) ;
+             ext ;
+           ]
        in replace old_name new_name hstr
     | _ -> assert false
 
@@ -231,7 +225,7 @@ From root@gringotts.lib.uchicago.edu Fri Jan 21 11:48:27 2022
         )
       with
         (Some _, Some _) -> update_mimetype
-                              "application/vnd.openxmlformats-officedocument.wordprocessingml.document" (* note: should we make this optional? how much could we infer from config etc *)
+                              (* "application/vnd.openxmlformats-officedocument.wordprocessingml.document" (\* note: should we make this optional? how much could we infer from config etc *\) *)
                               "application/pdf"
                               (update_filename ~ext:".pdf" hstring)
       | _ -> hstring (* noop when not a pdf and attachment *)
@@ -263,6 +257,25 @@ From root@gringotts.lib.uchicago.edu Fri Jan 21 11:48:27 2022
 
 end
 
+module REPLTesting = struct
+  include Conversion_ocamlnet
+        
+  let unparts = function
+    | `Parts plist -> plist
+    | _ -> assert false
+         
+  let unbody = function
+    | `Body b -> b
+    | _ -> assert false
+         
+  let xmas_tree () =
+    let _, parts = parse (readfile "../2843") in
+    match unparts parts with
+      _ :: attached :: _ -> attached
+    | _ -> assert false
+end
+
+                               
 
 
 (*
