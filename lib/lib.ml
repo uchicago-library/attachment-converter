@@ -176,7 +176,7 @@ module Conversion_ocamlnet = struct
     let timestamp () =
       Unix.time ()
       |> string_of_float
-      |> fun x -> sub x 0 (length x - 1)
+      |> fun x -> String.(sub x 0 (length x - 1))
     in
     match substr "filename=" hstr with
     | Some lo ->
@@ -200,7 +200,6 @@ module Conversion_ocamlnet = struct
            ]
        in replace old_name new_name hstr
     | _ -> assert false
-
 
   (* TESTS *)
 
@@ -252,6 +251,13 @@ From root@gringotts.lib.uchicago.edu Fri Jan 21 11:48:27 2022
     let g = Fun.const "" in
     let tree = parse (Prelude.readfile fname) in
     Prelude.writefile ~fn:(fname ^ "_contented") (tree |> (amap f g) |> to_string)
+
+  let extra_spaces_in_header fname =
+    let double_space c = if c == ' ' then "  " else String.make 1 c in
+    let f s = s |> String.foldr (fun c l -> double_space c :: l) [] |> String.concat "" in
+    let tree = parse (Prelude.readfile fname) in
+    Prelude.writefile ~fn:(fname ^ "_extra_spaces_in_header") (tree |> (amap f id) |> to_string)
+  (* Not sure if this should be possible, may throw an execption *)
 
   let acopy_email () = assert false
 
