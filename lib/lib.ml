@@ -52,7 +52,7 @@ module Conversion_ocamlnet = struct
     match tail fields with
     (* Case 1: no params, alist is just field name/value *)
     | Some [] -> [fieldname, (header#field fieldname)]
-    (* case 2: split on "=" then zip together as alist*)
+    (* Case 2: split on "=" then zip together as alist*)
     | Some params ->
        let kvpairs = map (String.cut ~sep:"=") params in
        let process = function
@@ -200,20 +200,28 @@ module Conversion_ocamlnet = struct
            ]
        in replace old_name new_name hstr
     | _ -> assert false
+end
 
-  (* TESTS *)
+module REPLTesting = struct
 
-  (* TODOs
-   *
-   * - [x] have pdf_convert_test update the Content-Type header
-   * - [~] put the line breaks back in the semicolon-separated header field
-   *   parameters (i.e. filename=etc) in the output
-   * - [x] see if the result will open in Apple Mail
-   *
-   * to make the output into an MBOX, put this at the top:
-   *
-From root@gringotts.lib.uchicago.edu Fri Jan 21 11:48:27 2022
-   *)
+  (* for reference, MBOX From line:
+   * From root@gringotts.lib.uchicago.edu Fri Jan 21 11:48:27 2022 *)
+  
+  include Conversion_ocamlnet
+        
+  let unparts = function
+    | `Parts plist -> plist
+    | _ -> assert false
+         
+  let unbody = function
+    | `Body b -> b
+    | _ -> assert false
+         
+  let xmas_tree () =
+    let _, parts = parse (readfile "../2843") in
+    match unparts parts with
+      _ :: attached :: _ -> attached
+    | _ -> assert false
 
   let docx_convert_test fname =
     let header_func hstring =
@@ -261,24 +269,6 @@ From root@gringotts.lib.uchicago.edu Fri Jan 21 11:48:27 2022
 
   let acopy_email () = assert false
 
-end
-
-module REPLTesting = struct
-  include Conversion_ocamlnet
-        
-  let unparts = function
-    | `Parts plist -> plist
-    | _ -> assert false
-         
-  let unbody = function
-    | `Body b -> b
-    | _ -> assert false
-         
-  let xmas_tree () =
-    let _, parts = parse (readfile "../2843") in
-    match unparts parts with
-      _ :: attached :: _ -> attached
-    | _ -> assert false
 end
 
                                
