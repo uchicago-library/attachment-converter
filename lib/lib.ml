@@ -169,37 +169,70 @@ module Conversion_ocamlnet = struct
         header_to_string hdr
       end
 
-  (** updates the filename in a header string *)
-  let update_filename ?(ext="") hstr =
-    let open String in
-    let open Filename in
+  let equals_sign star = if star
+                         then "*="
+                         else "="
+
+  (** updates the name in just the 'filename=' part of the string *)
+  let update_filename_string ?(ext="") ?(star=false) str =
     let timestamp () =
       Unix.time ()
       |> string_of_float
       |> fun x -> String.(sub x 0 (length x - 1))
     in
-    match substr "filename=" hstr with
-    | Some lo ->
-       let hi = lo + try Option.get (substr "\r\n" hstr#.(lo,0)) with
-                       Invalid_argument _ -> assert false (* should never happen if libpst does its job *)
+    let new_name ?(star=false) header_key prefix ext =
+      String.concat "" [ header_key ;
+                         equals_sign star ;
+                         prefix ;
+                         "_CONVERTED_" ;
+                         timestamp () ;
+                         ext ; ]
+    in 
+    match String.split ~sep:"=" str with
+    | [ header_key; filename ] ->
+       let prefix, e =
+         let open Filename in
+         remove_extension filename, extension filename
        in
-       let old_name =    (* offsets are for escaped quotation marks and/or a ';',
-                            which is only required if more params follow the filename param.*)
-         if mem ';' hstr#.(lo, hi)
-         then hstr#.(lo + 10, hi - 2)
-         else hstr#.(lo + 10, hi - 1)
+       let extn =
+         if e = ""
+         then ext
+         else e
        in
-       let new_name =
-         String.join ~sep:"" [
-             (remove_extension old_name) ;
-             ".CONVERTED." ;
-             timestamp () ;
-             "." ;
-             (extension old_name) ;
-             ext ;
-           ]
-       in replace old_name new_name hstr
-    | _ -> assert false
+       new_name header_key prefix extn
+    | _ -> str
+    
+  (** updates the filename within an entire header string *)
+  (* uses OCaml's pure regular expression library ocaml-re *)
+  let update_filename ?(ext="") ?(star=false) hstr =
+    let open Re in
+    let open Option in
+    let ( let* ) = (>>=) in
+    let rex =
+      compile @@ seq [ str "filename" ;
+                     Re.str (equals_sign star) ;
+                     rep1 notnl ;
+                     alt [char ';' ; str "\r\n\r\n" ] ]
+    in
+    let old_string_opt =
+      let* grp = exec_opt rex hstr in
+      let* matched = Group.get_opt grp 0 in
+      Some matched
+    in
+    let update_header new_h =
+      replace_string ~all:false rex ~by:new_h hstr
+    in
+    let updated_header =
+      old_string_opt
+      >>| update_filename_string ~ext:ext
+      >>| update_header
+    in    
+    match updated_header with
+    | None -> hstr
+    | Some h -> h
+
+  let update_both_filenames ?(ext="") ?(star=false) =
+    update_filename << update_filename ~star:true
 end
 
 module REPLTesting = struct
