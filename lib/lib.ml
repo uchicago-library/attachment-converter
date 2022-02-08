@@ -231,6 +231,8 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
     | None -> hstr
     | Some h -> h
 
+  (** updates both the filename= and the filename*= filenames in an
+      attachment *)
   let update_both_filenames ?(ext="") ?(star=false) =
     update_filename ~ext:ext ~star:star
     << update_filename ~ext:ext ~star:true
@@ -242,21 +244,26 @@ module REPLTesting = struct
    * From root@gringotts.lib.uchicago.edu Fri Jan 21 11:48:27 2022 *)
   
   include Conversion_ocamlnet
-        
+
+  (** convenience function for unwrapping a `Parts; for REPL only *)
   let unparts = function
     | `Parts plist -> plist
     | _ -> assert false
-         
+
+  (** convenience function for unwrapping a `Body; for REPL only *)
   let unbody = function
     | `Body b -> b
     | _ -> assert false
-         
+    
+  (** quick access to the PDF attachment part of our example Christmas
+      tree email *)
   let xmas_tree () =
     let _, parts = parse (readfile "../2843") in
     match unparts parts with
       _ :: attached :: _ -> attached
     | _ -> assert false
 
+  (** function to change the mime type to PDF *)
   let header_func hstring =
     let hs = String.lowercase_ascii hstring in
     match Strings.(
@@ -265,23 +272,21 @@ module REPLTesting = struct
           )
     with
       (Some _, Some _) -> update_mimetype
-                            (* "application/vnd.openxmlformats-officedocument.wordprocessingml.document" (\* note: should we make this optional? how much could we infer from config etc *\) *)
                             "application/pdf"
                             (update_both_filenames ~ext:".pdf" hstring)
     | _ -> hstring (* noop when not a pdf and attachment *)
 
+  (** constant function that returns an example PDF-A as an output;
+      assumes you have a file by that name in your project that is a
+      PDF-A *)
   let body_func _ = readfile "xmas-PDFA.pdf"
-         
-  (* let body_func bstr =
-   *   let open Prelude.Unix.Proc in
-   *   let tmpname = fname ^ "_extracted_tmp.docx" in
-   *   (writefile ~fn:(tmpname) bstr; read ["pandoc"; "--from=docx"; "--to=pdf"; "--pdf-engine=xelatex"; tmpname]) *)
 
+  (** function from filepath pointing at input email to output email
+      as a string *)
   let docx_convert_test fname =
     let tree = parse (readfile fname) in
     let converted_tree = amap header_func body_func tree in
     to_string converted_tree
-    (* in writefile ~fn:(fname ^ "_docxmas_saved") (to_string converted_tree) *)
 
   let upcase_header_and_delete_body fname =
     let f = String.uppercase_ascii in
@@ -296,6 +301,8 @@ module REPLTesting = struct
     let tree = parse (Prelude.readfile fname) in
     Prelude.writefile ~fn:(fname ^ "_contented") (tree |> (amap f g) |> to_string)
 
+  (** takes filepath as input and writes a new file with extra spaces
+      in the headers *)
   let extra_spaces_in_header fname =
     let double_space c = if c == ' ' then "  " else String.make 1 c in
     let f s = s |> String.foldr (fun c l -> double_space c :: l) [] |> String.concat "" in
