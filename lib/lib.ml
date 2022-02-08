@@ -62,8 +62,6 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
       map process kvpairs
     | None -> assert false
 
-  (*let get_parts = function `Parts plst -> plst | _-> assert false;;*)
-
   (** to_string for Netmime headers *)
   let header_to_string h =
     let buf = Stdlib.Buffer.create 1024 in
@@ -75,12 +73,13 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
       channel_writer ;
     Stdlib.Buffer.contents buf
 
+  (** from_string for Netmime headers *)
   let header_from_string s =
     let channel_reader ch =
       let stream = new Netstream.input_stream ch in
       Netmime_string.read_header
-        ?downcase:(Some true)
-        ?unfold:(Some false)
+        ?downcase:(Some false)
+        ?unfold:None
         stream
     in
     new Netmime.basic_mime_header
@@ -88,60 +87,45 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
          (new Netchannels.input_string s)
          channel_reader)
 
-  (* param_map takes a builds a string -> string function from a specified header field (e.g. "Content-Disposition"),
-   * a parameter that we might find in that field (e.g. "filename"), and a
-   * simpler string->string function that just targets that value (e.g. a
-   * change_extension function or something.)
-  *)
-  (* let param_map = () *)
+  (* Notes: Content-Disposition headers provide information about how
+     to present a message or a body part. When a body part is to be
+     treated as an attached file, the Content-Disposition header will
+     include a file name parameter. *)
 
-
-  (* let mk_header  = assert false *)
-
-  (* Notes:
-     Content-Disposition headers provide information about how to present a
-     message or a body part. When a body part is to be treated as an attached
-     file, the Content-Disposition header will include a file name parameter. *)
-
-
-  let rec amap f g (tree : parsetree) =
+  (** apply an input function f to every attachment in an email
+      parsetree; note that this is not a real functorial map, which
+      means we will probably be renaming it in the future *)
+  let rec amap f g tree =
     match tree with
-      (header, `Body b) ->
+    | header, `Body b ->
       let h = header_to_string header in
       if f h = h
       (* only invoke g (the converting function) if f converts the header *)
       then tree
-      else (header_from_string (f h), `Body (b#set_value (g b#value); b))
-    | (header, `Parts p_lst) ->
-      (header, `Parts (List.map (amap f g) p_lst))
+      else header_from_string (f h) ,
+            `Body (b#set_value @@ g b#value ; b)
+    | header, `Parts p_lst ->
+      header, `Parts (List.map (amap f g) p_lst)
 
-  let rec header_alists (t: parsetree) =
-    match t with
-      (h, `Body _) ->
-      let parse_rest (fname, vals) =
-        (fname, Netmime_string.scan_value_with_parameters_ep vals [])
-      in map parse_rest h#fields
-    | (_, `Parts p_lst) -> List.concat_map header_alists p_lst
-
-  let rec acopy f g (tree : parsetree) =
+  (** apply an input function f to every attachment in an email parsetree and
+      put the result next to the original *)
+  let rec acopy f g tree =
     match tree with
-      (_, `Body _) -> tree (* TODO double check desired behavior for root messages without attachments *)
-
-    | (header, `Parts p_lst) ->
-      let copy_or_skip part = (* NOTE: two of the three cases here are singleton
-                                 lists, which might be a code smell.  Worth
-                                 reviewing in case there's a cleaner way to
-                                 express this, especially since it's always
-                                 *exactly* one or two things *)
-        match part with
-          (header, `Body (b: Netmime.mime_body)) ->
-          let h = header_to_string header in
-          if f h = h
-          then [part]
-          else [ (header_from_string (f h), `Body (b#set_value (g b#value); b)); part]
-        | _ -> [acopy f g part]
-
-      in (header, `Parts List.(concat_map copy_or_skip p_lst))
+    (* leave input email unchanged if it isn't multipart *)
+    | _, `Body _ -> tree 
+    | header, `Parts p_lst ->
+       let copy_or_skip part =
+         match part with
+         | header, `Body b ->
+            let hstring = header_to_string header in
+            (* do nothing to the body if the header transform leaves the header
+               alone *)
+            if f hstring = hstring
+            then [ part ]
+            else [ header_from_string (f hstring),
+                   `Body (b#set_value (g b#value); b); part]
+         | _ -> [ acopy f g part ]
+       in header, `Parts List.(concat_map copy_or_skip p_lst)
 
   let to_string (tree : parsetree) =
     let (header, _) = tree in
