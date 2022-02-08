@@ -73,12 +73,15 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
 
   (*let get_parts = function `Parts plst -> plst | _-> assert false;;*)
 
-
-  let header_to_string (h : Netmime.mime_header) =
+  (** to_string for Netmime headers *)
+  let header_to_string h =
     let buf = Stdlib.Buffer.create 1024 in
+    let channel_writer ch =
+      Netmime_string.write_header ch (h#fields)
+    in
     Netchannels.with_out_obj_channel
       (new Netchannels.output_buffer buf)
-      (fun ch -> Netmime_string.write_header ch (h#fields));
+      channel_writer ;
     Stdlib.Buffer.contents buf
 
   let header_from_string s =
