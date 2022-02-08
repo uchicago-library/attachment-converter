@@ -44,15 +44,6 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
      -- I /think/ that with_in_obj_channel should close both the Netchannels and
      the Netstream input bits, but it's worth keeping an eye on. *)
 
-                 
-  (* let parse (s : string) =
-   *   let ch = (new Netstream.input_stream (new Netchannels.input_string s)) in
-   *   let f = (fun ch -> Netmime_channels.read_mime_message ~multipart_style:`Deep ch) in
-   *   Netchannels.with_in_obj_channel ch f
-   * (\* see http://projects.camlcity.org/projects/dl/ocamlnet-4.1.9/doc/html-main/Netmime_tut.html
-   *    -- I /think/ that with_in_obj_channel should close both the Netchannels and the Netstream input bits,
-   *    but it's worth keeping an eye on. *\) *)
-
   (** parse the header field parameters into an association list *)
   let field_params_alist header fieldname =
     let fields =
@@ -85,10 +76,17 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
     Stdlib.Buffer.contents buf
 
   let header_from_string s =
+    let channel_reader ch =
+      let stream = new Netstream.input_stream ch in
+      Netmime_string.read_header
+        ?downcase:(Some true)
+        ?unfold:(Some false)
+        stream
+    in
     new Netmime.basic_mime_header
       (Netchannels.with_in_obj_channel
          (new Netchannels.input_string s)
-         (fun ch -> Netmime_string.read_header ?downcase:(Some true) (new Netstream.input_stream ch)))
+         channel_reader)
 
   (* param_map takes a builds a string -> string function from a specified header field (e.g. "Content-Disposition"),
    * a parameter that we might find in that field (e.g. "filename"), and a
