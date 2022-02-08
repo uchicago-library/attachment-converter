@@ -1,0 +1,17 @@
+October 1, 2009
+
+Name O. Person
+
+Organization
+
+1234 Street Name
+
+City, State 00000
+
+Dear Sir or Madam:
+
+Insert body text here.
+
+Sincerely,
+
+Bob Smith

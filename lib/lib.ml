@@ -127,93 +127,135 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
          | _ -> [ acopy f g part ]
        in header, `Parts List.(concat_map copy_or_skip p_lst)
 
-  let to_string (tree : parsetree) =
+  (** serialize a parsetree into a string *)
+  let to_string tree =
     let (header, _) = tree in
-    let n = try Netmime_header.get_content_length header
-      with Not_found -> (1024 * 1024) in (* defaulting to a megabyte seems like a nice round number *)
-    let buf =  Stdlib.Buffer.create n in
+    (* defaulting to a megabyte seems like a nice round number *)
+    let n =
+      Exn.default
+        (1024*1024)
+        Netmime_header.get_content_length header
+    in
+    let buf = Stdlib.Buffer.create n in
+    let channel_writer ch =
+      Netmime_channels.write_mime_message
+        ?crlf:(Some false)
+        ch
+        tree
+    in
     Netchannels.with_out_obj_channel
       (new Netchannels.output_buffer buf)
-      (fun ch -> Netmime_channels.write_mime_message ?crlf:(Some false) ch tree);
+      channel_writer ;
     Stdlib.Buffer.contents buf
 
-  (* returns a function that expects and returns binary attachment data as a string, not b64 encoded.
-     e.g. `body # set_value (convert ["/bin/cat" "-"] (body # value))` would be a noop, since the ocamlnet value access
-     methods handle the encoding themselves. *)
-  let convert =
-    Prelude.Unix.Proc.rw ?oknon0:(Some false)  ?env:None ?usepath:(Some true)
+  (** putting this off till issues 7 and 9 *)
+  let convert () = assert false
 
-  let is_attachment (tree : parsetree) =
-    let (header, _) = tree in
+  (** predicate for email parts that are attachments *)
+  let is_attachment tree =
+    let header, _ = tree in
     let s = try header # field "content-disposition"
       with Not_found -> ""
     in Strings.prefix "attachment" (String.lowercase_ascii s)
 
-  let unparts pts =
-    match pts with
-      `Parts plist -> plist
-    | _ -> assert false
-
-  let unbody bdy =
-    match bdy with
-      `Body b -> b
-    | _ -> assert false
-
-  let xmas_tree () =
-    let (_, parts) = parse (readfile "../2843") in
-    match unparts parts with
-      (_ :: attached :: _ ) -> attached
-    | _ -> assert false
-
-  let update_mimetype oldtype newtype hstr =
-    let open String in
+  (** updates the MIME type in a header string *)
+  let update_mimetype newtype hstr =
     let hdr = header_from_string hstr in
-    let s = try hdr # field "content-type" with Not_found -> "" in
-    if lowercase_ascii s = lowercase_ascii oldtype
-    then (hdr # update_field "content-type" newtype;
-          header_to_string hdr)
-    else hstr
+    let s = try hdr # field "Content-Type" with Not_found -> "" in
+    if Stdlib.String.(trim s = trim newtype)
+    then hstr
+    else begin
+        hdr#update_field "Content-Type" newtype ;
+        header_to_string hdr
+      end
 
-  let update_filename ?(ext="") hstr  =
-    let open Strings in
-    let open Filename in
+  let equals_sign star = if star
+                         then "*="
+                         else "="
+
+  (** updates the name in just the 'filename=' part of the string *)
+  let update_filename_string ?(ext="") ?(star=false) str =
     let timestamp () =
       Unix.time ()
       |> string_of_float
       |> fun x -> String.(sub x 0 (length x - 1))
     in
-    match substr "filename=" hstr with
-      Some lo ->
-      let hi = lo + try Option.get (substr "\r\n" hstr#.(lo,0)) with
-          Invalid_argument _ -> assert false (* should never happen if libpst does its job *)
-      in
-      let old_name =    (* offsets are for escaped quotation marks and/or a ';',
-                           which is only required if more params follow the filename param.*)
-        if mem ';' hstr#.(lo, hi)
-        then hstr#.(lo + 10, hi - 2)
-        else hstr#.(lo + 10, hi - 1)
-      in
-      let new_name = (remove_extension old_name)
-                     ^ ".CONVERTED"
-                     ^ timestamp ()
-                     ^ (extension old_name)
-                     ^ ext
-      in replace old_name new_name hstr
+    let new_name ?(star=false) header_key prefix ext =
+      String.concat "" [ header_key ;
+                         equals_sign star ;
+                         prefix ;
+                         "_CONVERTED_" ;
+                         timestamp () ;
+                         ext ; ]
+    in 
+    match String.split ~sep:"=" str with
+    | [ header_key; filename ] ->
+       let prefix, e =
+         let open Filename in
+         remove_extension filename, extension filename
+       in
+       let extn =
+         if e = ""
+         then ext
+         else e
+       in
+       new_name ~star:star header_key prefix extn
+    | _ -> str
+    
+  (** updates the filename within an entire header string; uses
+      OCaml's pure regular expression library ocaml-re *)
+  let update_filename ?(ext="") ?(star=false) hstr =
+    let open Re in
+    let open Option in
+    let ( let* ) = (>>=) in
+    let rex =
+      compile @@ seq [ str "filename" ;
+                     Re.str (equals_sign star) ;
+                     rep1 notnl ;
+                     alt [char ';' ; str "\r\n\r\n" ] ]
+    in
+    let old_string_opt =
+      let* grp = exec_opt rex hstr in
+      let* matched = Group.get_opt grp 0 in
+      Some matched
+    in
+    let update_header new_h =
+      replace_string ~all:false rex ~by:new_h hstr
+    in
+    let updated_header =
+      old_string_opt
+      >>| update_filename_string ~ext:ext
+      >>| update_header
+    in    
+    match updated_header with
+    | None -> hstr
+    | Some h -> h
+
+  let update_both_filenames ?(ext="") ?(star=false) =
+    update_filename ~ext:ext ~star:star
+    << update_filename ~ext:ext ~star:true
+end
+
+module REPLTesting = struct
+
+  (* for reference, MBOX From line:
+   * From root@gringotts.lib.uchicago.edu Fri Jan 21 11:48:27 2022 *)
+  
+  include Conversion_ocamlnet
+        
+  let unparts = function
+    | `Parts plist -> plist
     | _ -> assert false
-
-  (* TESTS *)
-
-  (* TODOs
-   *
-   * - [x] have pdf_convert_test update the Content-Type header
-   * - [~] put the line breaks back in the semicolon-separated header field
-   *   parameters (i.e. filename=etc) in the output
-   * - [x] see if the result will open in Apple Mail
-   *
-   * to make the output into an MBOX, put this at the top:
-   *
-From root@gringotts.lib.uchicago.edu Fri Jan 21 11:48:27 2022
-   *)
+         
+  let unbody = function
+    | `Body b -> b
+    | _ -> assert false
+         
+  let xmas_tree () =
+    let _, parts = parse (readfile "../2843") in
+    match unparts parts with
+      _ :: attached :: _ -> attached
+    | _ -> assert false
 
   let header_func hstring =
     let hs = String.lowercase_ascii hstring in
@@ -223,17 +265,23 @@ From root@gringotts.lib.uchicago.edu Fri Jan 21 11:48:27 2022
           )
     with
       (Some _, Some _) -> update_mimetype
-                            "application/vnd.openxmlformats-officedocument.wordprocessingml.document" (* note: should we make this optional? how much could we infer from config etc *)
+                            (* "application/vnd.openxmlformats-officedocument.wordprocessingml.document" (\* note: should we make this optional? how much could we infer from config etc *\) *)
                             "application/pdf"
-                            (update_filename ~ext:".pdf" hstring)
+                            (update_both_filenames ~ext:".pdf" hstring)
     | _ -> hstring (* noop when not a pdf and attachment *)
 
   let body_func _ = readfile "xmas-PDFA.pdf"
+         
+  (* let body_func bstr =
+   *   let open Prelude.Unix.Proc in
+   *   let tmpname = fname ^ "_extracted_tmp.docx" in
+   *   (writefile ~fn:(tmpname) bstr; read ["pandoc"; "--from=docx"; "--to=pdf"; "--pdf-engine=xelatex"; tmpname]) *)
 
   let docx_convert_test fname =
     let tree = parse (readfile fname) in
     let converted_tree = amap header_func body_func tree in
     to_string converted_tree
+    (* in writefile ~fn:(fname ^ "_docxmas_saved") (to_string converted_tree) *)
 
   let upcase_header_and_delete_body fname =
     let f = String.uppercase_ascii in
@@ -248,10 +296,14 @@ From root@gringotts.lib.uchicago.edu Fri Jan 21 11:48:27 2022
     let tree = parse (Prelude.readfile fname) in
     Prelude.writefile ~fn:(fname ^ "_contented") (tree |> (amap f g) |> to_string)
 
+  let extra_spaces_in_header fname =
+    let double_space c = if c == ' ' then "  " else String.make 1 c in
+    let f s = s |> String.foldr (fun c l -> double_space c :: l) [] |> String.concat "" in
+    let tree = parse (Prelude.readfile fname) in
+    Prelude.writefile ~fn:(fname ^ "_extra_spaces_in_header") (tree |> (amap f id) |> to_string)
+  (* Not sure if this should be possible, may throw an execption *)
+
   let acopy_email () = assert false
-
-
-
 end
 
 
