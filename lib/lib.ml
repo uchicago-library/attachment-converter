@@ -159,7 +159,6 @@ module Conversion_ocamlnet = struct
 
   (** updates the MIME type in a header string *)
   let update_mimetype newtype hstr =
-    let open String in
     let hdr = header_from_string hstr in
     let s = try hdr # field "Content-Type" with Not_found -> "" in
     if Stdlib.String.(trim s = trim newtype)
@@ -199,11 +198,11 @@ module Conversion_ocamlnet = struct
          then ext
          else e
        in
-       new_name header_key prefix extn
+       new_name ~star:star header_key prefix extn
     | _ -> str
     
-  (** updates the filename within an entire header string *)
-  (* uses OCaml's pure regular expression library ocaml-re *)
+  (** updates the filename within an entire header string; uses
+      OCaml's pure regular expression library ocaml-re *)
   let update_filename ?(ext="") ?(star=false) hstr =
     let open Re in
     let open Option in
@@ -232,7 +231,8 @@ module Conversion_ocamlnet = struct
     | Some h -> h
 
   let update_both_filenames ?(ext="") ?(star=false) =
-    update_filename << update_filename ~star:true
+    update_filename ~ext:ext ~star:star
+    << update_filename ~ext:ext ~star:true
 end
 
 module REPLTesting = struct
@@ -267,7 +267,7 @@ module REPLTesting = struct
         (Some _, Some _) -> update_mimetype
                               (* "application/vnd.openxmlformats-officedocument.wordprocessingml.document" (\* note: should we make this optional? how much could we infer from config etc *\) *)
                               "application/pdf"
-                              (update_filename ~ext:".pdf" hstring)
+                              (update_both_filenames ~ext:".pdf" hstring)
       | _ -> hstring (* noop when not a pdf and attachment *)
     in
     let body_func bstr =
