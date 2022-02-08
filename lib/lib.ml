@@ -29,21 +29,46 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
   type filepath =  string
   type parsetree = Netmime.complex_mime_message
 
-
-  let parse (s : string) =
-    let ch = (new Netstream.input_stream (new Netchannels.input_string s)) in
-    let f = (fun ch -> Netmime_channels.read_mime_message ~multipart_style:`Deep ch) in
+  (** parse email string into a parse tree *)
+  let parse s =
+    let input = new Netchannels.input_string s in
+    let ch = new Netstream.input_stream input in
+    let f ch =
+      Netmime_channels.read_mime_message
+        ~multipart_style:`Deep
+        ch
+    in
     Netchannels.with_in_obj_channel ch f
-  (* see http://projects.camlcity.org/projects/dl/ocamlnet-4.1.9/doc/html-main/Netmime_tut.html
-     -- I /think/ that with_in_obj_channel should close both the Netchannels and the Netstream input bits,
-     but it's worth keeping an eye on. *)
+  (* see
+     http://projects.camlcity.org/projects/dl/ocamlnet-4.1.9/doc/html-main/Netmime_tut.html
+     -- I /think/ that with_in_obj_channel should close both the Netchannels and
+     the Netstream input bits, but it's worth keeping an eye on. *)
 
+                 
+  (* let parse (s : string) =
+   *   let ch = (new Netstream.input_stream (new Netchannels.input_string s)) in
+   *   let f = (fun ch -> Netmime_channels.read_mime_message ~multipart_style:`Deep ch) in
+   *   Netchannels.with_in_obj_channel ch f
+   * (\* see http://projects.camlcity.org/projects/dl/ocamlnet-4.1.9/doc/html-main/Netmime_tut.html
+   *    -- I /think/ that with_in_obj_channel should close both the Netchannels and the Netstream input bits,
+   *    but it's worth keeping an eye on. *\) *)
 
+  (** parse the header field parameters into an association list *)
   let field_params_alist header fieldname =
-    match tail (String.cuts ~sep:";" (header#field fieldname)) with
-      Some [] -> [(fieldname, (header#field fieldname))] (* Case 1: no params, alist is just field name/value *)
-    | Some params -> let kvpairs = map (String.cut ~sep:"=") params in (* case 2: split on "=" then zip together as alist*)
-      map (function (key, Some v) -> (key, v) | (key, None) -> (key, "")) kvpairs
+    let fields =
+      String.cuts ~sep:";" (header#field fieldname)
+    in
+    match tail fields with
+    (* Case 1: no params, alist is just field name/value *)
+    | Some [] -> [fieldname, (header#field fieldname)]
+    (* Case 2: split on "=" then zip together as alist*)
+    | Some params ->
+       let kvpairs = map (String.cut ~sep:"=") params in
+       let process = function
+         | key, Some v -> key, v
+         | key, None -> key, ""
+       in
+      map process kvpairs
     | None -> assert false
 
   (*let get_parts = function `Parts plst -> plst | _-> assert false;;*)
@@ -219,17 +244,11 @@ From root@gringotts.lib.uchicago.edu Fri Jan 21 11:48:27 2022
     | _ -> hstring (* noop when not a pdf and attachment *)
 
   let body_func _ = readfile "xmas-PDFA.pdf"
-         
-  (* let body_func bstr =
-   *   let open Prelude.Unix.Proc in
-   *   let tmpname = fname ^ "_extracted_tmp.docx" in
-   *   (writefile ~fn:(tmpname) bstr; read ["pandoc"; "--from=docx"; "--to=pdf"; "--pdf-engine=xelatex"; tmpname]) *)
 
   let docx_convert_test fname =
     let tree = parse (readfile fname) in
     let converted_tree = amap header_func body_func tree in
     to_string converted_tree
-    (* in writefile ~fn:(fname ^ "_docxmas_saved") (to_string converted_tree) *)
 
   let upcase_header_and_delete_body fname =
     let f = String.uppercase_ascii in
