@@ -241,9 +241,8 @@ end
 
 module REPLTesting = struct
 
-  (* for reference, MBOX From line:
-   * From root@gringotts.lib.uchicago.edu Fri Jan 21 11:48:27 2022 *)
-  
+
+
   include Conversion_ocamlnet
 
   (** convenience function for unwrapping a `Parts; for REPL only *)
@@ -255,7 +254,13 @@ module REPLTesting = struct
   let unbody = function
     | `Body b -> b
     | _ -> assert false
-    
+
+  let to_mbox ?(escape=false)  =
+    let fromline = "From jorge@babel.lib Thu Aug 24 12:00:00 1899\n" in
+    Lists.foldl (fun acc email -> acc ^ fromline ^ email ^"\n") ""
+
+
+
   (** quick access to the PDF attachment part of our example Christmas
       tree email *)
   let xmas_tree () =
