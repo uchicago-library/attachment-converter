@@ -159,15 +159,16 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
     in Strings.prefix "attachment" (String.lowercase_ascii s)
 
   (** updates the MIME type in a header string *)
-  let update_mimetype newtype hstr =
+  let update_mimetype oldtype newtype hstr =
+    let open String in
     let hdr = header_from_string hstr in
-    let s = try hdr # field "Content-Type" with Not_found -> "" in
-    if Stdlib.String.(trim s = trim newtype)
-    then hstr
-    else begin
-        hdr#update_field "Content-Type" newtype ;
-        header_to_string hdr
-      end
+    let s = try hdr # field "content-type"
+            with Not_found -> ""
+    in
+    if lowercase_ascii s = lowercase_ascii oldtype
+    then (hdr # update_field "content-type" newtype;
+          header_to_string hdr)
+    else hstr
 
   let equals_sign star = if star
                          then "*="
@@ -272,6 +273,7 @@ module REPLTesting = struct
           )
     with
       (Some _, Some _) -> update_mimetype
+                            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                             "application/pdf"
                             (update_both_filenames ~ext:".pdf" hstring)
     | _ -> hstring (* noop when not a pdf and attachment *)
