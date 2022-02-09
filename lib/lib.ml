@@ -259,7 +259,7 @@ module REPLTesting = struct
   (** quick access to the PDF attachment part of our example Christmas
       tree email *)
   let xmas_tree () =
-    let _, parts = parse (readfile "../2843") in
+    let _, parts = parse (readfile "2843") in
     match unparts parts with
       _ :: attached :: _ -> attached
     | _ -> assert false
@@ -269,7 +269,8 @@ module REPLTesting = struct
     let hs = String.lowercase_ascii hstring in
     match Strings.(
       (substr "content-disposition: attachment;" hs,
-       substr "content-type: application/vnd.openxmlformats-officedocument.wordprocessingml.document" hs)
+       substr "content-type: application/vnd.openxmlformats-officedocument.wordprocessingml.document" hs
+      )
           )
     with
       (Some _, Some _) -> update_mimetype
@@ -287,7 +288,7 @@ module REPLTesting = struct
       as a string *)
   let docx_convert_test fname =
     let tree = parse (readfile fname) in
-    let converted_tree = amap header_func body_func tree in
+    let converted_tree = acopy header_func body_func tree in
     to_string converted_tree
 
   let upcase_header_and_delete_body fname =
