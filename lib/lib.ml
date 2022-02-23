@@ -202,7 +202,7 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
        in
        new_name ~star:star header_key prefix extn
     | _ -> str
-    
+
   (** updates the filename within an entire header string; uses
       OCaml's pure regular expression library ocaml-re *)
   let update_filename ?(ext="") ?(star=false) hstr =
