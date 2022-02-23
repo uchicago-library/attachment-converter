@@ -227,7 +227,7 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
       old_string_opt
       >>| update_filename_string ~ext:ext
       >>| update_header
-    in    
+    in
     match updated_header with
     | None -> hstr
     | Some h -> h
@@ -273,10 +273,12 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
       DataAndHeader (header_transformer, data_transformer)
 
   let add_line_num line_num err =
-    let open Config.Formats
+    let open Config.Formats in
+    let add_to msg = Printf.sprintf "Line %d, %s" line_num msg
     in
     match err with
-    | Error.ReferParse msg -> Error.ReferParse (Printf.sprintf "Line %d, %s" line_num msg)
+    | Error.ConfigData msg -> Error.ReferParse (add_to msg)
+    | Error.ReferParse msg -> Error.ReferParse (add_to msg)
     | otherwise -> otherwise (* TODO *)
 
   let parse_config_file (path_to_config: string) =
