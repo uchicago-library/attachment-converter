@@ -1,3 +1,5 @@
+open Prelude
+
 module Formats = struct
 
   type htransform = string -> string
@@ -32,7 +34,6 @@ module Formats = struct
 end
 
 module ParseConfig = struct
-  open Prelude
   open Formats
 
   type config_entry =
