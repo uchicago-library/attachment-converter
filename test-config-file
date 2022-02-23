@@ -1,43 +1,43 @@
 %source_type application/pdf
 %target_type application/pdf
-%shell_script soffice-to-pdfa.sh
+%shell_script conversion-scripts/soffice-to-pdfa.sh
 
 %source_type application/pdf
 %target_type text/plain
-%shell_script pdftotext-pdf-to-txt.sh
+%shell_script conversion-scripts/pdftotext-pdf-to-txt.sh
 
 %source_type application/msword
 %target_type application/pdf
-%shell_script soffice-to-pdfa.sh
+%shell_script conversion-scripts/soffice-to-pdfa.sh
 
 %source_type application/msword
 %target_type text/plain
-%shell_script soffice-to-txt.sh
+%shell_script conversion-scripts/soffice-to-txt.sh
 
 %source_type application/vnd.openxmlformats-officedocument.wordprocessingml.document
 %target_type application/pdf
-%shell_script soffice-to-pdfa.sh
+%shell_script conversion-scripts/soffice-to-pdfa.sh
 
 %source_type application/vnd.openxmlformats-officedocument.wordprocessingml.document
 %target_type text/plain
-%shell_script soffice-to-txt.sh
+%shell_script conversion-scripts/soffice-to-txt.sh
 
 %source_type application/vnd.ms-excel
 %target_type text/tab-separated-values
-%shell_script soffice-to-tsv.sh
+%shell_script conversion-scripts/soffice-to-tsv.sh
 
 %source_type application/vnd.ms-excel
 %target_type text/tab-separated-values
-%shell_script soffice-to-tsv.sh
+%shell_script conversion-scripts/soffice-to-tsv.sh
 
 %source_type image/gif
 %target_type image/tiff
-%shell_script vips-to-tif.sh
+%shell_script conversion-scripts/vips-to-tif.sh
 
 %source_type image/bmp
 %target_type image/tiff
-%shell_script vips-to-tif.sh
+%shell_script conversion-scripts/vips-to-tif.sh
 
 %source_type image/jpeg
 %target_type image/tiff
-%shell_script vips-to-tif.sh
+%shell_script conversion-scripts/vips-to-tif.sh

@@ -18,7 +18,7 @@ sig
   val amap : htransform -> btransform -> parsetree -> parsetree
   val acopy : htransform -> btransform -> parsetree -> parsetree
   val to_string : parsetree -> string
-  val convert : filepath list -> (string -> string)
+  val convert : filepath -> (string -> string)
   val acopy_email : string -> (string -> string) -> string
 end
 
@@ -149,7 +149,7 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
     Stdlib.Buffer.contents buf
 
   (** putting this off till issues 7 and 9 *)
-  let convert () = assert false
+  let convert _ = assert false
 
   (** predicate for email parts that are attachments *)
   let is_attachment tree =
@@ -237,6 +237,40 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
   let update_both_filenames ?(ext="") ?(star=false) =
     update_filename ~ext:ext ~star:star
     << update_filename ~ext:ext ~star:true
+
+  let source_type config_data = assoc "source_type" config_data
+  let target_type config_data = assoc "target_type" config_data
+  let shell_script config_data = assoc "shell_script" config_data
+
+  let variety_of_config config_data =
+    let open Config in
+    let old_mimetype = source_type config_data in
+    let new_mimetype = target_type config_data in
+    let header_transformer = update_mimetype old_mimetype new_mimetype in (* TODO: error handling *)
+    let data_transformer = convert (shell_script config_data) (* TODO: error handling *)
+    in
+    if old_mimetype = new_mimetype then
+      Formats.DataOnly data_transformer
+    else
+      Formats.DataAndHeader (header_transformer, data_transformer)
+
+  let parse_config (path_to_config: string) =
+    let open Refer in
+    let open Config in
+    let config_str = Prelude.readfile path_to_config in
+    let collect_varieties _ next accum =
+      Formats.Dict.update
+        (source_type next)
+        (fun opt_target_formats ->
+          Some (variety_of_config next :: (Option.value opt_target_formats ~default:[])))
+        accum
+    in
+    fold
+      (witherr ignore collect_varieties) (* TODO: error handling *)
+      Formats.Dict.empty
+      (of_string config_str)
+
+
 end
 
 module REPLTesting = struct
