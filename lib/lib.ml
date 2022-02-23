@@ -149,7 +149,7 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
     Stdlib.Buffer.contents buf
 
   (** putting this off till issues 7 and 9 *)
-  let convert _ = assert false
+  let convert _ _ = assert false
 
   (** predicate for email parts that are attachments *)
   let is_attachment tree =
@@ -246,8 +246,8 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
     let open Config in
     let old_mimetype = source_type config_data in
     let new_mimetype = target_type config_data in
-    let header_transformer = update_mimetype old_mimetype new_mimetype in (* TODO: error handling *)
-    let data_transformer = convert (shell_script config_data) (* TODO: error handling *)
+    let header_transformer = update_mimetype old_mimetype new_mimetype in
+    let data_transformer = convert (shell_script config_data)
     in
     if old_mimetype = new_mimetype then
       Formats.DataOnly data_transformer
@@ -258,18 +258,20 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
     let open Refer in
     let open Config in
     let config_str = Prelude.readfile path_to_config in
-    let collect_varieties _ next accum =
+    let variety_dict_update next =
       Formats.Dict.update
         (source_type next)
         (fun opt_target_formats ->
           Some (variety_of_config next :: (Option.value opt_target_formats ~default:[])))
-        accum
+    in
+    let collect_varieties _ next accum = Result.map (variety_dict_update next) accum in
+    let error_handler _ str accum =
+      Result.bind accum (fun _ -> Error (Formats.Error.ReferParse ("Cannot read line: " ^ str)))
     in
     fold
-      (witherr ignore collect_varieties) (* TODO: error handling *)
-      Formats.Dict.empty
+      (witherr error_handler collect_varieties) (* TODO: error handling *)
+      (Ok Formats.Dict.empty)
       (of_string config_str)
-
 
 end
 
