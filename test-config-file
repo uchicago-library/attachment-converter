@@ -20,7 +20,7 @@
 
 %source_type application/vnd.openxmlformats-officedocument.wordprocessingml.document
 %target_type text/plain
-%shell_script conversion-scripts/soffice-to-txt.sh
+%shell_script conversion-scripts/pandoc-docx-to-txt.sh
 
 %source_type application/vnd.ms-excel
 %target_type text/tab-separated-values

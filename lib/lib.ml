@@ -238,6 +238,8 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
     update_filename ~ext:ext ~star:star
     << update_filename ~ext:ext ~star:true
 
+
+  (* parsing the config file *)
   let source_type config_data = assoc "source_type" config_data
   let target_type config_data = assoc "target_type" config_data
   let shell_script config_data = assoc "shell_script" config_data
@@ -266,10 +268,10 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
     in
     let collect_varieties _ next accum = Result.map (variety_dict_update next) accum in
     let error_handler _ str accum =
-      Result.bind accum (fun _ -> Error (Formats.Error.ReferParse ("Cannot read line: " ^ str)))
+      Result.bind accum (fun _ -> Error (Formats.Error.ReferParse ("Cannot read line: " ^ str))) (* TODO: Smarter error handling *)
     in
     fold
-      (witherr error_handler collect_varieties) (* TODO: error handling *)
+      (witherr error_handler collect_varieties)
       (Ok Formats.Dict.empty)
       (of_string config_str)
 
