@@ -15,6 +15,7 @@ module Formats = struct
   module Error = struct
     type t =
       | ReferParse of string
+      | ConfigData of string
       | Unix of (string * Unix.error)
       | MimeParse of string
       | CharacterEncoding of string

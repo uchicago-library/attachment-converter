@@ -238,42 +238,67 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
     update_filename ~ext:ext ~star:star
     << update_filename ~ext:ext ~star:true
 
-
   (* parsing the config file *)
-  let source_type config_data = assoc "source_type" config_data
-  let target_type config_data = assoc "target_type" config_data
-  let shell_script config_data = assoc "shell_script" config_data
+  type config_entry =
+    { source_type: string;
+      target_type: string;
+      shell_script: string }
 
-  let variety_of_config config_data =
-    let open Config in
-    let old_mimetype = source_type config_data in
-    let new_mimetype = target_type config_data in
-    let header_transformer = update_mimetype old_mimetype new_mimetype in
-    let data_transformer = convert (shell_script config_data)
+  let config_entry_of_assoc config_assoc =
+    let open Config.Formats in
+    let open Result in
+    let construct_config_entry st tt ss =
+      { source_type = st;
+        target_type = tt;
+        shell_script = ss }
     in
-    if old_mimetype = new_mimetype then
-      Formats.DataOnly data_transformer
+    let check key err_msg =
+      Option.to_result
+        ~none:(Error.ConfigData ("Config File Error: " ^ err_msg))
+        (assoc_opt key config_assoc)
+    in
+    (check "source_type"  "no source type given") >>= (fun st ->
+    (check "target_type"  "no target type given") >>= (fun tt ->
+    (check "shell_script" "no script path given") >>= (fun ss ->
+      Ok (construct_config_entry st tt ss))))
+
+  let variety_of_config_entry entry =
+    let open Config.Formats in
+    let header_transformer = update_mimetype entry.source_type entry.target_type in
+    let data_transformer = convert entry.shell_script
+    in
+    if entry.source_type = entry.target_type then
+      DataOnly data_transformer
     else
-      Formats.DataAndHeader (header_transformer, data_transformer)
+      DataAndHeader (header_transformer, data_transformer)
 
-  let parse_config (path_to_config: string) =
-    let open Refer in
-    let open Config in
+  let add_line_num line_num err =
+    let open Config.Formats
+    in
+    match err with
+    | Error.ReferParse msg -> Error.ReferParse (Printf.sprintf "Line %d, %s" line_num msg)
+    | otherwise -> otherwise (* TODO *)
+
+  let parse_config_file (path_to_config: string) =
+    let open Config.Formats in
+    let open Result in
     let config_str = Prelude.readfile path_to_config in
-    let variety_dict_update next =
-      Formats.Dict.update
-        (source_type next)
-        (fun opt_target_formats ->
-          Some (variety_of_config next :: (Option.value opt_target_formats ~default:[])))
+    let variety_dict_update line_num next accum = witherr (add_line_num line_num)
+        ((config_entry_of_assoc next) >>= (fun entry ->
+          Ok (Dict.update entry.source_type
+               (fun opt_target_formats ->
+                 Some (variety_of_config_entry entry :: (Option.value opt_target_formats ~default:[])))
+              accum)))
     in
-    let collect_varieties _ next accum = Result.map (variety_dict_update next) accum in
-    let error_handler _ str accum =
-      Result.bind accum (fun _ -> Error (Formats.Error.ReferParse ("Cannot read line: " ^ str))) (* TODO: Smarter error handling *)
+    let collect_varieties line_num next accum_or_error = accum_or_error >>= (variety_dict_update line_num next) in
+    let error_handler line_num line accum_or_error = accum_or_error >>=
+      (fun _ ->
+        Error (Error.ReferParse (Printf.sprintf "Line %d, Refer Parse Error: Cannot parse '%s'" line_num line)))
     in
-    fold
-      (witherr error_handler collect_varieties)
-      (Ok Formats.Dict.empty)
-      (of_string config_str)
+    Refer.fold
+      (Refer.witherr error_handler collect_varieties)
+      (Ok Dict.empty)
+      (Refer.of_string config_str)
 
 end
 
