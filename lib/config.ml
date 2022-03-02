@@ -54,8 +54,7 @@ module ParseConfig = struct
     let  ( let* ) = Result.(>>=)                                 in
     let* st       = check "source_type"   "no source type given" in
     let* tt       = check "target_type"   "no target type given" in
-    let* ss       = check "shell_command" "no script path given"
-    in
+    let* ss       = check "shell_command" "no script path given" in
     Ok (construct_config_entry st tt ss)
 
   let transform_data_of_entry entry =
