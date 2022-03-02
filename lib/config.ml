@@ -62,7 +62,7 @@ module ParseConfig = struct
       then DataOnly
       else DataAndHeader
     in
-    { target_type = entry.source_type;
+    { target_type = entry.target_type;
       shell_script = entry.shell_script;
       variety = variety_of_entry }
 

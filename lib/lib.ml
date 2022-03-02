@@ -7,6 +7,9 @@
 
 open Prelude
 
+(* created for unit testing *)
+module Config = Config
+
 (* library code for attachment converter goes here *)
 module type CONVERT =
 sig
