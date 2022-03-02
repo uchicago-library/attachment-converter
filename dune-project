@@ -8,4 +8,16 @@
 (package
  (name attachment-converter)
  (synopsis "does something")
- (description "does something"))
+ (description "cf. synopsis")
+ (depends
+  (ocaml (= 4.12.0))
+  dune
+  prelude
+  ocamlbuild
+  ocamlfind
+  mrmime
+  ocamlnet
+  (qtest :dev)
+  (utop :dev)
+  (ocamlformat :dev)
+  (merlin :dev)))
