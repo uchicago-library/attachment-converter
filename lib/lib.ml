@@ -7,7 +7,7 @@
 
 open Prelude
 
-(* created for unit testing *)
+(* created for unit testing, though I guess this is what the cool kids do *)
 module Config = Config
 
 (* library code for attachment converter goes here *)

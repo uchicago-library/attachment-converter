@@ -5,9 +5,8 @@
 (library
  (name lib)
  (libraries prelude mrmime threads netstring unix re)
- (modules lib config))
- ; (modules lib config)
- ; (inline_tests (backend qtest.lib)))
+ (modules lib config)
+ (inline_tests (backend qtest.lib)))
 
 (env
   (dev                                  ; make warnings non-fatal
