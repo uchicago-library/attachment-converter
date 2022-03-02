@@ -26,6 +26,7 @@ module Formats = struct
       | ReferParse msg -> ReferParse (f msg)
       | ConfigData msg -> ConfigData (f msg)
   end
+
   type error = Error.t
 end
 
@@ -57,9 +58,9 @@ module ParseConfig = struct
 
   let transform_data_of_entry entry =
     let variety_of_entry =
-        if entry.source_type = entry.target_type
-        then DataOnly
-        else DataAndHeader
+      if entry.source_type = entry.target_type
+      then DataOnly
+      else DataAndHeader
     in
     { target_type = entry.source_type;
       shell_script = entry.shell_script;
@@ -71,7 +72,7 @@ module ParseConfig = struct
       Dict.update k (fun curr -> Some (v :: Option.value curr ~default:[]))
     in
     let config_str = Prelude.readfile path_to_config in
-    let add_line_num i = Error.map_msg (fun msg -> Printf.sprintf "Line %d, %s" i msg) in
+    let add_line_num i = Error.map_msg (fun msg -> Printf.sprintf "Entry starting at Line %d, %s" i msg) in
     let update_accum line_num next accum =
       Result.witherr (add_line_num line_num) (entry_of_assoc next) >>= (fun entry ->
         Ok (insert_append entry.source_type (transform_data_of_entry entry) accum))

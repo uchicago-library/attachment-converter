@@ -2,10 +2,10 @@
 
 trap 'rm -rf "$TMP_DIR"' EXIT
 
-INPUT=$1
 TMP_DIR=$(mktemp -d)
-OUTPUT="$TMP_DIR/temp.txt"
+INPUT="$TMP_DIR/temp-in.pdf"
+OUTPUT="$TMP_DIR/temp-out.txt"
 
+cat > $INPUT
 pdftotext $INPUT $OUTPUT
-
 cat $OUTPUT
