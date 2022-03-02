@@ -1,43 +1,39 @@
 %source_type application/pdf
 %target_type application/pdf
-%shell_script conversion-scripts/soffice-to-pdfa.sh
+%shell_command ./conversion-scripts/soffice-wrapper -i pdf -o pdf
 
 %source_type application/pdf
 %target_type text/plain
-%shell_script conversion-scripts/pdftotext-pdf-to-txt.sh
+%shell_command ./conversion-scripts/pdftotext-wrapper.sh
 
 %source_type application/msword
 %target_type application/pdf
-%shell_script conversion-scripts/soffice-to-pdfa.sh
+%shell_command ./conversion-scripts/soffice-wrapper.sh -i doc -o pdf
 
 %source_type application/msword
 %target_type text/plain
-%shell_script conversion-scripts/soffice-to-txt.sh
+%shell_command ./conversion-scripts/soffice-wrapper.sh -i doc -o txt
 
 %source_type application/vnd.openxmlformats-officedocument.wordprocessingml.document
 %target_type application/pdf
-%shell_script conversion-scripts/soffice-to-pdfa.sh
+%shell_command ./conversion-scripts/soffice-wrapper.sh -i docx -o pdf
 
 %source_type application/vnd.openxmlformats-officedocument.wordprocessingml.document
 %target_type text/plain
-%shell_script conversion-scripts/pandoc-docx-to-txt.sh
+%shell_command ./conversion-scripts/pandoc-wrapper.sh -i docx -o txt
 
 %source_type application/vnd.ms-excel
 %target_type text/tab-separated-values
-%shell_script conversion-scripts/soffice-to-tsv.sh
-
-%source_type application/vnd.ms-excel
-%target_type text/tab-separated-values
-%shell_script conversion-scripts/soffice-to-tsv.sh
+%shell_command ./conversion-scripts/soffice-wrapper.sh -i xls -o tsv
 
 %source_type image/gif
 %target_type image/tiff
-%shell_script conversion-scripts/vips-to-tif.sh
+%shell_command ./conversion-scripts/vips-wrapper.sh -i gif -o tif
 
 %source_type image/bmp
 %target_type image/tiff
-%shell_script conversion-scripts/vips-to-tif.sh
+%shell_command ./conversion-scripts/vips-wapper.sh -i bmp -o tif
 
 %source_type image/jpeg
 %target_type image/tiff
-%shell_script conversion-scripts/vips-to-tif.sh
+%shell_command ./conversion-scripts/vips-wrapper.sh -i jpeg -o tif
