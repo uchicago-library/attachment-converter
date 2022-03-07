@@ -130,7 +130,8 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
   (* returns a function that expects and returns binary attachment data as a string, not b64 encoded.
      e.g. `body # set_value (convert ["/bin/cat" "-"] (body # value))` would be a noop, since the ocamlnet value access
      methods handle the encoding themselves. *)
-  let convert script str = Unix.Proc.rw [script] str
+  let convert script str = let args = split script in
+    Unix.Proc.rw args str
 
   let is_attachment (tree : parsetree) =
     let (header, _) = tree in
