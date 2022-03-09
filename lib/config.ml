@@ -25,6 +25,11 @@ module Formats = struct
       match err with
       | ReferParse msg -> ReferParse (f msg)
       | ConfigData msg -> ConfigData (f msg)
+
+    let message err =
+      match err with
+      | ReferParse msg -> msg
+      | ConfigData msg -> msg
   end
 
   type error = Error.t

@@ -19,10 +19,10 @@ sig
   type btransform = string -> string
   val parse : string -> parsetree
   val amap : htransform -> btransform -> parsetree -> parsetree
-  val acopy : htransform -> btransform -> parsetree -> parsetree
+  val acopy : Config.Formats.t -> parsetree -> parsetree
   val to_string : parsetree -> string
   val convert : filepath -> (string -> string)
-  val acopy_email : string -> (string -> string) -> string
+  val acopy_email : Config.Formats.t -> string -> string
 end
 
 module Conversion_ocamlnet (* : CONVERT *) = struct
@@ -112,7 +112,7 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
 
   (** apply an input function f to every attachment in an email parsetree and
       put the result next to the original *)
-  let rec acopy f g tree =
+  let rec acopy' f g tree =
     match tree with
     (* leave input email unchanged if it isn't multipart *)
     | _, `Body _ -> tree 
@@ -127,8 +127,11 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
             then [ part ]
             else [ header_from_string (f hstring),
                    `Body (b#set_value (g b#value); b); part]
-         | _ -> [ acopy f g part ]
+         | _ -> [ acopy' f g part ]
        in header, `Parts List.(concat_map copy_or_skip p_lst)
+
+  (* TODO *)
+  let rec acopy config tree = tree
 
   (** serialize a parsetree into a string *)
   let to_string tree =
@@ -240,6 +243,14 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
   let update_both_filenames ?(ext="") ?(star=false) =
     update_filename ~ext:ext ~star:star
     << update_filename ~ext:ext ~star:true
+
+  (** combines parsing and serializing with acopy *)
+  let acopy_email config email_str =
+    email_str    |>
+    parse        |>
+    acopy config |>
+    to_string
+
 end
 
 module REPLTesting = struct
@@ -291,7 +302,7 @@ module REPLTesting = struct
       as a string *)
   let docx_convert_test fname =
     let tree = parse (readfile fname) in
-    let converted_tree = acopy header_func body_func tree in
+    let converted_tree = acopy' header_func body_func tree in
     to_string converted_tree
 
   let upcase_header_and_delete_body fname =
