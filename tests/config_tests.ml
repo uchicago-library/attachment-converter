@@ -194,10 +194,10 @@ let double_entry_cs =
 %shell_command h"
 
 let check_double_entry_cs =
-  let description = "checking access for double_entry_cs"         in
-  let open Lib.Config.Formats                                     in
-  let d = Result.get_ok (parse_config_str double_entry_cs)        in
-  let check _ = assert_equal (Dict.find "a" d) [e2; e1] in
+  let description = "checking access for double_entry_cs"  in
+  let open Lib.Config.Formats                              in
+  let d = Result.get_ok (parse_config_str double_entry_cs) in
+  let check _ = assert_equal (Dict.find "a" d) [e2; e1]    in
   description >:: check
 
 
