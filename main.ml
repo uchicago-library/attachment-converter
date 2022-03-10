@@ -11,18 +11,20 @@ open Lib.Conversion_ocamlnet
 open Lib.Config.ParseConfig
 open Lib.Config.Formats
 
-let default_config_name = "default-config"
+let default_config_name = ".default-config"
 
 let () =
-  if Sys.file_exists default_config_name then
-    match parse_config_file default_config_name with
-      Error err -> print (Error.message err)
-    | Ok config ->
-      read stdin         |>
-      acopy_email config |>
-      write stdout
-  else
-    print "Error: no file 'default-config', you can create a default configuration using create-config.sh"
+  if   Sys.file_exists default_config_name
+  then let converted_email =
+         let ( let* ) = Result.(>>=) in
+         let input = read stdin in
+         let* config = parse_config_file default_config_name in
+         full_convert_email config input
+       in
+       match converted_email with
+       | Error err -> print (Error.message err)
+       | Ok converted -> write stdout converted
+  else print (Printf.sprintf "Error: missing config file '%s'" default_config_name)
 
 (*
  * Copyright (c) 2021 Matt Teichman
