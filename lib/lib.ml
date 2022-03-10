@@ -24,6 +24,17 @@ sig
   val acopy_email : string -> (string -> string) -> string
 end
 
+module Error = struct
+  type t =
+    [ `DummyError ] (* For testing *)
+
+  let message err =
+    let open Config in
+    match err with
+    | `DummyError -> "Dummy error message"
+    | #Formats.Error.t as e  -> Formats.Error.message e
+end
+
 module Conversion_ocamlnet (* : CONVERT *) = struct
 
   type htransform = string -> string
@@ -240,7 +251,9 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
     update_filename ~ext:ext ~star:star
     << update_filename ~ext:ext ~star:true
 
-  let full_convert_email config email_str = Error (Config.Formats.Error.ConfigData "Dummy info")
+  (* TODO: Converts all attachments in an email, used by the
+     executable code, definition depends on that of a_copy_email *)
+  let full_convert_email _ _ = Error `DummyError
 end
 
 module REPLTesting = struct

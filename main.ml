@@ -9,10 +9,11 @@
 open Prelude
 open Lib.Conversion_ocamlnet
 open Lib.Config.ParseConfig
-open Lib.Config.Formats
 
 let default_config_name = ".default-config"
 
+(* A minimial executable which converts all attachments in a single email given
+   at stdin *)
 let () =
   if   Sys.file_exists default_config_name
   then let converted_email =
@@ -22,7 +23,7 @@ let () =
          full_convert_email config input
        in
        match converted_email with
-       | Error err -> print (Error.message err)
+       | Error err -> print (Lib.Error.message err)
        | Ok converted -> write stdout converted
   else print (Printf.sprintf "Error: missing config file '%s'" default_config_name)
 
