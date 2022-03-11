@@ -149,7 +149,8 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
     Stdlib.Buffer.contents buf
 
   (** putting this off till issues 7 and 9 *)
-  let convert () = assert false
+  let convert script str = let args = split script in
+      Unix.Proc.rw args str
 
   (** predicate for email parts that are attachments *)
   let is_attachment tree =
