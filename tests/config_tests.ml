@@ -1,6 +1,6 @@
 open OUnit2
-open Lib.Config.ParseConfig
-open Lib.Config.Formats
+open Lib.ConfigFile.ParseConfig
+open Lib.ConfigFile.Formats
 
 let check_ok f fname i =
   let description =
@@ -148,7 +148,7 @@ let e2 =
 
 let check_wf_cs_or_extra_cs cs =
   let description = "checking access for wf_cs/extra_cs"       in
-  let open Lib.Config.Formats                                  in
+  let open Lib.ConfigFile.Formats                              in
   let d = Result.get_ok (parse_config_str cs)                  in
   let check key value _ = assert_equal (Dict.find key d) value in
   description >:::
@@ -195,7 +195,7 @@ let double_entry_cs =
 
 let check_double_entry_cs =
   let description = "checking access for double_entry_cs"  in
-  let open Lib.Config.Formats                              in
+  let open Lib.ConfigFile.Formats                          in
   let d = Result.get_ok (parse_config_str double_entry_cs) in
   let check _ = assert_equal (Dict.find "a" d) [e2; e1]    in
   description >:: check
