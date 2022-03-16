@@ -29,7 +29,7 @@ module Error = struct
     [ `DummyError ] (* For testing *)
 
   let message err =
-    let open Config in
+    let open Configuration in
     match err with
     | `DummyError -> "Dummy error message"
     | #Formats.Error.t as e  -> Formats.Error.message e

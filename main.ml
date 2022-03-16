@@ -8,7 +8,7 @@
 
 open Prelude
 open Lib.Conversion_ocamlnet
-open Lib.Config.ParseConfig
+open Lib.Configuration.ParseConfig
 
 let default_config_name = ".default-config"
 
@@ -17,13 +17,13 @@ let default_config_name = ".default-config"
 let () =
   if   Sys.file_exists default_config_name
   then let converted_email =
-         let ( let* ) = Result.(>>=) in
-         let input = read stdin in
-         let* config = parse_config_file default_config_name in
+         let  ( let* ) = Result.(>>=)                          in
+         let  input    = read stdin                            in
+         let* config   = parse_config_file default_config_name in
          full_convert_email config input
        in
        match converted_email with
-       | Error err -> print (Lib.Error.message err)
+       | Error err    -> print (Lib.Error.message err)
        | Ok converted -> write stdout converted
   else print (Printf.sprintf "Error: missing config file '%s'" default_config_name)
 
