@@ -23,7 +23,7 @@ let () =
          full_convert_email config input
        in
        match converted_email with
-       | Error err    -> print (Lib.Error.message err)
+       | Error err    -> print (Lib.ErrorHandling.message err)
        | Ok converted -> write stdout converted
   else print (Printf.sprintf "Error: missing config file '%s'" default_config_name)
 

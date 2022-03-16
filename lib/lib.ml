@@ -6,8 +6,8 @@
 
 open Prelude
 
-(* created for unit testing, though I guess this is what the cool kids do *)
 module Configuration = Configuration
+module ErrorHandling = ErrorHandling
 
 (* library code for attachment converter goes here *)
 module type CONVERT =
@@ -27,12 +27,6 @@ end
 module Error = struct
   type t =
     [ `DummyError ] (* For testing *)
-
-  let message err =
-    let open Configuration in
-    match err with
-    | `DummyError -> "Dummy error message"
-    | #Formats.Error.t as e  -> Formats.Error.message e
 end
 
 module Conversion_ocamlnet (* : CONVERT *) = struct
