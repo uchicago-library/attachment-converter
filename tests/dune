@@ -1,0 +1,3 @@
+(test
+  (name config_tests)
+  (libraries lib ounit2))

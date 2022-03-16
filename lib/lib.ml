@@ -7,6 +7,9 @@
 
 open Prelude
 
+(* created for unit testing, though I guess this is what the cool kids do *)
+module Configuration = Configuration
+
 (* library code for attachment converter goes here *)
 module type CONVERT =
 sig
@@ -18,7 +21,7 @@ sig
   val amap : htransform -> btransform -> parsetree -> parsetree
   val acopy : htransform -> btransform -> parsetree -> parsetree
   val to_string : parsetree -> string
-  val convert : filepath list -> (string -> string)
+  val convert : filepath -> (string -> string)
   val acopy_email : string -> (string -> string) -> string
 end
 
@@ -149,8 +152,7 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
     Stdlib.Buffer.contents buf
 
   (** putting this off till issues 7 and 9 *)
-  let convert script str = let args = split script in
-      Unix.Proc.rw args str
+  let convert _ _ = assert false
 
   (** predicate for email parts that are attachments *)
   let is_attachment tree =
@@ -203,7 +205,7 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
        in
        new_name ~star:star header_key prefix extn
     | _ -> str
-    
+
   (** updates the filename within an entire header string; uses
       OCaml's pure regular expression library ocaml-re *)
   let update_filename ?(ext="") ?(star=false) hstr =
@@ -228,7 +230,7 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
       old_string_opt
       >>| update_filename_string ~ext:ext
       >>| update_header
-    in    
+    in
     match updated_header with
     | None -> hstr
     | Some h -> h
