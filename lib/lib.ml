@@ -264,6 +264,13 @@ module REPLTesting = struct
     else
       fold_left (fun acc email -> acc ^ fromline ^ email ^ eol) ""
 
+  (* NOTE: double check that netstring knows what to do with mboxrd fromlines *)
+  let from_mbox s =
+    let open Re.Str in
+    let fromline =  (regexp "From .*$") in
+    let messages = split fromline s in
+    map parse messages
+
 
 
   (** quick access to the PDF attachment part of our example Christmas
@@ -342,20 +349,6 @@ end
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *)
-
-
-(*
- * Copyright (c) 2021 Matt Teichman
- *
- * Permission to use, copy, modify, and/or distribute this software for any
- * purpose with or without fee is hereby granted, provided that the above
- * copyright notice and this permission notice appear in all copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
- * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
- * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
- * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- *)
+(* TODO NEW module for MBOX stuff, merge into main w/ new PR
+*  ssh into owen.lib and start on the next issue
+*)
