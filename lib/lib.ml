@@ -117,7 +117,7 @@ let transform hd bd (trans_entry : Configuration.Formats.transform_data) =
   (** apply an input function f to every attachment in an email
       parsetree; note that this is not a real functorial map, which
       means we will probably be renaming it in the future *)
-  let rec amap ?(no_op = true) f dict tree =
+  let amap ?(no_op = true) f dict tree =
     let ( let* ) = Result.(>>=) in
     let err_handler e = if no_op then Error e else (f e; Ok []) in
     match tree with
