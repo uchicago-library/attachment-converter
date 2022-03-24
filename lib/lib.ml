@@ -22,7 +22,7 @@ sig
   type htransform = string -> string
   type btransform = string -> string
   val parse : string -> parsetree
-  val amap : htransform -> btransform -> parsetree -> parsetree
+  val amap : bool -> (Error.t -> unit) -> Configuration.Formats.t -> parsetree -> (parsetree, Configuration.Formats.error) result
   val acopy : bool -> (Error.t -> unit) -> Configuration.Formats.t -> parsetree -> (parsetree, Configuration.Formats.error) result
   val to_string : parsetree -> string
   val convert : filepath -> (string -> string)
@@ -117,17 +117,29 @@ let transform hd bd (trans_entry : Configuration.Formats.transform_data) =
   (** apply an input function f to every attachment in an email
       parsetree; note that this is not a real functorial map, which
       means we will probably be renaming it in the future *)
-  let rec amap f g tree =
+  let rec amap ?(no_op = true) f dict tree =
+    let ( let* ) = Result.(>>=) in
+    let err_handler e = if no_op then Error e else (f e; Ok []) in
     match tree with
-    | header, `Body b ->
-      let h = header_to_string header in
-      if f h = h
-      (* only invoke g (the converting function) if f converts the header *)
-      then tree
-      else header_from_string (f h) ,
-            `Body (b#set_value @@ g b#value ; b)
-    | header, `Parts p_lst ->
-      header, `Parts (List.map (amap f g) p_lst)
+      | _, `Body _ -> Ok tree 
+      | header, `Parts p_lst ->
+        let rec copy_or_skip hd lst =
+          match lst with
+            | (bhd, `Body b) :: rs ->
+              Result.on_error
+              (let* src = Result.trapc (`DummyError) id (bhd # field "content-type") in
+              let* trans_lst = Result.of_option (`DummyError) (Configuration.Formats.Dict.find_opt src dict) in
+              let* next_lst = copy_or_skip hd rs in
+              let conv_lst = List.map (transform bhd b) trans_lst in
+              Ok (conv_lst @ next_lst)) err_handler
+            | (phd, `Parts p) :: rs -> 
+              Result.on_error
+              (let* conv_lst = copy_or_skip phd p in
+              let* next_lst = copy_or_skip hd rs in
+              Ok ([(phd, `Parts conv_lst)] @ next_lst)) err_handler
+            | _ -> Ok []
+        in let* cmp_lst = copy_or_skip header p_lst in
+        Ok (header, `Parts cmp_lst)
 
 (*?(f = Printf.printf)*)
 let acopy ?(no_op = true) f dict tree =
