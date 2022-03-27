@@ -15,6 +15,10 @@ module Formats = struct
   module Dict = Map.Make (String)
 
   type t = (transform_data list) Dict.t
+end
+
+module ParseConfig = struct
+  open Formats
 
   module Error = struct
     type t = [
@@ -22,17 +26,16 @@ module Formats = struct
       | `ConfigData of string
     ]
 
+    let message err =
+      match err with
+      | `ReferParse msg -> msg
+      | `ConfigData msg -> msg
+
     let map_msg f err =
       match err with
       | `ReferParse msg -> `ReferParse (f msg)
       | `ConfigData msg -> `ConfigData (f msg)
   end
-
-  type error = Error.t
-end
-
-module ParseConfig = struct
-  open Formats
 
   type config_entry =
     { source_type   : string ;

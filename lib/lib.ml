@@ -5,9 +5,26 @@
 *)
 
 open Prelude
+open ErrorHandling
 
 module Configuration = Configuration
-module ErrorHandling = ErrorHandling
+
+module Error : ERROR with
+  type t = [
+    | `DummyError
+    | Configuration.ParseConfig.Error.t
+  ]
+  = struct
+  type t = [
+    | `DummyError
+    | Configuration.ParseConfig.Error.t
+  ]
+
+  let message err =
+    match err with
+    | `DummyError -> "Dummy error message"
+    | #Configuration.ParseConfig.Error.t as e -> Configuration.ParseConfig.Error.message e
+end
 
 (* library code for attachment converter goes here *)
 module type CONVERT =
@@ -22,11 +39,6 @@ sig
   val to_string : parsetree -> string
   val convert : filepath -> (string -> string)
   val acopy_email : string -> (string -> string) -> string
-end
-
-module Error = struct
-  type t =
-    [ `DummyError ] (* For testing *)
 end
 
 module Conversion_ocamlnet (* : CONVERT *) = struct
