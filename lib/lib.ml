@@ -22,8 +22,8 @@ sig
   type htransform = string -> string
   type btransform = string -> string
   val parse : string -> parsetree
-  val amap : bool -> (Error.t -> unit) -> Configuration.Formats.t -> parsetree -> (parsetree, Configuration.Formats.error) result
-  val acopy : bool -> (Error.t -> unit) -> Configuration.Formats.t -> parsetree -> (parsetree, Configuration.Formats.error) result
+  val amap : bool -> (Error.t -> unit) -> Configuration.Formats.t -> parsetree -> (parsetree, Error.t) result
+  val acopy : bool -> (Error.t -> unit) -> Configuration.Formats.t -> parsetree -> (parsetree, Error.t) result
   val to_string : parsetree -> string
   val convert : filepath -> (string -> string)
   val acopy_email : string -> (string -> string) -> string
@@ -286,6 +286,38 @@ module REPLTesting = struct
   
   include Conversion_ocamlnet
 
+  let unparts_opt = function 
+    | Ok (_, `Parts lst) -> lst
+    | _ -> assert false
+
+  let get_header = function
+    | (hd, _) -> hd
+
+  let parse_file str = 
+    Configuration.ParseConfig.parse_config_file str
+
+  let print_error err = Printf.printf "%s\n" (ErrorHandling.message err)
+
+  let tree () = let pdf_h = Netmime.basic_mime_header ["content-type", "application/pdf"] in
+    (* let txt_h = Netmime.basic_mime_header ["content-type", "text/plain"] in *)
+    let pdf_data = Unix.Proc.read ["cat"; "/Users/cormacduhamel/Downloads/Nietzsche.pdf"] in
+    (pdf_h, `Parts [(pdf_h, `Body (Netmime.memory_mime_body pdf_data))])
+
+  let err_tree () = let pdf_h = Netmime.basic_mime_header ["content-type", "application/pdf"] in
+  let txt_h = Netmime.basic_mime_header ["content-type", "text/plain"] in
+  (* let txt_h = Netmime.basic_mime_header ["content-type", "text/plain"] in *)
+  let pdf_data = Unix.Proc.read ["cat"; "/Users/cormacduhamel/Downloads/Nietzsche.pdf"] in
+  (pdf_h, `Parts [(pdf_h, `Body (Netmime.memory_mime_body pdf_data)); (txt_h, `Body (Netmime.memory_mime_body "str_data"))])
+
+  let dict () = 
+    parse_file "/Users/cormacduhamel/sample_refer.txt"
+
+  let test_acopy () =
+    let ( let* ) = Result.(>>=) in
+    let tree = err_tree () in
+    let* dict = Result.witherrc (`DummyError) (dict ()) in
+    acopy ~no_op:false print_error dict tree
+
   (** convenience function for unwrapping a `Parts; for REPL only *)
   let unparts = function
     | `Parts plist -> plist
@@ -295,6 +327,9 @@ module REPLTesting = struct
   let unbody = function
     | `Body b -> b
     | _ -> assert false
+
+  let get_body = function
+  | (_, bd) -> unbody bd
     
   (** quick access to the PDF attachment part of our example Christmas
       tree email *)
@@ -331,7 +366,7 @@ module REPLTesting = struct
     let converted_tree = acopy header_func body_func tree in
     to_string converted_tree *)
 
-  let upcase_header_and_delete_body fname =
+  (* let upcase_header_and_delete_body fname =
     let f = String.uppercase_ascii in
     let g = fun _ -> "" in
     let tree = parse (Prelude.readfile fname) in
@@ -351,7 +386,7 @@ module REPLTesting = struct
     let f s = s |> String.foldr (fun c l -> double_space c :: l) [] |> String.concat "" in
     let tree = parse (Prelude.readfile fname) in
     Prelude.writefile ~fn:(fname ^ "_extra_spaces_in_header") (tree |> (amap f id) |> to_string)
-  (* Not sure if this should be possible, may throw an execption *)
+  (* Not sure if this should be possible, may throw an execption *) *)
 
   let acopy_email () = assert false
 end
