@@ -5,9 +5,26 @@
 *)
 
 open Prelude
+open ErrorHandling
 
 module Configuration = Configuration
-module ErrorHandling = ErrorHandling
+
+module Error : ERROR with
+  type t = [
+    | `DummyError
+    | Configuration.ParseConfig.Error.t
+  ]
+  = struct
+  type t = [
+    | `DummyError
+    | Configuration.ParseConfig.Error.t
+  ]
+
+  let message err =
+    match err with
+    | `DummyError -> "Dummy error message"
+    | #Configuration.ParseConfig.Error.t as e -> Configuration.ParseConfig.Error.message e
+end
 
 module Error = struct
   type t =
