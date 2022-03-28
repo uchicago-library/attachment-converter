@@ -26,11 +26,6 @@ module Error : ERROR with
     | #Configuration.ParseConfig.Error.t as e -> Configuration.ParseConfig.Error.message e
 end
 
-module Error = struct
-  type t =
-    [ `DummyError ] (* For testing *)
-end
-
 (* library code for attachment converter goes here *)
 module type CONVERT =
 sig
