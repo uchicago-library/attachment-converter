@@ -12,17 +12,20 @@ module Configuration = Configuration
 module Error : ERROR with
   type t = [
     | `DummyError
+    | `EmailParse of string
     | Configuration.ParseConfig.Error.t
   ]
   = struct
   type t = [
     | `DummyError
+    | `EmailParse of string
     | Configuration.ParseConfig.Error.t
   ]
 
   let message err =
     match err with
     | `DummyError -> "Dummy error message"
+    | `EmailParse msg -> msg
     | #Configuration.ParseConfig.Error.t as e -> Configuration.ParseConfig.Error.message e
 end
 
@@ -139,16 +142,17 @@ let transform hd bd (trans_entry : Configuration.Formats.transform_data) =
           match lst with
             | (bhd, `Body b) :: rs ->
               Result.on_error
-              (let* src = Result.trapc (`DummyError) id (bhd # field "content-type") in
-              let* trans_lst = Result.of_option (`DummyError) (Configuration.Formats.Dict.find_opt src dict) in
-              let* next_lst = copy_or_skip hd rs in
-              let conv_lst = List.map (transform bhd b) trans_lst in
-              Ok (conv_lst @ next_lst)) err_handler
+              (let* src = Result.trapc (`EmailParse "no content-type in header") id (bhd # field "content-type") in
+               let* trans_lst = Result.of_option 
+                (`ConfigData ("source: '" ^ src ^ "' not found")) (Configuration.Formats.Dict.find_opt src dict) in
+               let* next_lst = copy_or_skip hd rs in
+               let conv_lst = List.map (transform bhd b) trans_lst in
+               Ok (conv_lst @ next_lst)) err_handler
             | (phd, `Parts p) :: rs -> 
               Result.on_error
               (let* conv_lst = copy_or_skip phd p in
-              let* next_lst = copy_or_skip hd rs in
-              Ok ([(phd, `Parts conv_lst)] @ next_lst)) err_handler
+               let* next_lst = copy_or_skip hd rs in
+               Ok ([(phd, `Parts conv_lst)] @ next_lst)) err_handler
             | _ -> Ok []
         in let* cmp_lst = copy_or_skip header p_lst in
         Ok (header, `Parts cmp_lst)
@@ -164,16 +168,17 @@ let acopy ?(no_op = true) f dict tree =
         match lst with
           | (bhd, `Body b) :: rs ->
             Result.on_error
-            (let* src = Result.trapc (`DummyError) id (bhd # field "content-type") in
-            let* trans_lst = Result.of_option (`DummyError) (Configuration.Formats.Dict.find_opt src dict) in
-            let* next_lst = copy_or_skip hd rs in
-            let conv_lst = (List.map (transform bhd b) trans_lst) @ [(bhd, `Body b)] in
-            Ok (conv_lst @ next_lst)) err_handler
+            (let* src = Result.trapc (`EmailParse "no content-type in header") id (bhd # field "content-type") in
+             let* trans_lst = Result.of_option 
+              (`ConfigData ("source: '" ^ src ^ "' not found")) (Configuration.Formats.Dict.find_opt src dict) in
+             let* next_lst = copy_or_skip hd rs in
+             let conv_lst = (List.map (transform bhd b) trans_lst) @ [(bhd, `Body b)] in
+             Ok (conv_lst @ next_lst)) err_handler
           | (phd, `Parts p) :: rs -> 
             Result.on_error
             (let* conv_lst = copy_or_skip phd p in
-            let* next_lst = copy_or_skip hd rs in
-            Ok ([(phd, `Parts conv_lst)] @ next_lst)) err_handler
+             let* next_lst = copy_or_skip hd rs in
+             Ok ([(phd, `Parts conv_lst)] @ next_lst)) err_handler
           | _ -> Ok []
       in let* cmp_lst = copy_or_skip header p_lst in
       Ok (header, `Parts cmp_lst)
@@ -308,7 +313,7 @@ module REPLTesting = struct
   let parse_file str = 
     Configuration.ParseConfig.parse_config_file str
 
-  let print_error err = Printf.printf "%s\n" (ErrorHandling.message err)
+  let print_error err = Printf.printf "%s\n" (Error.message err)
 
   let tree () = let pdf_h = Netmime.basic_mime_header ["content-type", "application/pdf"] in
     (* let txt_h = Netmime.basic_mime_header ["content-type", "text/plain"] in *)
