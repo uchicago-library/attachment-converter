@@ -7,8 +7,8 @@
 
 open Prelude
 
-(* created for unit testing, though I guess this is what the cool kids do *)
 module Configuration = Configuration
+module Report        = Report
 
 (* library code for attachment converter goes here *)
 module type CONVERT =
