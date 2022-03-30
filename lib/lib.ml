@@ -4,11 +4,27 @@
  * Distributed under the ISC license, see terms at the end of the file.
 *)
 
-
 open Prelude
+open ErrorHandling
 
-(* created for unit testing, though I guess this is what the cool kids do *)
 module Configuration = Configuration
+
+module Error : ERROR with
+  type t = [
+    | `DummyError
+    | Configuration.ParseConfig.Error.t
+  ]
+  = struct
+  type t = [
+    | `DummyError
+    | Configuration.ParseConfig.Error.t
+  ]
+
+  let message err =
+    match err with
+    | `DummyError -> "Dummy error message"
+    | #Configuration.ParseConfig.Error.t as e -> Configuration.ParseConfig.Error.message e
+end
 
 (* library code for attachment converter goes here *)
 module type CONVERT =
@@ -240,6 +256,10 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
   let update_both_filenames ?(ext="") ?(star=false) =
     update_filename ~ext:ext ~star:star
     << update_filename ~ext:ext ~star:true
+
+  (* TODO: Converts all attachments in an email, used by the
+     executable code, definition depends on that of a_copy_email *)
+  let full_convert_email _ _ = Error `DummyError
 end
 
 module REPLTesting = struct

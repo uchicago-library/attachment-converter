@@ -15,23 +15,27 @@ module Formats = struct
   module Dict = Map.Make (String)
 
   type t = (transform_data list) Dict.t
-
-  module Error = struct
-    type t =
-      | ReferParse of string
-      | ConfigData of string
-
-    let map_msg f err =
-      match err with
-      | ReferParse msg -> ReferParse (f msg)
-      | ConfigData msg -> ConfigData (f msg)
-  end
-
-  type error = Error.t
 end
 
 module ParseConfig = struct
   open Formats
+
+  module Error = struct
+    type t = [
+      | `ReferParse of string
+      | `ConfigData of string
+    ]
+
+    let message err =
+      match err with
+      | `ReferParse msg -> msg
+      | `ConfigData msg -> msg
+
+    let map_msg f err =
+      match err with
+      | `ReferParse msg -> `ReferParse (f msg)
+      | `ConfigData msg -> `ConfigData (f msg)
+  end
 
   type config_entry =
     { source_type   : string ;
@@ -48,7 +52,7 @@ module ParseConfig = struct
     in
     let check key err_msg =
       Option.to_result
-        ~none:(Error.ConfigData ("Config File Error: " ^ err_msg))
+        ~none:(`ConfigData ("Config File Error: " ^ err_msg))
         (assoc_opt key config_assoc)
     in
     let  ( let* ) = Result.(>>=)                                 in
@@ -82,7 +86,7 @@ module ParseConfig = struct
     in
     let collect_varieties line_num next raccum = raccum >>= update_accum line_num next in
     let error_handler line_num line rerror     = rerror >>= (fun _ ->
-      Error (Error.ReferParse
+      Error (`ReferParse
         (Printf.sprintf "Line %d, Refer Parse Error: Cannot parse '%s'" line_num line)))
     in
     Refer.fold
