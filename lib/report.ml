@@ -7,12 +7,11 @@ let attachment_types ?(params = false) =
   let attach_cont   = prefix attach_header                      in
   let mime_type     = drop split_index >> trim " "              in
   let just_mime     = takewhile (not << (String.contains " ;")) in
-  let not_attach = not << disjunction
+  let not_attach    = not << disjunction
     [ prefix "multipart" ;
       prefix "message"   ;
-    ]
-  in
-  let open Lists in
+    ]                                                           in
+  let open Lists                                                in
   split ~sep:"\n"                      >>
   filter attach_cont                   >>
   map mime_type                        >>
