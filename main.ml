@@ -12,7 +12,17 @@ let default_config_name = ".default-config"
 
 (* A minimial executable which converts all attachments in a single email given
    at stdin *)
-let () =
+
+let report_header = "Attachment Types:\n"
+
+let report _ =
+  let open Lib.Report                in
+  let open String                    in
+  let types = attachment_types stdin in
+  print "Attachment Types:";
+  List.iter (prepend "  " >> print) types
+
+let convert _ =
   let open Lib.Conversion_ocamlnet       in
   let open Lib.Configuration.ParseConfig in
   if   Sys.file_exists default_config_name
@@ -26,6 +36,11 @@ let () =
        | Error err    -> print (Lib.Error.message err)
        | Ok converted -> write stdout converted
   else print (Printf.sprintf "Error: missing config file '%s'" default_config_name)
+
+let () =
+  if   Array.length Sys.argv > 1 && Sys.argv.(1) = "--report"
+  then report  ()
+  else convert ()
 
 (*
  * Copyright (c) 2021 Matt Teichman
