@@ -8,19 +8,15 @@
 
 open Prelude
 
-let default_config_name = ".default-config"
-
-(* A minimial executable which converts all attachments in a single email given
-   at stdin *)
-
-let report_header = "Attachment Types:\n"
-
-let report _ =
-  let open Lib.Report                in
-  let open String                    in
-  let types = attachment_types stdin in
+let report ?(params = false) _ =
+  let open Lib.Report                               in
+  let open String                                   in
+  let module SS = Set.Make(String)                  in
+  let types = attachment_types ~params:params stdin in
   print "Attachment Types:";
-  List.iter (prepend "  " >> print) types
+  SS.iter (prepend "  " >> print) types
+
+let default_config_name = ".default-config"
 
 let convert _ =
   let open Lib.Conversion_ocamlnet       in
@@ -35,11 +31,17 @@ let convert _ =
        match converted_email with
        | Error err    -> print (Lib.Error.message err)
        | Ok converted -> write stdout converted
-  else print (Printf.sprintf "Error: missing config file '%s'" default_config_name)
+  else Printf.printf "Error: missing config file '%s'\n" default_config_name
 
+(* A _very_ minimial executable *)
 let () =
-  if   Array.length Sys.argv > 1 && Sys.argv.(1) = "--report"
-  then report  ()
+  if   Array.length Sys.argv > 1
+  then match Sys.argv.(1) with
+       | "--report"        -> report ()
+       | "--report-params" -> report ~params:true ()
+       | unknown_flag      -> Printf.printf
+                                "Error: do not recognize flag '%s'\n"
+                                unknown_flag
   else convert ()
 
 (*

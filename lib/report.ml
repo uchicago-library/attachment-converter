@@ -22,4 +22,4 @@ let attachment_types ?(params = false) channel =
     then SS.add mime curr
     else curr
   in
-  SS.to_list (foldlines add_to_set SS.empty channel)
+  foldlines add_to_set SS.empty channel
