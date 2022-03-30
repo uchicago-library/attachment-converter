@@ -9,10 +9,10 @@
 open Prelude
 
 let report ?(params = false) _ =
-  let open Lib.Report                               in
-  let open String                                   in
-  let module SS = Set.Make(String)                  in
-  let types = attachment_types ~params:params stdin in
+  let open Lib.Report                                   in
+  let open String                                       in
+  let module SS = Set.Make(String)                      in
+  let types     = attachment_types ~params:params stdin in
   print "Attachment Types:";
   SS.iter (prepend "  " >> print) types
 
