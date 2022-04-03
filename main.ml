@@ -33,7 +33,7 @@ let convert _ =
        | Ok converted -> write stdout converted
   else Printf.printf "Error: missing config file '%s'\n" default_config_name
 
-(* A _very_ minimial executable *)
+(* A _very_ minimal executable *)
 let () =
   if   Array.length Sys.argv > 1
   then match Sys.argv.(1) with
