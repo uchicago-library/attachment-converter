@@ -7,7 +7,8 @@ let attachment_types ?(params = false) channel =
   let attach_header = "Content-Type:"                                  in
   let split_index   = len attach_header                                in
   let attach_cont   = prefix attach_header                             in
-  let mime_type     = drop split_index >> trim whitespace              in
+  let downcase      = String.map Char.lowercase_ascii                  in
+  let mime_type     = drop split_index >> trim whitespace >> downcase  in
   let just_mime     = takewhile (not << (contains (whitespace ^ ";"))) in
   let is_attach     = not << disjunction [ prefix "multipart" ;
                                            prefix "message"   ;
