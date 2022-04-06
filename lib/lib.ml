@@ -189,7 +189,7 @@ let acopy ?(f = fun err -> Printf.printf "%s\n" (Error.message err)) dict (tree 
              let* trans_lst = Result.of_option 
              (`ConfigData ("source: '" ^ src ^ "' not found")) (Configuration.Formats.Dict.find_opt src dict)  in
              let* next_lst = copy_or_skip hd rs                                                                in
-             let conv_lst = (List.map (transform bhd b) trans_lst)                                             in
+             let conv_lst = (List.map (transform bhd b) trans_lst) @ [(bhd, `Body b)]                          in
              Ok (conv_lst @ next_lst)) (err_handler (bhd, `Body b))
           | (phd, `Parts p) :: rs -> 
             Result.on_error
