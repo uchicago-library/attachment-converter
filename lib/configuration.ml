@@ -45,8 +45,16 @@ module ParseConfig = struct
         | ShellCommand -> line_num + 2
       in
       match err with
-      | `ReferParse (line_num, key)  -> "TODO"
-      | `ConfigData (line_num, line) -> "TODO"
+      | `ConfigData (line_num, key)  ->
+          Printf.sprintf
+            "Config Data Error: (line %d) Missing key '%s'"
+            (config_error_line key line_num)
+            (string_of_config_key key)
+      | `ReferParse (line_num, line) ->
+          Printf.sprintf
+            "Refer Parse Error: (line %d) Cannot parse '%s'"
+            line_num
+            line
   end
 
   type config_entry =
@@ -102,6 +110,5 @@ module ParseConfig = struct
       (Ok Dict.empty)
       (Refer.of_string config_str)
 
-  let parse_config_file path_to_config =
-    path_to_config |> Prelude.readfile |> parse_config_str
+  let parse_config_file = Prelude.readfile >> parse_config_str
 end
