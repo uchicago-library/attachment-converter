@@ -145,7 +145,7 @@ let transform hd bd (trans_entry : Configuration.Formats.transform_data) =
   (** apply an input function f to every attachment in an email
       parsetree; note that this is not a real functorial map, which
       means we will probably be renaming it in the future *)
-  let amap ?(f = fun err -> Printf.printf "%s\n" (Error.message err)) dict (tree:parsetree) =
+  let amap ?(f = fun err -> Printf.printf "%s\n" (Error.message err)) dict (tree : parsetree) =
     let ( let* ) = Result.(>>=) in
     let err_handler part e = match e with
       | #LogError.t as y -> f y; Ok [part]
@@ -173,7 +173,7 @@ let transform hd bd (trans_entry : Configuration.Formats.transform_data) =
         Ok (header, `Parts cmp_lst)
 
 (*?(f = Printf.printf (Error.message))*)
-let acopy ?(f = fun err -> Printf.printf "%s\n" (Error.message err)) dict (tree:parsetree) =
+let acopy ?(f = fun err -> Printf.printf "%s\n" (Error.message err)) dict (tree : parsetree) =
   let ( let* ) = Result.(>>=) in
   let err_handler part e = match e with
     | #LogError.t as y -> f y; Ok [part]
@@ -189,7 +189,7 @@ let acopy ?(f = fun err -> Printf.printf "%s\n" (Error.message err)) dict (tree:
              let* trans_lst = Result.of_option 
              (`ConfigData ("source: '" ^ src ^ "' not found")) (Configuration.Formats.Dict.find_opt src dict)  in
              let* next_lst = copy_or_skip hd rs                                                                in
-             let conv_lst = (List.map (transform bhd b) trans_lst) @ [(bhd, `Body b)]                          in
+             let conv_lst = (List.map (transform bhd b) trans_lst)                                             in
              Ok (conv_lst @ next_lst)) (err_handler (bhd, `Body b))
           | (phd, `Parts p) :: rs -> 
             Result.on_error
@@ -221,7 +221,7 @@ let acopy ?(f = fun err -> Printf.printf "%s\n" (Error.message err)) dict (tree:
       channel_writer ;
     Stdlib.Buffer.contents buf
 
-  let acopy_email str f = str
+  let acopy_email _ = assert false
 
   (** predicate for email parts that are attachments *)
   let is_attachment tree =
@@ -348,7 +348,7 @@ module REPLTesting = struct
 
   let test_acopy () =
     let ( let* ) = Result.(>>=) in
-    let tree = tree () in
+    let tree = err_tree () in
     let* dict = Result.witherrc (`DummyError) (dict ()) in
     acopy dict tree
 
