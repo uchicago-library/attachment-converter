@@ -29,6 +29,19 @@ module Error : ERROR with
     | #Configuration.ParseConfig.Error.t as e -> Configuration.ParseConfig.Error.message e
 end
 
+module LogError = struct
+  type t = [
+    | `EmailParse of string
+  ]
+end
+
+module FatalError = struct
+  type t = [
+    | `DummyError
+    | Configuration.ParseConfig.Error.t
+  ]
+end
+
 (* library code for attachment converter goes here *)
 module type CONVERT =
 sig
@@ -37,14 +50,14 @@ sig
   type htransform = string -> string
   type btransform = string -> string
   val parse : string -> parsetree
-  val amap : bool -> (Error.t -> unit) -> Configuration.Formats.t -> parsetree -> (parsetree, Error.t) result
-  val acopy : bool -> (Error.t -> unit) -> Configuration.Formats.t -> parsetree -> (parsetree, Error.t) result
+  val amap : (Error.t -> unit) -> Configuration.Formats.t -> parsetree -> (parsetree, Error.t) result
+  val acopy : (Error.t -> unit) -> Configuration.Formats.t -> parsetree -> (parsetree, Error.t) result
   val to_string : parsetree -> string
   val convert : filepath -> (string -> string)
   val acopy_email : string -> (string -> string) -> string
 end
 
-module Conversion_ocamlnet (* : CONVERT *) = struct
+module Conversion_ocamlnet (*: CONVERT*) = struct
 
   type htransform = string -> string
   type btransform = string -> string
@@ -132,9 +145,11 @@ let transform hd bd (trans_entry : Configuration.Formats.transform_data) =
   (** apply an input function f to every attachment in an email
       parsetree; note that this is not a real functorial map, which
       means we will probably be renaming it in the future *)
-  let amap ?(no_op = true) f dict tree =
+  let amap ?(f = fun err -> Printf.printf "%s\n" (Error.message err)) dict (tree:parsetree) =
     let ( let* ) = Result.(>>=) in
-    let err_handler e = if no_op then Error e else (f e; Ok []) in
+    let err_handler part e = match e with
+      | #LogError.t as y -> f y; Ok [part]
+      | #FatalError.t as x -> Error (x :> Error.t) in
     match tree with
       | _, `Body _ -> Ok tree 
       | header, `Parts p_lst ->
@@ -144,23 +159,25 @@ let transform hd bd (trans_entry : Configuration.Formats.transform_data) =
               Result.on_error
               (let* src = Result.trapc (`EmailParse "no content-type in header") id (bhd # field "content-type") in
                let* trans_lst = Result.of_option 
-                (`ConfigData ("source: '" ^ src ^ "' not found")) (Configuration.Formats.Dict.find_opt src dict) in
-               let* next_lst = copy_or_skip hd rs in
-               let conv_lst = List.map (transform bhd b) trans_lst in
-               Ok (conv_lst @ next_lst)) err_handler
+               (`ConfigData ("source: '" ^ src ^ "' not found")) (Configuration.Formats.Dict.find_opt src dict)  in
+               let* next_lst = copy_or_skip hd rs                                                                in
+               let conv_lst = List.map (transform bhd b) trans_lst                                               in
+               Ok (conv_lst @ next_lst)) (err_handler (bhd, `Body b))
             | (phd, `Parts p) :: rs -> 
               Result.on_error
               (let* conv_lst = copy_or_skip phd p in
                let* next_lst = copy_or_skip hd rs in
-               Ok ([(phd, `Parts conv_lst)] @ next_lst)) err_handler
+               Ok ([(phd, `Parts conv_lst)] @ next_lst)) (err_handler (phd, `Parts p))
             | _ -> Ok []
         in let* cmp_lst = copy_or_skip header p_lst in
         Ok (header, `Parts cmp_lst)
 
-(*?(f = Printf.printf)*)
-let acopy ?(no_op = true) f dict tree =
+(*?(f = Printf.printf (Error.message))*)
+let acopy ?(f = fun err -> Printf.printf "%s\n" (Error.message err)) dict (tree:parsetree) =
   let ( let* ) = Result.(>>=) in
-  let err_handler e = if no_op then Error e else (f e; Ok []) in
+  let err_handler part e = match e with
+    | #LogError.t as y -> f y; Ok [part]
+    | #FatalError.t as x -> Error (x :> Error.t) in
   match tree with
     | _, `Body _ -> Ok tree 
     | header, `Parts p_lst ->
@@ -170,15 +187,15 @@ let acopy ?(no_op = true) f dict tree =
             Result.on_error
             (let* src = Result.trapc (`EmailParse "no content-type in header") id (bhd # field "content-type") in
              let* trans_lst = Result.of_option 
-              (`ConfigData ("source: '" ^ src ^ "' not found")) (Configuration.Formats.Dict.find_opt src dict) in
-             let* next_lst = copy_or_skip hd rs in
-             let conv_lst = (List.map (transform bhd b) trans_lst) @ [(bhd, `Body b)] in
-             Ok (conv_lst @ next_lst)) err_handler
+             (`ConfigData ("source: '" ^ src ^ "' not found")) (Configuration.Formats.Dict.find_opt src dict)  in
+             let* next_lst = copy_or_skip hd rs                                                                in
+             let conv_lst = (List.map (transform bhd b) trans_lst) @ [(bhd, `Body b)]                          in
+             Ok (conv_lst @ next_lst)) (err_handler (bhd, `Body b))
           | (phd, `Parts p) :: rs -> 
             Result.on_error
             (let* conv_lst = copy_or_skip phd p in
              let* next_lst = copy_or_skip hd rs in
-             Ok ([(phd, `Parts conv_lst)] @ next_lst)) err_handler
+             Ok ([(phd, `Parts conv_lst)] @ next_lst)) (err_handler (phd, `Parts p))
           | _ -> Ok []
       in let* cmp_lst = copy_or_skip header p_lst in
       Ok (header, `Parts cmp_lst)
@@ -203,6 +220,8 @@ let acopy ?(no_op = true) f dict tree =
       (new Netchannels.output_buffer buf)
       channel_writer ;
     Stdlib.Buffer.contents buf
+
+  let acopy_email str f = str
 
   (** predicate for email parts that are attachments *)
   let is_attachment tree =
@@ -316,13 +335,11 @@ module REPLTesting = struct
   let print_error err = Printf.printf "%s\n" (Error.message err)
 
   let tree () = let pdf_h = Netmime.basic_mime_header ["content-type", "application/pdf"] in
-    (* let txt_h = Netmime.basic_mime_header ["content-type", "text/plain"] in *)
     let pdf_data = Unix.Proc.read ["cat"; "/Users/cormacduhamel/Downloads/Nietzsche.pdf"] in
     (pdf_h, `Parts [(pdf_h, `Body (Netmime.memory_mime_body pdf_data))])
 
   let err_tree () = let pdf_h = Netmime.basic_mime_header ["content-type", "application/pdf"] in
   let txt_h = Netmime.basic_mime_header ["content-type", "text/plain"] in
-  (* let txt_h = Netmime.basic_mime_header ["content-type", "text/plain"] in *)
   let pdf_data = Unix.Proc.read ["cat"; "/Users/cormacduhamel/Downloads/Nietzsche.pdf"] in
   (pdf_h, `Parts [(pdf_h, `Body (Netmime.memory_mime_body pdf_data)); (txt_h, `Body (Netmime.memory_mime_body "str_data"))])
 
@@ -331,9 +348,9 @@ module REPLTesting = struct
 
   let test_acopy () =
     let ( let* ) = Result.(>>=) in
-    let tree = err_tree () in
+    let tree = tree () in
     let* dict = Result.witherrc (`DummyError) (dict ()) in
-    acopy ~no_op:false print_error dict tree
+    acopy dict tree
 
   (** convenience function for unwrapping a `Parts; for REPL only *)
   let unparts = function
@@ -404,8 +421,6 @@ module REPLTesting = struct
     let tree = parse (Prelude.readfile fname) in
     Prelude.writefile ~fn:(fname ^ "_extra_spaces_in_header") (tree |> (amap f id) |> to_string)
   (* Not sure if this should be possible, may throw an execption *) *)
-
-  let acopy_email () = assert false
 end
 
 
