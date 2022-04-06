@@ -164,8 +164,7 @@ let check_error result error =
 let missing_cs_error_msg =
   check_error
     (parse_config_str missing_cs)
-    (`ConfigData
-      "Entry starting at Line 1, Config File Error: no script path given")
+    (`ConfigData (1, ShellCommand))
 
 let bad_refer_cs =
 "%source_type a
@@ -181,8 +180,7 @@ not a real line
 let bad_refer_cs_msg =
   check_error
     (parse_config_str bad_refer_cs)
-      (`ReferParse
-        "Line 5, Refer Parse Error: Cannot parse 'not a real line'")
+      (`ReferParse (5, "not a real line"))
 
 let double_entry_cs =
 "%source_type a

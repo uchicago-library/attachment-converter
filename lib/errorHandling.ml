@@ -7,7 +7,7 @@ end
 
 module _ : ERROR with
   type t = [
-    | `ReferParse of string
-    | `ConfigData of string
+    | `ConfigData of int * Configuration.ParseConfig.config_key
+    | `ReferParse of int * string
   ] = Configuration.ParseConfig.Error
 
