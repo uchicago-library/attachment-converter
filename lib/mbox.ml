@@ -29,6 +29,14 @@
 
 open Prelude
 
+module type Input =
+sig
+  type t
+  val opens  : t -> ()
+  val close : t -> ()
+  val line  : t -> String
+end
+
 type t =
   { ic: in_channel;
     zipped: bool;
@@ -107,14 +115,14 @@ let mbox_in_out_chan_convert inchan outchan fn =    (* Nathan *)
 (** [mbox_in_chan convert]: apply [fn] to each message in the mbox open on [inchan], write to
     string, leaving the message unchanged if [fn] fails.
  *)
-let mbox_in_chan_convert inchan fn =    (* Nathan *)
+let mbox_in_chan_convert ?(eol="\n") inchan fn =    (* Nathan *)
   let ic = open_mbox_channel inchan in
   let rec loop acc =
     match try Some (read_msg ic) with End_of_file -> None with
     | Some msg ->
         (match (fn msg) with
-         | Ok msg -> loop (acc ^ "\n" ^ ic.start ^ "\n" ^ msg)
-         | _      -> loop (acc ^ "\n" ^ ic.start ^ "\n" ^ msg)) (* TODO: logging *)
+         | Ok msg -> loop (acc ^ eol ^ ic.start ^ eol ^ msg)
+         | _      -> loop (acc ^ eol ^ ic.start ^ eol ^ msg)) (* TODO: logging *)
     | None -> ()
   in
     Ok (loop "")
