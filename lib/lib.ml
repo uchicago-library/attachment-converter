@@ -125,18 +125,18 @@ module Conversion_ocamlnet (*: CONVERT*) = struct
 let convert script str = let args = split script in
   Unix.Proc.rw args str
 
-  let transform hd bd trans_entry =
-    let open Netmime in
-    let open Configuration.Formats in
-    let data = bd # value in
-    let conv_data = convert trans_entry.shell_command data in
-    let conv_hd =
-      basic_mime_header ["content-type", trans_entry.target_type]
-    in
-    match trans_entry.variety with
-    | NoChange -> hd,`Body bd
-    | DataOnly -> hd, `Body (memory_mime_body (conv_data))
-    | DataAndHeader -> conv_hd, `Body (memory_mime_body (conv_data))
+let transform hd bd trans_entry =
+  let open Netmime in
+  let open Configuration.Formats in
+  let data = bd # value in
+  let conv_data = convert trans_entry.shell_command data in
+  let conv_hd =
+    basic_mime_header ["content-type", trans_entry.target_type]
+  in
+  match trans_entry.variety with
+  | NoChange -> hd,`Body bd
+  | DataOnly -> hd, `Body (memory_mime_body (conv_data))
+  | DataAndHeader -> conv_hd, `Body (memory_mime_body (conv_data))
 
   (* Notes: Content-Disposition headers provide information about how
      to present a message or a body part. When a body part is to be
