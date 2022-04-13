@@ -50,8 +50,8 @@ sig
   type htransform = string -> string
   type btransform = string -> string
   val parse : string -> parsetree
-  val amap : (Error.t -> unit) -> Configuration.Formats.t -> parsetree -> (parsetree, Error.t) result
-  val acopy : (Error.t -> unit) -> Configuration.Formats.t -> parsetree -> (parsetree, Error.t) result
+  val amap : ?f:(Error.t -> unit) -> Configuration.Formats.t -> parsetree -> (parsetree, Error.t) result
+  val acopy : ?f:(Error.t -> unit) -> Configuration.Formats.t -> parsetree -> (parsetree, Error.t) result
   val to_string : parsetree -> string
   val convert : filepath -> (string -> string)
   val acopy_email : string -> (string -> string) -> string
@@ -125,17 +125,18 @@ module Conversion_ocamlnet (*: CONVERT*) = struct
 let convert script str = let args = split script in
   Unix.Proc.rw args str
 
-let transform hd bd (trans_entry : Configuration.Formats.transform_data) =
-  let open Netmime in 
-    if trans_entry.variety = NoChange then (hd,`Body bd)
-    else 
-      let data = bd # value in
-      let conv_data = convert trans_entry.shell_command data in
-      if trans_entry.variety = DataOnly then
-        (hd, `Body (memory_mime_body (conv_data)))
-      else 
-        let conv_hd = basic_mime_header ["content-type", trans_entry.target_type] in
-        (conv_hd, `Body (memory_mime_body (conv_data)))
+  let transform hd bd trans_entry =
+    let open Netmime in
+    let open Configuration.Formats in
+    let data = bd # value in
+    let conv_data = convert trans_entry.shell_command data in
+    let conv_hd =
+      basic_mime_header ["content-type", trans_entry.target_type]
+    in
+    match trans_entry.variety with
+    | NoChange -> hd,`Body bd
+    | DataOnly -> hd, `Body (memory_mime_body (conv_data))
+    | DataAndHeader -> conv_hd, `Body (memory_mime_body (conv_data))
 
   (* Notes: Content-Disposition headers provide information about how
      to present a message or a body part. When a body part is to be
@@ -348,7 +349,7 @@ module REPLTesting = struct
 
   let test_acopy () =
     let ( let* ) = Result.(>>=) in
-    let tree = err_tree () in
+    let tree = tree () in
     let* dict = Result.witherrc (`DummyError) (dict ()) in
     acopy dict tree
 
