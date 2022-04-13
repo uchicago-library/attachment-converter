@@ -142,10 +142,9 @@ let convert script str = let args = split script in
      to present a message or a body part. When a body part is to be
      treated as an attached file, the Content-Disposition header will
      include a file name parameter. *)
-
-  (** apply an input function f to every attachment in an email
-      parsetree; note that this is not a real functorial map, which
-      means we will probably be renaming it in the future *)
+  
+  (**applies conversions to the attachment elements of the parsetree, replacing the original
+     attachment with the converted versions in the returned parsetree*)
   let amap ?(f = fun err -> Printf.printf "%s\n" (Error.message err)) dict (tree : parsetree) =
     let ( let* ) = Result.(>>=) in
     let err_handler part e = match e with
@@ -173,7 +172,8 @@ let convert script str = let args = split script in
         in let* cmp_lst = copy_or_skip header p_lst in
         Ok (header, `Parts cmp_lst)
 
-(*?(f = Printf.printf (Error.message))*)
+(**applies conversions to the attachment elements of the parsetree, leaving the original 
+   attachment with the converted versions in the returned parsetree*)
 let acopy ?(f = fun err -> Printf.printf "%s\n" (Error.message err)) dict (tree : parsetree) =
   let ( let* ) = Result.(>>=) in
   let err_handler part e = match e with
