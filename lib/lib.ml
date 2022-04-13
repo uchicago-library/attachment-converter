@@ -9,6 +9,7 @@ open ErrorHandling
 
 module Configuration = Configuration
 module Report        = Report
+module Mbox          = Mbox
 
 module Error : ERROR with
   type t = [
@@ -261,6 +262,9 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
   (* TODO: Converts all attachments in an email, used by the
      executable code, definition depends on that of a_copy_email *)
   let full_convert_email _ _ = Error `DummyError
+
+  let acopy_mbox = Mbox.mbox_convert (full_convert_email ())
+
 end
 
 module REPLTesting = struct

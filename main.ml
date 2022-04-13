@@ -8,7 +8,7 @@
 
 open Prelude
 
-let report ?(params = false) _ =
+let report ?(params = false) () =
   let open Lib.Report                                   in
   let open String                                       in
   let module SS = Set.Make(String)                      in
@@ -18,7 +18,7 @@ let report ?(params = false) _ =
 
 let default_config_name = ".default-config"
 
-let convert _ =
+let convert () =
   let open Lib.Conversion_ocamlnet       in
   let open Lib.Configuration.ParseConfig in
   if   Sys.file_exists default_config_name
@@ -32,6 +32,10 @@ let convert _ =
        | Error err    -> print (Lib.Error.message err)
        | Ok converted -> write stdout converted
   else Printf.printf "Error: missing config file '%s'\n" default_config_name
+
+let convert_mbox () =
+  let open Lib.Conversion_ocamlnet in
+  let open
 
 (* A _very_ minimal executable *)
 let () =
