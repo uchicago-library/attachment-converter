@@ -14,17 +14,23 @@ module Mbox          = Mbox
 module Error : ERROR with
   type t = [
     | `DummyError
+    | `UnknownFlag of string
     | Configuration.ParseConfig.Error.t
   ]
   = struct
   type t = [
     | `DummyError
+    | `UnknownFlag of string
     | Configuration.ParseConfig.Error.t
   ]
 
   let message err =
     match err with
     | `DummyError -> "Dummy error message"
+    | `UnknownFlag flag ->
+        Printf.sprintf
+          "Unknown Flag Error: Do not recognize flag '%s'"
+          flag
     | #Configuration.ParseConfig.Error.t as e -> Configuration.ParseConfig.Error.message e
 end
 
@@ -263,7 +269,7 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
      executable code, definition depends on that of a_copy_email *)
   let full_convert_email _ _ = Error `DummyError
 
-  let acopy_mbox = Mbox.mbox_convert (full_convert_email ())
+  let acopy_mbox config = Mbox.mbox_in_out_chan_convert stdin stdout (full_convert_email config)
 
 end
 

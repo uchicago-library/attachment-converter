@@ -1,4 +1,6 @@
-(* 2022-04-06, Yoinked by Nathan Mull verbatim, including header *)
+(*
+  2022-04-06, Yoinked by Nathan Mull verbatim, including header
+ *)
 
 (** {1 Mbox parser ({i Xavier Leroy})}
 
@@ -24,6 +26,8 @@
 (* $Id: mbox.ml,v 1.4 2002/08/26 09:35:25 xleroy Exp $ *)
 
 (* Reading of a mailbox file and splitting into individual messages *)
+
+open Prelude
 
 type t =
   { ic: in_channel;
@@ -85,18 +89,36 @@ let mbox_file_iter filename fn =
   with End_of_file ->
     close_mbox ic
 
-(** [mbox_convert convert]: [convert] each message in the mbox open on stdin, put to stdout, leaving the message unchanged if [convert] fails. *)
-let mbox_convert convert =    (* Nathan *)
-  let ic = open_mbox_channel stdin in
-  let rec loop =
+(** [mbox_in_out_chan_convert inchan outchan fn]: apply [fn] to each message in the mbox open
+    on [inchan], put to [outchan], leaving the message unchanged if [fn] fails.
+ *)
+let mbox_in_out_chan_convert inchan outchan fn =    (* Nathan *)
+  let ic = open_mbox_channel inchan in
+  let rec loop () =
     match try Some (read_msg ic) with End_of_file -> None with
     | Some msg ->
-        (match (convert msg) with
-         | Ok msg -> print (ic.start ^ msg)
-         | _      -> print (ic.start ^ msg)) (* TODO: logging? *)
+        (match (fn msg) with
+         | Ok msg -> loop (write outchan (ic.start ^ "\n" ^ msg))
+         | _      -> loop (write outchan (ic.start ^ "\n" ^ msg))) (* TODO: logging *)
     | None -> ()
   in
-  loop
+    Ok (loop ())
+
+(** [mbox_in_chan convert]: apply [fn] to each message in the mbox open on [inchan], write to
+    string, leaving the message unchanged if [fn] fails.
+ *)
+let mbox_in_chan_convert inchan fn =    (* Nathan *)
+  let ic = open_mbox_channel inchan in
+  let rec loop acc =
+    match try Some (read_msg ic) with End_of_file -> None with
+    | Some msg ->
+        (match (fn msg) with
+         | Ok msg -> loop (acc ^ "\n" ^ ic.start ^ "\n" ^ msg)
+         | _      -> loop (acc ^ "\n" ^ ic.start ^ "\n" ^ msg)) (* TODO: logging *)
+    | None -> ()
+  in
+    Ok (loop "")
+
 
 (** [mbox_file_fold fn inchan acc]: fold the function [fn] over the messages in the mbox file open on [inchan] with [acc] as initial accumulator. *)
 let mbox_file_fold fn inchan acc =		(* KW *)

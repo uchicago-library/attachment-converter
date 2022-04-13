@@ -14,39 +14,39 @@ let report ?(params = false) () =
   let module SS = Set.Make(String)                      in
   let types     = attachment_types ~params:params stdin in
   print "Attachment Types:";
-  SS.iter (prepend "  " >> print) types
+  SS.iter (prepend "  " >> print) types;
+  Ok ()
 
-let default_config_name = ".default-config"
+let default_config () =
+  Lib.Configuration.ParseConfig.parse_config_file
+    ".default-config"
 
-let convert () =
-  let open Lib.Conversion_ocamlnet       in
-  let open Lib.Configuration.ParseConfig in
-  if   Sys.file_exists default_config_name
-  then let converted_email =
-         let  ( let* ) = Result.(>>=)                          in
-         let  input    = read stdin                            in
-         let* config   = parse_config_file default_config_name in
-         full_convert_email config input
-       in
-       match converted_email with
-       | Error err    -> print (Lib.Error.message err)
-       | Ok converted -> write stdout converted
-  else Printf.printf "Error: missing config file '%s'\n" default_config_name
+let convert_email () =
+  let open Lib.Conversion_ocamlnet                        in
+  let  ( let* )  = Result.(>>=)                           in
+  let* config    = default_config ()                      in
+  let* converted = full_convert_email config (read stdin) in
+  Ok (write stdout converted)
 
 let convert_mbox () =
-  let open Lib.Conversion_ocamlnet in
-  let open
+  let open Lib.Conversion_ocamlnet  in
+  let  ( let* ) = Result.(>>=)      in
+  let* config   = default_config () in
+  acopy_mbox config
 
 (* A _very_ minimal executable *)
-let () =
-  if   Array.length Sys.argv > 1
-  then match Sys.argv.(1) with
-       | "--report"        -> report ()
-       | "--report-params" -> report ~params:true ()
-       | unknown_flag      -> Printf.printf
-                                "Error: do not recognize flag '%s'\n"
-                                unknown_flag
-  else convert ()
+let main = if   Array.length Sys.argv > 1
+           then match Sys.argv.(1) with
+                | "--report"        -> report              ()
+                | "--report-params" -> report ~params:true ()
+                | "--single-email"  -> convert_email       ()
+                | unknown_flag      -> Error (`UnknownFlag unknown_flag)
+           else convert_mbox ()
+
+let print_error =
+  match main with
+  | Error err -> write stderr (Lib.Error.message err)
+  | _ -> ()
 
 (*
  * Copyright (c) 2021 Matt Teichman
