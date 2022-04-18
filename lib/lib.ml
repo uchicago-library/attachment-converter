@@ -125,82 +125,6 @@ module Conversion_ocamlnet (*: CONVERT*) = struct
 let convert script str = let args = split script in
   Unix.Proc.rw args str
 
-let transform hd bd trans_entry =
-  let open Netmime in
-  let open Configuration.Formats in
-  let data = bd # value in
-  let conv_data = convert trans_entry.shell_command data in
-  let conv_hd =
-    basic_mime_header ["content-type", trans_entry.target_type]
-  in
-  match trans_entry.variety with
-  | NoChange -> hd,`Body bd
-  | DataOnly -> hd, `Body (memory_mime_body (conv_data))
-  | DataAndHeader -> conv_hd, `Body (memory_mime_body (conv_data))
-
-  (* Notes: Content-Disposition headers provide information about how
-     to present a message or a body part. When a body part is to be
-     treated as an attached file, the Content-Disposition header will
-     include a file name parameter. *)
-  
-  (**applies conversions to the attachment elements of the parsetree, replacing the original
-     attachment with the converted versions in the returned parsetree*)
-  let amap ?(f = fun err -> Printf.printf "%s\n" (Error.message err)) dict (tree : parsetree) =
-    let ( let* ) = Result.(>>=) in
-    let err_handler part e = match e with
-      | #LogError.t as y -> f y; Ok [part]
-      | #FatalError.t as x -> Error (x :> Error.t) in
-    match tree with
-      | _, `Body _ -> Ok tree 
-      | header, `Parts p_lst ->
-        let rec copy_or_skip hd lst =
-          match lst with
-            | (bhd, `Body b) :: rs ->
-              Result.on_error
-              (let* src = Result.trapc (`EmailParse "no content-type in header") id (bhd # field "content-type") in
-               let* trans_lst = Result.of_option 
-               (`ConfigData ("source: '" ^ src ^ "' not found")) (Configuration.Formats.Dict.find_opt src dict)  in
-               let* next_lst = copy_or_skip hd rs                                                                in
-               let conv_lst = List.map (transform bhd b) trans_lst                                               in
-               Ok (conv_lst @ next_lst)) (err_handler (bhd, `Body b))
-            | (phd, `Parts p) :: rs -> 
-              Result.on_error
-              (let* conv_lst = copy_or_skip phd p in
-               let* next_lst = copy_or_skip hd rs in
-               Ok ([(phd, `Parts conv_lst)] @ next_lst)) (err_handler (phd, `Parts p))
-            | _ -> Ok []
-        in let* cmp_lst = copy_or_skip header p_lst in
-        Ok (header, `Parts cmp_lst)
-
-(**applies conversions to the attachment elements of the parsetree, leaving the original 
-   attachment with the converted versions in the returned parsetree*)
-let acopy ?(f = fun err -> Printf.printf "%s\n" (Error.message err)) dict (tree : parsetree) =
-  let ( let* ) = Result.(>>=) in
-  let err_handler part e = match e with
-    | #LogError.t as y -> f y; Ok [part]
-    | #FatalError.t as x -> Error (x :> Error.t) in
-  match tree with
-    | _, `Body _ -> Ok tree 
-    | header, `Parts p_lst ->
-      let rec copy_or_skip hd lst =
-        match lst with
-          | (bhd, `Body b) :: rs ->
-            Result.on_error
-            (let* src = Result.trapc (`EmailParse "no content-type in header") id (bhd # field "content-type") in
-             let* trans_lst = Result.of_option 
-             (`ConfigData ("source: '" ^ src ^ "' not found")) (Configuration.Formats.Dict.find_opt src dict)  in
-             let* next_lst = copy_or_skip hd rs                                                                in
-             let conv_lst = (List.map (transform bhd b) trans_lst) @ [(bhd, `Body b)]                          in
-             Ok (conv_lst @ next_lst)) (err_handler (bhd, `Body b))
-          | (phd, `Parts p) :: rs -> 
-            Result.on_error
-            (let* conv_lst = copy_or_skip phd p in
-             let* next_lst = copy_or_skip hd rs in
-             Ok ([(phd, `Parts conv_lst)] @ next_lst)) (err_handler (phd, `Parts p))
-          | _ -> Ok []
-      in let* cmp_lst = copy_or_skip header p_lst in
-      Ok (header, `Parts cmp_lst)
-
   (** serialize a parsetree into a string *)
   let to_string tree =
     let (header, _) = tree in
@@ -310,6 +234,81 @@ let acopy ?(f = fun err -> Printf.printf "%s\n" (Error.message err)) dict (tree 
   let update_both_filenames ?(ext="") ?(star=false) =
     update_filename ~ext:ext ~star:star
     << update_filename ~ext:ext ~star:true
+
+  let transform hd bd trans_entry =
+    let open Netmime in
+    let open Configuration.Formats in
+    let data = bd # value in
+    let conv_data = convert trans_entry.shell_command data in
+    let conv_hd = 
+      let hd_str = header_to_string (basic_mime_header ["content-type", trans_entry.target_type]) in
+      header_from_string (update_both_filenames ~ext:trans_entry.target_type hd_str)
+    in
+    match trans_entry.variety with
+    | NoChange -> hd,`Body bd
+    | DataOnly -> hd, `Body (memory_mime_body (conv_data))
+    | DataAndHeader -> conv_hd, `Body (memory_mime_body (conv_data))
+  
+    (* Notes: Content-Disposition headers provide information about how
+        to present a message or a body part. When a body part is to be
+        treated as an attached file, the Content-Disposition header will
+        include a file name parameter. *)
+    
+    (**applies conversions to the attachment elements of the parsetree, replacing the original
+        attachment with the converted versions in the returned parsetree*)
+    let amap ?(f = fun err -> Printf.printf "%s\n" (Error.message err)) dict (tree : parsetree) =
+      let ( let* ) = Result.(>>=) in
+      let err_handler part e = match e with
+        | #LogError.t as y -> f y; Ok [part]
+        | #FatalError.t as x -> Error (x :> Error.t) in
+      match tree with
+        | _, `Body _ -> Ok tree 
+        | header, `Parts p_lst ->
+          let rec copy_or_skip hd lst =
+            match lst with
+              | (bhd, `Body b) :: rs ->
+                Result.on_error
+                (let* src = Result.trapc (`EmailParse "no content-type in header") id (bhd # field "content-type") in
+                  let trans_lst = Option.default [] (Configuration.Formats.Dict.find_opt src dict)                  in
+                  let* next_lst = copy_or_skip hd rs                                                                in
+                  let conv_lst = List.map (transform bhd b) trans_lst                                               in
+                  Ok (conv_lst @ next_lst)) (err_handler (bhd, `Body b))
+              | (phd, `Parts p) :: rs -> 
+                Result.on_error
+                (let* conv_lst = copy_or_skip phd p in
+                  let* next_lst = copy_or_skip hd rs in
+                  Ok ([(phd, `Parts conv_lst)] @ next_lst)) (err_handler (phd, `Parts p))
+              | _ -> Ok []
+          in let* cmp_lst = copy_or_skip header p_lst in
+          Ok (header, `Parts cmp_lst)
+  
+  (**applies conversions to the attachment elements of the parsetree, leaving the original 
+      attachment with the converted versions in the returned parsetree*)
+  let acopy ?(f = fun err -> Printf.printf "%s\n" (Error.message err)) dict (tree : parsetree) =
+    let ( let* ) = Result.(>>=) in
+    let err_handler part e = match e with
+      | #LogError.t as y -> f y; Ok [part]
+      | #FatalError.t as x -> Error (x :> Error.t) in
+    match tree with
+      | _, `Body _ -> Ok tree 
+      | header, `Parts p_lst ->
+        let rec copy_or_skip hd lst =
+          match lst with
+            | (bhd, `Body b) :: rs ->
+              Result.on_error
+              (let* src = Result.trapc (`EmailParse "no content-type in header") id (bhd # field "content-type") in
+                let trans_lst = Option.default [] (Configuration.Formats.Dict.find_opt src dict)                  in
+                let* next_lst = copy_or_skip hd rs                                                                in
+                let conv_lst = (List.map (transform bhd b) trans_lst) @ [(bhd, `Body b)]                          in
+                Ok (conv_lst @ next_lst)) (err_handler (bhd, `Body b))
+            | (phd, `Parts p) :: rs -> 
+              Result.on_error
+              (let* conv_lst = copy_or_skip phd p in
+                let* next_lst = copy_or_skip hd rs in
+                Ok ([(phd, `Parts conv_lst)] @ next_lst)) (err_handler (phd, `Parts p))
+            | _ -> Ok []
+        in let* cmp_lst = copy_or_skip header p_lst in
+        Ok (header, `Parts cmp_lst)
 
   (* TODO: Converts all attachments in an email, used by the
      executable code, definition depends on that of a_copy_email *)
