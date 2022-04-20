@@ -13,18 +13,34 @@ module Report        = Report
 module Error : ERROR with
   type t = [
     | `DummyError
+    | `EmailParse of string
     | Configuration.ParseConfig.Error.t
   ]
   = struct
   type t = [
     | `DummyError
+    | `EmailParse of string
     | Configuration.ParseConfig.Error.t
   ]
 
   let message err =
     match err with
     | `DummyError -> "Dummy error message"
+    | `EmailParse msg -> msg
     | #Configuration.ParseConfig.Error.t as e -> Configuration.ParseConfig.Error.message e
+end
+
+module LogError = struct
+  type t = [
+    | `EmailParse of string
+  ]
+end
+
+module FatalError = struct
+  type t = [
+    | `DummyError
+    | Configuration.ParseConfig.Error.t
+  ]
 end
 
 (* library code for attachment converter goes here *)
@@ -35,14 +51,14 @@ sig
   type htransform = string -> string
   type btransform = string -> string
   val parse : string -> parsetree
-  val amap : htransform -> btransform -> parsetree -> parsetree
-  val acopy : htransform -> btransform -> parsetree -> parsetree
+  val amap : ?f:(Error.t -> unit) -> Configuration.Formats.t -> parsetree -> (parsetree, Error.t) result
+  val acopy : ?f:(Error.t -> unit) -> Configuration.Formats.t -> parsetree -> (parsetree, Error.t) result
   val to_string : parsetree -> string
   val convert : filepath -> (string -> string)
   val acopy_email : string -> (string -> string) -> string
 end
 
-module Conversion_ocamlnet (* : CONVERT *) = struct
+module Conversion_ocamlnet (*: CONVERT*) = struct
 
   type htransform = string -> string
   type btransform = string -> string
@@ -107,45 +123,8 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
          (new Netchannels.input_string s)
          channel_reader)
 
-  (* Notes: Content-Disposition headers provide information about how
-     to present a message or a body part. When a body part is to be
-     treated as an attached file, the Content-Disposition header will
-     include a file name parameter. *)
-
-  (** apply an input function f to every attachment in an email
-      parsetree; note that this is not a real functorial map, which
-      means we will probably be renaming it in the future *)
-  let rec amap f g tree =
-    match tree with
-    | header, `Body b ->
-      let h = header_to_string header in
-      if f h = h
-      (* only invoke g (the converting function) if f converts the header *)
-      then tree
-      else header_from_string (f h) ,
-            `Body (b#set_value @@ g b#value ; b)
-    | header, `Parts p_lst ->
-      header, `Parts (List.map (amap f g) p_lst)
-
-  (** apply an input function f to every attachment in an email parsetree and
-      put the result next to the original *)
-  let rec acopy f g tree =
-    match tree with
-    (* leave input email unchanged if it isn't multipart *)
-    | _, `Body _ -> tree 
-    | header, `Parts p_lst ->
-       let copy_or_skip part =
-         match part with
-         | header, `Body b ->
-            let hstring = header_to_string header in
-            (* do nothing to the body if the header transform leaves the header
-               alone *)
-            if f hstring = hstring
-            then [ part ]
-            else [ header_from_string (f hstring),
-                   `Body (b#set_value (g b#value); b); part]
-         | _ -> [ acopy f g part ]
-       in header, `Parts List.(concat_map copy_or_skip p_lst)
+let convert script str = let args = split script in
+  Unix.Proc.rw args str
 
   (** serialize a parsetree into a string *)
   let to_string tree =
@@ -168,8 +147,7 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
       channel_writer ;
     Stdlib.Buffer.contents buf
 
-  (** putting this off till issues 7 and 9 *)
-  let convert _ _ = assert false
+  let acopy_email _ = assert false
 
   (** predicate for email parts that are attachments *)
   let is_attachment tree =
@@ -258,6 +236,81 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
     update_filename ~ext:ext ~star:star
     << update_filename ~ext:ext ~star:true
 
+  let transform hd bd trans_entry =
+    let open Netmime in
+    let open Configuration.Formats in
+    let data = bd # value in
+    let conv_data = convert trans_entry.shell_command data in
+    let conv_hd = 
+      let hd_str = header_to_string (basic_mime_header ["content-type", trans_entry.target_type]) in
+      header_from_string (update_both_filenames ~ext:trans_entry.target_type hd_str)
+    in
+    match trans_entry.variety with
+    | NoChange -> hd,`Body bd
+    | DataOnly -> hd, `Body (memory_mime_body (conv_data))
+    | DataAndHeader -> conv_hd, `Body (memory_mime_body (conv_data))
+  
+    (* Notes: Content-Disposition headers provide information about how
+        to present a message or a body part. When a body part is to be
+        treated as an attached file, the Content-Disposition header will
+        include a file name parameter. *)
+    
+    (**applies conversions to the attachment elements of the parsetree, replacing the original
+        attachment with the converted versions in the returned parsetree*)
+    let amap ?(f = fun err -> Printf.printf "%s\n" (Error.message err)) dict (tree : parsetree) =
+      let ( let* ) = Result.(>>=) in
+      let err_handler part e = match e with
+        | #LogError.t as y -> f y; Ok [part]
+        | #FatalError.t as x -> Error (x :> Error.t) in
+      match tree with
+        | _, `Body _ -> Ok tree 
+        | header, `Parts p_lst ->
+          let rec copy_or_skip hd lst =
+            match lst with
+              | (bhd, `Body b) :: rs ->
+                Result.on_error
+                (let* src = Result.trapc (`EmailParse "no content-type in header") id (bhd # field "content-type") in
+                  let trans_lst = Option.default [] (Configuration.Formats.Dict.find_opt src dict)                  in
+                  let* next_lst = copy_or_skip hd rs                                                                in
+                  let conv_lst = List.map (transform bhd b) trans_lst                                               in
+                  Ok (conv_lst @ next_lst)) (err_handler (bhd, `Body b))
+              | (phd, `Parts p) :: rs -> 
+                Result.on_error
+                (let* conv_lst = copy_or_skip phd p in
+                  let* next_lst = copy_or_skip hd rs in
+                  Ok ([(phd, `Parts conv_lst)] @ next_lst)) (err_handler (phd, `Parts p))
+              | _ -> Ok []
+          in let* cmp_lst = copy_or_skip header p_lst in
+          Ok (header, `Parts cmp_lst)
+  
+  (**applies conversions to the attachment elements of the parsetree, leaving the original 
+      attachment with the converted versions in the returned parsetree*)
+  let acopy ?(f = fun err -> Printf.printf "%s\n" (Error.message err)) dict (tree : parsetree) =
+    let ( let* ) = Result.(>>=) in
+    let err_handler part e = match e with
+      | #LogError.t as y -> f y; Ok [part]
+      | #FatalError.t as x -> Error (x :> Error.t) in
+    match tree with
+      | _, `Body _ -> Ok tree 
+      | header, `Parts p_lst ->
+        let rec copy_or_skip hd lst =
+          match lst with
+            | (bhd, `Body b) :: rs ->
+              Result.on_error
+              (let* src = Result.trapc (`EmailParse "no content-type in header") id (bhd # field "content-type") in
+                let trans_lst = Option.default [] (Configuration.Formats.Dict.find_opt src dict)                  in
+                let* next_lst = copy_or_skip hd rs                                                                in
+                let conv_lst = (List.map (transform bhd b) trans_lst) @ [(bhd, `Body b)]                          in
+                Ok (conv_lst @ next_lst)) (err_handler (bhd, `Body b))
+            | (phd, `Parts p) :: rs -> 
+              Result.on_error
+              (let* conv_lst = copy_or_skip phd p in
+                let* next_lst = copy_or_skip hd rs in
+                Ok ([(phd, `Parts conv_lst)] @ next_lst)) (err_handler (phd, `Parts p))
+            | _ -> Ok []
+        in let* cmp_lst = copy_or_skip header p_lst in
+        Ok (header, `Parts cmp_lst)
+
   (* TODO: Converts all attachments in an email, used by the
      executable code, definition depends on that of a_copy_email *)
   let full_convert_email _ _ = Error `DummyError
@@ -269,6 +322,36 @@ module REPLTesting = struct
    * From root@gringotts.lib.uchicago.edu Fri Jan 21 11:48:27 2022 *)
   
   include Conversion_ocamlnet
+
+  let unparts_opt = function 
+    | Ok (_, `Parts lst) -> lst
+    | _ -> assert false
+
+  let get_header = function
+    | (hd, _) -> hd
+
+  let parse_file str = 
+    Configuration.ParseConfig.parse_config_file str
+
+  let print_error err = Printf.printf "%s\n" (Error.message err)
+
+  let tree () = let pdf_h = Netmime.basic_mime_header ["content-type", "application/pdf"] in
+    let pdf_data = Unix.Proc.read ["cat"; "/Users/cormacduhamel/Downloads/Nietzsche.pdf"] in
+    (pdf_h, `Parts [(pdf_h, `Body (Netmime.memory_mime_body pdf_data))])
+
+  let err_tree () = let pdf_h = Netmime.basic_mime_header ["content-type", "application/pdf"] in
+  let txt_h = Netmime.basic_mime_header ["content-type", "text/plain"] in
+  let pdf_data = Unix.Proc.read ["cat"; "/Users/cormacduhamel/Downloads/Nietzsche.pdf"] in
+  (pdf_h, `Parts [(pdf_h, `Body (Netmime.memory_mime_body pdf_data)); (txt_h, `Body (Netmime.memory_mime_body "str_data"))])
+
+  let dict () = 
+    parse_file "/Users/cormacduhamel/sample_refer.txt"
+
+  let test_acopy () =
+    let ( let* ) = Result.(>>=) in
+    let tree = tree () in
+    let* dict = Result.witherrc (`DummyError) (dict ()) in
+    acopy dict tree
 
   (** convenience function for unwrapping a `Parts; for REPL only *)
   let unparts = function
@@ -289,6 +372,9 @@ module REPLTesting = struct
     else
       fold_left (fun acc email -> acc ^ fromline ^ email ^ eol) ""
          
+  let get_body = function
+  | (_, bd) -> unbody bd
+    
   (** quick access to the PDF attachment part of our example Christmas
       tree email *)
   let xmas_tree () =
@@ -319,12 +405,12 @@ module REPLTesting = struct
 
   (** function from filepath pointing at input email to output email
       as a string *)
-  let docx_convert_test fname =
+  (* let docx_convert_test fname =
     let tree = parse (readfile fname) in
     let converted_tree = acopy header_func body_func tree in
-    to_string converted_tree
+    to_string converted_tree *)
 
-  let upcase_header_and_delete_body fname =
+  (* let upcase_header_and_delete_body fname =
     let f = String.uppercase_ascii in
     let g = fun _ -> "" in
     let tree = parse (Prelude.readfile fname) in
@@ -344,9 +430,7 @@ module REPLTesting = struct
     let f s = s |> String.foldr (fun c l -> double_space c :: l) [] |> String.concat "" in
     let tree = parse (Prelude.readfile fname) in
     Prelude.writefile ~fn:(fname ^ "_extra_spaces_in_header") (tree |> (amap f id) |> to_string)
-  (* Not sure if this should be possible, may throw an execption *)
-
-  let acopy_email () = assert false
+  (* Not sure if this should be possible, may throw an execption *) *)
 end
 
 
