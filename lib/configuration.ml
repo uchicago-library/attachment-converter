@@ -7,9 +7,9 @@ module Formats = struct
     | NoChange
 
   type transform_data =
-    { target_type: string;
-      shell_command: string;
-      variety: variety
+    { target_type   : string  ;
+      shell_command : string  ;
+      variety       : variety ;
     }
 
   module Dict = Map.Make (String)
