@@ -29,18 +29,61 @@
 
 open Prelude
 
-module type SimpleIterator =
-sig
-  type s
-  type t
-  type o
-  val  opens : s -> t
-  val  close : t -> unit
-  val  next  : t -> o
-  exception End_of_input
+module type ITERATOR =
+  sig
+    type s
+    type t
+    type o
+    val  opens : s -> t
+    val  close : t -> unit
+    val  next  : t -> o
+    exception End_of_input
+  end
+
+module type LOG =
+  sig
+    type s
+    type t
+    type i
+    type o
+    val opens : s -> t
+    val close : t -> unit
+    val write : t -> i -> unit
+    val value : t -> o
+  end
+
+module StringLog : LOG
+  with type s = unit
+  with type i = string
+  with type o = string
+  = struct
+  type s = unit
+  type t = { mutable curr : string }
+  type i = string
+  type o = string
+
+  let opens () = { curr = "" }
+  let close _  = ()
+  let write t str = t.curr <- t.curr ^ str
+  let value t = t.curr
 end
 
-module FileIterator : SimpleIterator = struct
+module StdOutLog : LOG = struct
+  type s = unit
+  type t = unit
+  type i = string
+  type o = unit
+
+  let opens () = ()
+  let close _  = ()
+  let write _  = print
+  let value _  = ()
+end
+
+module FileIterator : ITERATOR
+  with type s = string
+  with type o = string
+  = struct
   type s = string (* filename *)
   type t = { zipped : bool       ;
              ic     : in_channel ;
@@ -70,7 +113,7 @@ module FileIterator : SimpleIterator = struct
       raise End_of_input
 end
 
-module LineIterator : SimpleIterator
+module LineIterator : ITERATOR
   with type s = string
   with type o = string
   = struct
@@ -94,8 +137,8 @@ module LineIterator : SimpleIterator
 end
 
 module MBoxIterator
-  ( L : SimpleIterator with type o = string )
-  : SimpleIterator
+  ( L : ITERATOR with type o = string )
+  : ITERATOR
   with type s = L.s
   with type o = string * string
   = struct
@@ -144,44 +187,28 @@ module MBoxIterator
       else raise End_of_input
 end
 
+module WithIteratorFunctions (I : ITERATOR) (L : LOG) = struct
 
+  include I
 
-(*
-  let mbox_file_iter fn =
-    let t = opens () in
+  let iter s fn =
+    let t = I.opens s in
       try
-        while true do fn (read_msg t) done
-      with L.End_of_input ->
-        close t
+        while true do fn (I.next t) done
+      with I.End_of_input ->
+        I.close t
 
-  let mbox_convert outchan fn =
-    let ic = opens () in
+  let convert s log_s fn =
+    let t   = I.opens s in
+    let log = L.opens log_s in
     let rec loop () =
-      match try Some (read_msg ic) with L.End_of_input -> None with
-      | Some msg ->
-          (match (fn msg) with
-           | Ok msg -> loop (write outchan (ic.start ^ "\n" ^ msg))
-           | _      -> loop (write outchan (ic.start ^ "\n" ^ msg))) (* TODO: logging *)
+      match try Some (fn (I.next t)) with I.End_of_input -> None with
+      | Some converted -> L.write log converted; loop ()
       | None -> ()
-    in
-      Ok (loop ())
-
-  (** [mbox_in_chan convert]: apply [fn] to each message in the mbox open on [inchan], write to
-      string, leaving the message unchanged if [fn] fails.
-   *)
-(*
-  let mbox_in_chan_convert ?(eol="\n") inchan fn =    (* Nathan *)
-    let ic = open_mbox_channel inchan in
-    let rec loop acc =
-      match try Some (read_msg ic) with End_of_file -> None with
-      | Some msg ->
-          (match (fn msg) with
-           | Ok msg -> loop (acc ^ eol ^ ic.start ^ eol ^ msg)
-           | _      -> loop (acc ^ eol ^ ic.start ^ eol ^ msg)) (* TODO: logging *)
-      | None -> ()
-    in
-      Ok (loop "")
-*)
+    in begin
+      loop ();
+      I.close t;
+      L.close log;
+      L.value log;
+    end
 end
-*)
-

@@ -269,7 +269,7 @@ module Conversion_ocamlnet (* : CONVERT *) = struct
      executable code, definition depends on that of a_copy_email *)
   let full_convert_email _ _ = Error `DummyError
 
-  let acopy_mbox config = Error `DummyError (* Mbox.mbox_in_out_chan_convert stdin stdout (full_convert_email config) *)
+  let acopy_mbox _ = Error `DummyError (* Mbox.mbox_in_out_chan_convert stdin stdout (full_convert_email config) *)
 
 end
 
