@@ -40,14 +40,14 @@ switch: the sandboxed switch.  When you create that type of switch, it
 installs a particular OCaml compiler version along with all your
 project's dependencies not to a centralized location in `~/.opam`, as
 per the normal custom, but rather in a directory called `_opam` inside
-your project itself.  It is typically named after the directory where
-you project is located, rather than after a specific compiler version.
-Opam will also change into your sandboxed switch whenever you `cd`
-into the project directory automatically, and change back to whatever
-global switch you were in previously when you `cd` out.  Note,
-however, that you may sometimes have to run `eval $(opam env)` to get
-your shell variables into whack with the sandboxed switch after
-entering the directory.
+your project itself.  The switch is typically named after the
+directory where you project is located, rather than after a specific
+compiler version.  Opam will also change into your sandboxed switch
+whenever you `cd` into the project directory automatically, and change
+back to whatever global switch you were in previously when you `cd`
+out.  Note, however, that you may sometimes have to run `eval $(opam
+env)` to get your shell variables into whack with the sandboxed switch
+after entering the directory.
 
 ## The DLDC Opam Repo
 
