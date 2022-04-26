@@ -11,16 +11,16 @@ and Community](https://emailarchivesgrant.library.illinois.edu/)
 Mellon project out of [UIUC](https://www.library.illinois.edu/),
 currently includes:
 
-- [[https://github.com/nmmull][Nathan Mull]]
-- [[https://github.com/cormacd9818][Cormac Duhamel]]
+- [Nathan Mull](https://github.com/nmmull)
+- [Cormac Duhamel](https://github.com/cormacd9818)
 
 Previous developers include Owen Price Skelly, who wrote much of the
 initial exploratory code from this project in 2020 as part of a
 research practicum, then returned during the 2021-2022 academic year
 to build some of the core functionality out.
 
-[[https://elucidations.vercel.app/][Matt Teichman]] and
-[[https://www2.lib.uchicago.edu/keith/][Keith Waclena]] will be
+[Matt Teichman](https://elucidations.vercel.app/) and
+[Keith Waclena(https://www2.lib.uchicago.edu/keith/) will be
 contributing to and maintaining the project on an ongoing basis, after
 the end of the grant period.  Matt is currently in charge of managing
 the project.
