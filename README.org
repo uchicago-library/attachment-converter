@@ -5,9 +5,10 @@
 
 * For Outside Users
 
-  This project has just been started, and the code is highly in
-  progress/in flux.  We do not recommend trying it yet, but we will
-  post updates here as soon as it is ready for alpha testing.
+  This project only got into full swing starting in January of 2021,
+  and the code is very much in progress/in flux.  We do not recommend
+  trying it yet, but we will post updates here as soon as it is ready
+  for alpha testing.
 
 
 * For UChicago Library Developers

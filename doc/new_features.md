@@ -58,7 +58,7 @@ feature.
   create a new pull request merging the feature branch into `main` ,
   associate it with the relevant issue (GitHub should do that
   automatically), and assign everyone else in the group as a reviewer
-- the group, presently, is Matt, Keith, Cormac, Owen, and Nathan
+- the group, presently, is Matt, Keith, Cormac, and Nathan
 - Keith won't necessarily have time to code review every issue, but he
   will have time to do some of them, and Matt will take care of
   un-assigning him and others, where applicable
