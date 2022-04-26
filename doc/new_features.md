@@ -20,7 +20,7 @@ research practicum, then returned during the 2021-2022 academic year
 to build some of the core functionality out.
 
 [Matt Teichman](https://elucidations.vercel.app/) and
-[Keith Waclena(https://www2.lib.uchicago.edu/keith/) will be
+[Keith Waclena](https://www2.lib.uchicago.edu/keith/) will be
 contributing to and maintaining the project on an ongoing basis, after
 the end of the grant period.  Matt is currently in charge of managing
 the project.
