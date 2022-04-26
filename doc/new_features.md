@@ -50,12 +50,12 @@ feature.
 - 'slugified' means all lowercase and spaces are hyphens
 - for example, if issue number 12 is called "Delete All Emails For All
   Time", then the new branch should be called
-  =12-delete-all-emails-for-all-time=
+  `12-delete-all-emails-for-all-time`
 - while working on the feature, the person assigned to it should feel
   free to commit all the time, keep pushing the branch up to GitHub,
   pulling it down, etc.
 - when the assignee thinks it's ready for prime time, they should
-  create a new pull request merging the feature branch into =main= ,
+  create a new pull request merging the feature branch into `main` ,
   associate it with the relevant issue (GitHub should do that
   automatically), and assign everyone else in the group as a reviewer
 - the group, presently, is Matt, Keith, Cormac, Owen, and Nathan
@@ -81,13 +81,13 @@ feature.
   GitHub issue
 - once every reviewer has either approved the PR or been unassigned
   from it, Matt will take care of merging the feature branch into
-  =main= and re-assign developers to new issues
+  `main` and re-assign developers to new issues
 
 
 ### Fast-Track Workflow
 
 Occasionally we'll be in a situation where we wanna fast track some
-feature branch for merging into =main=.  If that happens, we'll follow
+feature branch for merging into `main`.  If that happens, we'll follow
 the same workflow described above, with the difference that only one
 or two people will be assigned to the PR as reviewers, and the bar for
 merging the feature branch in will be more like: unless there's a
