@@ -67,6 +67,17 @@ library for OCaml.  The `opam` repository allows us to easily hook
 libraries, so that `opam` has access to the latest versions of those
 libraries as soon as they are pushed up.
 
+If you would like to have access to our software libraries without
+having to create a sandboxed switch, the command to make the DLDC
+`opam` repo visible to whatever switch you're currently in is this:
+
+```
+$ opam repository add dldc https://dldc.lib.uchicago.edu/opam
+```
+
+That adds the repository and assigns it the name `dldc`, which is the
+name by which `opam` will thenceforth refer to it.
+
 ## Workflow
 
 Our workflow for contributions at the level of the sandboxed `opam`
