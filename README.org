@@ -22,7 +22,7 @@
    We have now broken our guides on our development workflow into two
    main documents:
 
-   + [[doc/new_features.md][adding new features]]
+   + [[doc/new-features.md][adding new features]]
    + [[doc/sandboxing.md][using sandboxed switches]]
 
 ** Current State of the Project

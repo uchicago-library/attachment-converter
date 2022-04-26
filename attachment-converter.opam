@@ -33,6 +33,3 @@ build: [
     "@doc" {with-doc}
   ]
 ]
-pin-depends: [
-  "prelude.~dev" "hg+https://www.lib.uchicago.edu/keith/hg/prelude"
-]
