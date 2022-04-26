@@ -193,6 +193,14 @@ Finally, run `opam-lock` to update the `.locked` file:
 $ opam lock ./attachment-converter.opam
 ```
 
-Commit all of those config files, and now anyone who pulls your branch
-down will be able to create a sandboxed `opam` switch just for
-Attachment Converter on their machine.
+Commit all of these config files:
+
+```
+dune-project
+attachment-converter.opam
+attachment-converter.opam.locked
+```
+
+And now anyone who pulls your branch down will be able to create a
+sandboxed `opam` switch just for Attachment Converter on their
+machine.
