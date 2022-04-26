@@ -21,8 +21,8 @@
    We have now broken our guides on our development workflow into two
    main documents:
 
-   + [adding new features](https://github.com/uchicago-library/attachment-converter/tree/main/doc/new_features.md)
-   + [using sandboxed switches](https://github.com/uchicago-library/attachment-converter/tree/main/doc/sandboxing.md)
+   + [[doc/new_features.md][adding new features]]
+   + [[doc/sandboxing.md][using sandboxed switches]]
 
 ** Current State of the Project
 
