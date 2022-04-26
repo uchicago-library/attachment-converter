@@ -51,16 +51,21 @@ after entering the directory.
 
 ## The DLDC Opam Repo
 
-We have now created an `opam` repository that is world-readable at:
+The [Digital Library Development
+Center](https://uchicago-library.github.io/) finally has an official
+`opam` repo, after over a decade of work building up various and
+sundry OCaml packages that university libraries can use in their
+software applications.  It is available for anyone to start using
+here:
 
 https://dldc.lib.uchicago.edu/opam
 
-This repository contains our in-house libraries, which at this point
-mainly means `prelude`, our standard library for OCaml.  The `opam`
-repository allows us to easily hook `opam` up with the GitHub and
-Mercurial repositories for our DLDC software libraries, so that it has
-access to the latest versions of those libraries as soon as they are
-pushed up.
+The focus of the DLDC `opam` repository is on our in-house software
+libraries, which at this point mainly means `prelude`, our standard
+library for OCaml.  The `opam` repository allows us to easily hook
+`opam` up with the GitHub and Mercurial repositories for these
+libraries, so that `opam` has access to the latest versions of those
+libraries as soon as they are pushed up.
 
 ## Workflow
 
