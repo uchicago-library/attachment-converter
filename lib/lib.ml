@@ -9,6 +9,7 @@ open ErrorHandling
 
 module Configuration = Configuration
 module Report        = Report
+module Convert       = Convert
 
 module Error : ERROR with
   type t = [

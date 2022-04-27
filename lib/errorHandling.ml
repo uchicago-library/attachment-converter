@@ -11,3 +11,8 @@ module _ : ERROR with
     | `ReferParse of int * string
   ] = Configuration.ParseConfig.Error
 
+module _ : ERROR with
+  type t = [
+    | `DummyError
+    | `EmailParse of string
+  ] = Convert.Conversion_ocamlnet.Error
