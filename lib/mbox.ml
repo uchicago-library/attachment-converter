@@ -165,7 +165,7 @@ module MBoxIterator
       if   String.length line >= 5
            && String.sub line 0 5 = "From "
       then let fromline = t.start in begin
-             t.start <- line ^ "\n";
+             t.start <- line;
              if   Buffer.length t.buf > 0
              then (fromline, Buffer.contents t.buf)
              else read ()
@@ -187,7 +187,7 @@ module MBoxIterator
       else raise End_of_input
 end
 
-module WithIteratorFunctions (I : ITERATOR) (L : LOG) = struct
+module IteratorFunctions (I : ITERATOR) (L : LOG) = struct
 
   include I
 
