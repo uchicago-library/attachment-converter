@@ -1,3 +1,6 @@
-(test
-  (name config_tests)
+(tests
+  (names config_tests convert_tests)
+  (deps
+    (file
+      test_emails/xmas_email))
   (libraries lib ounit2))
