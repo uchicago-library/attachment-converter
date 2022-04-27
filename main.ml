@@ -19,8 +19,9 @@ let report ?(params = false) _ =
 let default_config_name = ".default-config"
 
 let convert _ =
-  let open Lib.Conversion_ocamlnet       in
-  let open Lib.Configuration.ParseConfig in
+  let open Lib.Convert.Conversion_ocamlnet in
+  let open Lib.Configuration.ParseConfig   in
+  let open Lib.ErrorHandling               in
   if   Sys.file_exists default_config_name
   then let converted_email =
          let  ( let* ) = Result.(>>=)                          in
@@ -29,7 +30,7 @@ let convert _ =
          acopy_email config input
        in
        match converted_email with
-       | Error err    -> print (Lib.Error.message err)
+       | Error err    -> print (Error.message err)
        | Ok converted -> write stdout converted
   else Printf.printf "Error: missing config file '%s'\n" default_config_name
 
