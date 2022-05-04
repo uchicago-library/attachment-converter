@@ -234,7 +234,7 @@ let convert script str = let args = split script in
               then (List.map (transform bhd b) trans_lst) @ [(bhd, `Body b)]
               else List.map (transform bhd b) trans_lst
             with _ ->
-              print "no content-type in header\n"; (* TODO: better logging *)
+              prerr_endline "no content-type in header\n"; (* TODO: better logging *)
               [(bhd, `Body b)]
           in
           let* next_lst  = copy_or_skip hd rs in
