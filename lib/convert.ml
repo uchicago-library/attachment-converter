@@ -2,20 +2,21 @@ open Prelude
 
 module type CONVERT =
 sig
+  type log
   type error
   type filepath
   type parsetree
   type htransform = string -> string
   type btransform = string -> string
   val parse : string -> parsetree (* TODO: make output a result *)
-  val amap : Configuration.Formats.t -> parsetree -> (parsetree, error) result
-  val acopy : Configuration.Formats.t -> parsetree -> (parsetree, error) result
+  val amap : log -> Configuration.Formats.t -> parsetree -> (parsetree, error) result
+  val acopy : log -> Configuration.Formats.t -> parsetree -> (parsetree, error) result
   val to_string : parsetree -> string
   val convert : filepath -> (string -> string) (* TODO: make output a result *)
-  val acopy_email : (Configuration.Formats.t) -> string -> (string, error) result
+  val acopy_email : log -> (Configuration.Formats.t) -> string -> (string, error) result
 end
 
-module Conversion_ocamlnet = struct
+module Conversion_ocamlnetF (L : Logs.LOG) = struct
 
   module Error = struct
     type t = [ | `DummyError ] (* TODO: more possible error variants *)
@@ -30,6 +31,7 @@ module Conversion_ocamlnet = struct
   type filepath   = string
   type parsetree  = Netmime.complex_mime_message
   type error      = Error.t
+  type log        = L.t
 
   (** parse email string into a parse tree *)
   let parse s =
@@ -219,7 +221,7 @@ let convert script str = let args = split script in
         treated as an attached file, the Content-Disposition header will
         include a file name parameter. *)
 
-  let amap_or_copy dict tree copy =
+  let amap_or_copy (log : L.t) dict tree copy =
     let ( let* ) = Result.bind in
     let rec copy_or_skip hd lst =
       match lst with
@@ -234,7 +236,7 @@ let convert script str = let args = split script in
               then (List.map (transform bhd b) trans_lst) @ [(bhd, `Body b)]
               else List.map (transform bhd b) trans_lst
             with _ ->
-              prerr_endline "no content-type in header\n"; (* TODO: better logging *)
+              L.write log "no content-type in header\n";
               [(bhd, `Body b)]
           in
           let* next_lst  = copy_or_skip hd rs in
@@ -253,21 +255,22 @@ let convert script str = let args = split script in
 
   (**applies conversions to the attachment elements of the parsetree, replacing the original
         attachment with the converted versions in the returned parsetree*)
-  let amap dict (tree : parsetree) =
-    amap_or_copy dict tree false
+  let amap log dict (tree : parsetree) =
+    amap_or_copy log dict tree false
 
   (**applies conversions to the attachment elements of the parsetree, leaving the original 
       attachment with the converted versions in the returned parsetree*)
-  let acopy dict (tree : parsetree) =
-    amap_or_copy dict tree true
+  let acopy log dict (tree : parsetree) =
+    amap_or_copy log dict tree true
 
-  let acopy_email config email =
-    let  ( let* )       = Result.bind       in
-    let  tree           = parse email       in
-    let* converted_tree = acopy config tree in
+  let acopy_email log config email =
+    let  ( let* )       = Result.bind           in
+    let  tree           = parse email           in
+    let* converted_tree = acopy log config tree in
     Ok (to_string converted_tree)
 end
 
+module Conversion_ocamlnet  = Conversion_ocamlnetF (Logs.OutChannelLog)
 module _ : CONVERT = Conversion_ocamlnet
 
 module REPLTesting = struct
@@ -301,11 +304,11 @@ module REPLTesting = struct
   let dict () = 
     parse_file "/Users/cormacduhamel/sample_refer.txt"
 
-  let test_acopy () =
+  let test_acopy log () =
     let ( let* ) = Result.(>>=) in
     let tree = tree () in
     let* dict = Result.witherrc (`DummyError) (dict ()) in
-    acopy dict tree
+    acopy log dict tree
 
   (** convenience function for unwrapping a `Parts; for REPL only *)
   let unparts = function

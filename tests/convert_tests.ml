@@ -6,7 +6,7 @@ let empty_config_test_0 fname =
   let description = "empty config is okay on email" in
   let email   = readfile fname in
   let check _ = assert_bool "is okay"
-    (Result.good (acopy_email
+    (Result.good (acopy_email stderr
       Lib.Configuration.Formats.Dict.empty
       email))
   in
@@ -17,7 +17,7 @@ let empty_config_test_1 fname =
   let email   = readfile fname in
   let check _ = assert_equal
     (Ok (parse email))
-    (acopy
+    (acopy stderr
       Lib.Configuration.Formats.Dict.empty
       (parse email))
   in

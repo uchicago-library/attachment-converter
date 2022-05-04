@@ -27,7 +27,7 @@ let convert _ =
          let  ( let* ) = Result.(>>=)                          in
          let  input    = read stdin                            in
          let* config   = parse_config_file default_config_name in
-         acopy_email config input
+         acopy_email stderr config input
        in
        match converted_email with
        | Error err    -> print (Error.message err)
