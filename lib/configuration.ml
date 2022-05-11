@@ -82,10 +82,7 @@ module ParseConfig = struct
     Ok (construct_config_entry st tt ss)
 
   let transform_data_of_entry entry =
-    let variety_of_entry =
-      if   entry.source_type = entry.target_type
-      then DataOnly
-      else DataAndHeader
+    let variety_of_entry = DataAndHeader
     in
     { target_type   = entry.target_type   ;
       shell_command = entry.shell_command ;

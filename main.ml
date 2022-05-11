@@ -8,7 +8,7 @@
 
 open Prelude
 
-let report ?(params = false) _ =
+let report ?(params = false) () =
   let open Lib.Report                                   in
   let open String                                       in
   let module SS = Set.Make(String)                      in
@@ -18,7 +18,7 @@ let report ?(params = false) _ =
 
 let default_config_name = ".default-config"
 
-let convert _ =
+let convert () =
   let open Lib.Convert.Conversion_ocamlnet in
   let open Lib.Configuration.ParseConfig   in
   let open Lib.ErrorHandling               in

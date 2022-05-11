@@ -80,14 +80,14 @@ let wf_trans_data_correct =
     "entry with source = target converts to transform_data"
     "application/pdf"
     "soffice-to-pdfa.sh"
-    DataOnly
+    DataAndHeader
 
 let extra_trans_data_correct =
   check_trans_data (Result.get_ok (entry_of_assoc extra))
     "entry with source = target converts to transform_data"
     "application/pdf"
     "soffice-to-pdfa.sh"
-    DataOnly
+    DataAndHeader
 
 let t_neq_s =
   [ ("source_type"  , "a") ;

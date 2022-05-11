@@ -212,8 +212,8 @@ module Conversion_ocamlnet = struct
     in
     match trans_entry.variety with
     | NoChange -> hd,`Body bd
-    | DataOnly -> bd # set_value conv_data; hd, `Body bd
-    | DataAndHeader -> conv_hd, `Body (memory_mime_body (conv_data))
+    | DataOnly -> hd, `Body (memory_mime_body conv_data)
+    | DataAndHeader -> conv_hd, `Body (memory_mime_body conv_data)
 
     (* Notes: Content-Disposition headers provide information about how
         to present a message or a body part. When a body part is to be
@@ -235,7 +235,7 @@ module Conversion_ocamlnet = struct
               then (List.map (transform bhd b) trans_lst) @ [(bhd, `Body b)]
               else List.map (transform bhd b) trans_lst
             with _ ->
-              prerr_endline "no content-type in header\n"; (* TODO: better logging *)
+              (* TODO: better logging *)
               [(bhd, `Body b)]
           in
           let* next_lst  = copy_or_skip rs in
