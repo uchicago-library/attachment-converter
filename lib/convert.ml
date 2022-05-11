@@ -89,7 +89,8 @@ module Conversion_ocamlnet = struct
          (new Netchannels.input_string s)
          channel_reader)
 
-let convert script str = let args = split script in
+  let convert script str =
+    let args = split script in
   Unix.Proc.rw args str
 
   (** serialize a parsetree into a string *)
@@ -211,7 +212,7 @@ let convert script str = let args = split script in
     in
     match trans_entry.variety with
     | NoChange -> hd,`Body bd
-    | DataOnly -> hd, `Body (memory_mime_body (conv_data))
+    | DataOnly -> bd # set_value conv_data; hd, `Body bd
     | DataAndHeader -> conv_hd, `Body (memory_mime_body (conv_data))
 
     (* Notes: Content-Disposition headers provide information about how
@@ -221,7 +222,7 @@ let convert script str = let args = split script in
 
   let amap_or_copy dict tree copy =
     let ( let* ) = Result.bind in
-    let rec copy_or_skip hd lst =
+    let rec copy_or_skip lst =
       match lst with
       | (bhd, `Body b) :: rs ->
           let converted =
@@ -237,18 +238,18 @@ let convert script str = let args = split script in
               prerr_endline "no content-type in header\n"; (* TODO: better logging *)
               [(bhd, `Body b)]
           in
-          let* next_lst  = copy_or_skip hd rs in
+          let* next_lst  = copy_or_skip rs in
           Ok (converted @ next_lst)
       | (phd, `Parts p) :: rs ->
-          let* conv_lst = copy_or_skip phd p in
-          let* next_lst = copy_or_skip hd rs in
-          Ok ([(phd, `Parts conv_lst)] @ next_lst)
-      | _ -> Ok []
+          let* conv_lst = copy_or_skip p in
+          let* next_lst = copy_or_skip rs in
+          Ok ((phd, `Parts conv_lst) :: next_lst)
+      | [] -> Ok []
     in
     match tree with
     | _, `Body _ -> Ok tree
     | header, `Parts p_lst ->
-        let* cmp_lst = copy_or_skip header p_lst in
+        let* cmp_lst = copy_or_skip p_lst in
         Ok (header, `Parts cmp_lst)
 
   (**applies conversions to the attachment elements of the parsetree, replacing the original
