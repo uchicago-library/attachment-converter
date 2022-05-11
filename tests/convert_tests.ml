@@ -31,6 +31,20 @@ let noop_pdf_config =
     }]
     Dict.empty
 
+let mime_header_eq h1 h2 = h1 # fields = h2 # fields
+let mime_body_eq b1 b2 = b1 # value = b2 # value
+
+let rec parsetree_eq t1 t2 =
+  match t1, t2 with
+  | (h1, `Body b1), (h2, `Body b2)   -> mime_header_eq h1 h2 && mime_body_eq b1 b2
+  | (h1, `Parts p1), (h2, `Parts p2) ->
+      mime_header_eq h1 h2 &&
+      List.anded (List.zipwith parsetree_eq p1 p2)
+  | _, _ -> false
+
+let assert_equal_trees t1 t2 =
+  assert_bool "same trees" (parsetree_eq t1 t2)
+
 let test_noop_transform =
   let open Lib.Configuration.Formats                          in
   let open Netmime                                            in
@@ -38,9 +52,10 @@ let test_noop_transform =
   let bd = new memory_mime_body "This is nothing"             in
   let config = hd (Dict.find "image/gif" noop_pdf_config)     in
   let description = "transform with cat is noop"              in
-  let check _ = assert_equal
-    (h, `Body bd)
-    (transform h bd config)
+  let check _ =
+    assert_equal_trees
+      (h, `Body bd)
+      (transform h bd config)
   in
   description >:: check
 
@@ -67,12 +82,10 @@ let print_tree_structure tree =
 
 let noop_pdf_config_test_0 tree =
   let description = "noop config is noop" in
-  let check _ = assert_equal
-    (Ok tree)
-    (amap
-      noop_pdf_config
-      tree)
-    ~printer:(fun x -> print_tree_structure (Result.get_ok x))
+  let check _ = assert_equal_trees
+    tree
+    (Result.get_ok
+      (amap noop_pdf_config tree))
   in
   description >:: check
 
@@ -96,8 +109,8 @@ let basic_test_email_all =
 
 let tests =
   "all tests" >:::
-    [ basic_test_email_all ;
-      (* test_noop_transform                  ; *)
+    [ basic_test_email_all   ;
+      test_noop_transform    ;
     ]
 
 let _ = run_test_tt_main tests
