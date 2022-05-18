@@ -202,17 +202,26 @@ module Conversion_ocamlnet = struct
     << update_filename ~ext:ext ~star:true
 
   let transform hd bd trans_entry =
-    let open Netmime in
-    let open Configuration.Formats in
-    let data = bd # value in
-    let conv_data = convert trans_entry.shell_command data in
-    let conv_hd =
-      let hd_str = header_to_string (basic_mime_header ["content-type", trans_entry.target_type; "Content-Transfer-Encoding", "base64"]) in
-      header_from_string (update_both_filenames ~ext:trans_entry.target_type hd_str)
-    in
+    let open Netmime                                                in
+    let open Configuration.Formats                                  in
+    let data      = bd # value                                      in
+    let conv_data = convert trans_entry.shell_command data          in
+    let conv_hd   =
+      let ct     = ("Content-Type", trans_entry.target_type)   in
+      let cte    = ("Content-Transfer-Encoding", "base64")     in
+      let fields =
+        try
+          let dis = hd # field "content-disposition" in
+          [ct; cte; ("Content-Disposition", dis)]
+        with Not_found ->
+          (* TODO: Better error handling *)
+          [ct; cte]                                            in
+      let hd_str = header_to_string (basic_mime_header fields) in
+      header_from_string
+        (update_both_filenames ~ext:trans_entry.target_type hd_str) in
     match trans_entry.variety with
-    | NoChange -> hd,`Body bd
-    | DataOnly -> hd, `Body (memory_mime_body conv_data)
+    | NoChange      -> hd,      `Body bd
+    | DataOnly      -> hd,      `Body (memory_mime_body conv_data)
     | DataAndHeader -> conv_hd, `Body (memory_mime_body conv_data)
 
     (* Notes: Content-Disposition headers provide information about how
@@ -234,7 +243,7 @@ module Conversion_ocamlnet = struct
               if   copy || empty trans_lst
               then (List.map (transform bhd b) trans_lst) @ [(bhd, `Body b)]
               else List.map (transform bhd b) trans_lst
-            with _ ->
+            with Not_found ->
               (* TODO: better logging *)
               [(bhd, `Body b)]
           in
