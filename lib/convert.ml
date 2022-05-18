@@ -207,7 +207,7 @@ module Conversion_ocamlnet = struct
     let data = bd # value in
     let conv_data = convert trans_entry.shell_command data in
     let conv_hd =
-      let hd_str = header_to_string (basic_mime_header ["content-type", trans_entry.target_type]) in
+      let hd_str = header_to_string (basic_mime_header ["content-type", trans_entry.target_type; "Content-Transfer-Encoding", "base64"]) in
       header_from_string (update_both_filenames ~ext:trans_entry.target_type hd_str)
     in
     match trans_entry.variety with
