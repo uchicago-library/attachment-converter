@@ -22,7 +22,7 @@ module Formats = struct
     | "application/pdf" -> ".pdf"
     | "text/plain"      -> ".txt"
     | "text/tab-separated-values" -> ".tsv"
-    | _ -> "DUMMY VALUE FOR NOW"
+    | _ -> "" (* TODO: default to no extension should be logged *)
  end
 
 module ParseConfig = struct
