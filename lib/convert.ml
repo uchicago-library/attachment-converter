@@ -142,29 +142,23 @@ module Conversion_ocamlnet = struct
       |> fun x -> String.(sub x 0 (length x - 1))
 
   let new_filename ?(tstamped=true) ?(star=false) header_key prefix ext =
-    String.concat "" [ header_key                                  ;
-                       equals_sign star                            ;
-                       prefix                                      ;
-                       "_CONVERTED"                                ;
-                       if tstamped then "_" ^ timestamp () else "" ;
-                       ext                                         ;
-                       ";"                                         ;
-                     ]
+    let newname = String.concat "" [ prefix                                      ;
+                                     "_CONVERTED"                                ;
+                                     if tstamped then "_" ^ timestamp () else "" ;
+                                     ext                                         ;
+                                   ]
+    in
+    if   star
+    then header_key ^ "*="  ^ newname
+    else header_key ^ "=\"" ^ newname ^ "\""
 
   (** updates the name in just the 'filename=' part of the string *)
-  let update_filename_string ?(ext="") ?(tstamped=true) str =
-    match String.split ~sep:"=" str with
+  let update_filename_string ?(tstamped=true) ?(star=false) ext str =
+    match String.split ~sep:(equals_sign star) str with
     | [ header_key; filename ] ->
-       let prefix, e =
-         let open Filename in
-         remove_extension filename, extension filename
-       in
-       let extn =
-         if   ext = ""
-         then e
-         else ext
-       in
-       new_filename ~tstamped:tstamped header_key prefix extn
+       let name   = if star then filename else String.trim "\"" filename in
+       let prefix = Filename.remove_extension name                       in
+       new_filename ~tstamped:tstamped ~star:star header_key prefix ext
     | _ -> str
 
   (** updates the filename within an entire header string; uses
@@ -173,12 +167,18 @@ module Conversion_ocamlnet = struct
     let open Re in
     let open Option in
     let ( let* ) = (>>=) in
-    let rex =
-      compile @@ seq [ str "filename" ;
-                     Re.str (equals_sign star) ;
-                     rep1 notnl ;
-                     alt [char ';' ; str "\r\n\r\n" ] ]
+    let pattern =
+      if   star
+      then [ str "filename" ;
+             Re.str "*=" ;
+             rep1 (diff any (set "\n;")) ; ]
+      else [ str "filename" ;
+             Re.str "=" ;
+             char '"' ;
+             rep1 (diff any (set "\n\"")) ;
+             char '"' ; ]
     in
+    let rex = compile @@ seq pattern in
     let old_string_opt =
       let* grp = exec_opt rex hstr in
       let* matched = Group.get_opt grp 0 in
@@ -189,7 +189,7 @@ module Conversion_ocamlnet = struct
     in
     let updated_header =
       old_string_opt
-      >>| update_filename_string ~ext:ext ~tstamped:tstamped
+      >>| update_filename_string ~tstamped:tstamped ~star:star ext
       >>| update_header
     in
     match updated_header with
@@ -198,8 +198,8 @@ module Conversion_ocamlnet = struct
 
   (** updates both the filename= and the filename*= filenames in an
       attachment *)
-  let update_both_filenames ?(ext="") ?(star=false) =
-    update_filename ~ext:ext ~star:star
+  let update_both_filenames ?(ext="") =
+    update_filename ~ext:ext ~star:false
     << update_filename ~ext:ext ~star:true
 
   let transform hd bd trans_entry =

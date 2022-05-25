@@ -5,7 +5,7 @@ open Prelude
 let new_filename_test_0 =
   let description = "basic new filename test (no star, no time stamp)"  in
   let check _     = assert_equal
-    "filename=test_CONVERTED.gif;"
+    "filename=\"test_CONVERTED.gif\""
     (new_filename ~tstamped:false ~star:false "filename" "test" ".gif")
     ~printer:id                                                         in
   description >:: check
@@ -13,7 +13,7 @@ let new_filename_test_0 =
 let new_filename_test_1 =
   let description = "basic new filename test (with star, no time stamp)" in
   let check _     = assert_equal
-    "filename*=test_CONVERTED.gif;"
+    "filename*=test_CONVERTED.gif"
     (new_filename ~tstamped:false ~star:true "filename" "test" ".gif")
     ~printer:id                                                          in
   description >:: check
@@ -21,21 +21,22 @@ let new_filename_test_1 =
 let update_filename_string_test_0 =
   let description = "basic filename conversion test (no star, gif to tiff)" in
   let check _     = assert_equal
-    "filename=test_CONVERTED.tiff;"
+    "filename=\"test_CONVERTED.tiff\""
     (update_filename_string
-      ~ext:".tiff"
       ~tstamped:false
+      ".tiff"
       "filename=test.gif")
-     ~printer:id                                                            in
+    ~printer:id                                                             in
   description >:: check
 
 let update_filename_string_test_1 =
   let description = "basic filename conversion test (with star, gif to tiff)" in
   let check _     = assert_equal
-    "filename*=test_CONVERTED.tiff;"
+    "filename*=test_CONVERTED.tiff"
     (update_filename_string
-      ~ext:".tiff"
+      ~star:true
       ~tstamped:false
+      ".tiff"
       "filename*=test.gif")
     ~printer:id                                                               in
   description >:: check
@@ -48,6 +49,15 @@ let basic_cont_dis_conv_0 =
 
 let basic_cont_dis_conv_1 =
 "attachment;    filename*=utf-8''test.gif;    filename=\"test_CONVERTED.tiff\""
+
+let basic_cont_dis_conv_2 =
+"attachment;    filename*=utf-8''test_CONVERTED.tiff;    filename=\"test_CONVERTED.tiff\""
+
+let basic_cont_dis_1 =
+"attachment;    filename=\"test.gif\";    filename*=utf-8''test.gif"
+
+let basic_cont_dis_conv_3 =
+"attachment;    filename=\"test_CONVERTED.tiff\";    filename*=utf-8''test_CONVERTED.tiff"
 
 
 let update_filename_test_0 =
@@ -74,6 +84,27 @@ let update_filename_test_1 =
     ~printer:id                                                         in
   description >:: check
 
+let update_both_filenames_test_0 =
+  let description = "basic update both filenames" in
+  let check _     = assert_equal
+    basic_cont_dis_conv_2
+    (update_both_filenames
+      ~ext:".tiff"
+      basic_cont_dis)
+    ~printer:id
+  in
+  description >:: check
+
+let update_both_filenames_test_1 =
+  let description = "basic update both filenames (reversed order)" in
+  let check _     = assert_equal
+    basic_cont_dis_conv_3
+    (update_both_filenames
+      ~ext:".tiff"
+      basic_cont_dis_1)
+    ~printer:id
+  in
+  description >:: check
 
 
 let empty_config_test_0 tree =
@@ -197,6 +228,8 @@ let tests =
       update_filename_string_test_1 ;
       update_filename_test_0        ;
       update_filename_test_1        ;
-     ]
+      update_both_filenames_test_0  ;
+      update_both_filenames_test_1  ;
+    ]
 
 let _ = run_test_tt_main tests
