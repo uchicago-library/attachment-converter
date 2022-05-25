@@ -90,6 +90,7 @@ let update_both_filenames_test_0 =
     basic_cont_dis_conv_2
     (update_both_filenames
       ~ext:".tiff"
+      ~tstamped:false
       basic_cont_dis)
     ~printer:id
   in
@@ -101,6 +102,7 @@ let update_both_filenames_test_1 =
     basic_cont_dis_conv_3
     (update_both_filenames
       ~ext:".tiff"
+      ~tstamped:false
       basic_cont_dis_1)
     ~printer:id
   in
@@ -125,9 +127,10 @@ let noop_gif_config =
   let open Lib.Configuration.Formats in
   Dict.add
     "image/gif"
-    [{ target_type  = "image/tiff" ;
-      shell_command = "cat"        ;
-      variety       = DataOnly     ;
+    [{ target_type   = "image/tiff" ;
+       target_ext    = ".tiff"      ;
+       shell_command = "cat"        ;
+       variety       = DataOnly     ;
     }]
     Dict.empty
 
@@ -135,9 +138,10 @@ let header_change_gif_config =
   let open Lib.Configuration.Formats in
   Dict.add
     "image/gif"
-    [{ target_type  = "image/tiff"  ;
-      shell_command = "cat"         ;
-      variety       = DataAndHeader ;
+    [{ target_type   = "image/tiff"  ;
+       target_ext    = ".tiff"       ;
+       shell_command = "cat"         ;
+       variety       = DataAndHeader ;
     }]
     Dict.empty
 
@@ -216,7 +220,7 @@ let basic_test_email fname =
 (* add emails as necessary *)
 let basic_test_email_all =
   "basic tests for many emails" >:::
-    [ (* basic_test_email "test_emails/10-BURNETTA" *) ]
+    [ basic_test_email "test_emails/test_email_1.eml" ]
 
 let tests =
   "all tests" >:::

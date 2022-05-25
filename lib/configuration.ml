@@ -8,6 +8,7 @@ module Formats = struct
 
   type transform_data =
     { target_type   : string;
+      target_ext    : string;
       shell_command : string;
       variety       : variety
     }
@@ -15,7 +16,14 @@ module Formats = struct
   module Dict = Map.Make (String)
 
   type t = (transform_data list) Dict.t
-end
+
+  let mime_type_to_extension mt =
+    match mt with
+    | "application/pdf" -> ".pdf"
+    | "text/plain"      -> ".txt"
+    | "text/tab-separated-values" -> ".tsv"
+    | _ -> "DUMMY VALUE FOR NOW"
+ end
 
 module ParseConfig = struct
   open Formats
@@ -23,12 +31,14 @@ module ParseConfig = struct
   type config_key =
     | SourceType
     | TargetType
+    | TargetExt
     | ShellCommand
 
   let string_of_config_key key =
     match key with
     | SourceType   -> "source_type"
     | TargetType   -> "target_type"
+    | TargetExt    -> "target_extension"
     | ShellCommand -> "shell_command"
 
   module Error = struct
@@ -42,7 +52,8 @@ module ParseConfig = struct
         match key with
         | SourceType   -> line_num
         | TargetType   -> line_num + 1
-        | ShellCommand -> line_num + 2
+        | TargetExt    -> line_num + 2
+        | ShellCommand -> line_num + 3
       in
       match err with
       | `ConfigData (line_num, key)  ->
@@ -60,13 +71,15 @@ module ParseConfig = struct
   type config_entry =
     { source_type   : string ;
       target_type   : string ;
+      target_ext    : string ;
       shell_command : string ;
     }
 
   let entry_of_assoc config_assoc =
-    let construct_config_entry st tt ss =
+    let construct_config_entry st tt te ss =
       { source_type   = st ;
         target_type   = tt ;
+        target_ext    = te ;
         shell_command = ss ;
       }
     in
@@ -79,10 +92,15 @@ module ParseConfig = struct
     let* st       = check SourceType   in
     let* tt       = check TargetType   in
     let* ss       = check ShellCommand in
-    Ok (construct_config_entry st tt ss)
+    let  te       = Result.default
+                      (mime_type_to_extension tt)
+                      (check TargetExt)
+    in
+    Ok (construct_config_entry st tt te ss)
 
   let transform_data_of_entry entry =
     { target_type   = entry.target_type   ;
+      target_ext    = entry.target_ext    ;
       shell_command = entry.shell_command ;
       variety       = DataAndHeader       ;
     }

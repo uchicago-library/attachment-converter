@@ -105,20 +105,24 @@ let t_neq_s_trans_data_correct =
 let wf_cs =
 "%source_type a
 %target_type b
+%target_extension q
 %shell_command c d e
 
 %source_type f
 %target_type g
+%target_extension q
 %shell_command h"
 
 let extra_cs =
 "%source_type a
 %target_type b
+%target_extension q
 %shell_command c d e
 %test test
 
 %source_type f
 %target_type g
+%target_extension q
 %shell_command h
 %test test"
 
@@ -136,12 +140,14 @@ let missing_cs_to_data_error = check_error parse_config_str "parse_config_str" m
 
 let e1 =
   { target_type   = "b"           ;
+    target_ext    = "q"           ;
     shell_command = "c d e"       ;
     variety       = DataAndHeader ;
   }
 
 let e2 =
   { target_type   = "g"           ;
+    target_ext    = "q"           ;
     shell_command = "h"           ;
     variety       = DataAndHeader ;
   }
@@ -185,10 +191,12 @@ let bad_refer_cs_msg =
 let double_entry_cs =
 "%source_type a
 %target_type b
+%target_extension q
 %shell_command c d e
 
 %source_type a
 %target_type g
+%target_extension q
 %shell_command h"
 
 let check_double_entry_cs =

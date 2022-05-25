@@ -1,5 +1,5 @@
 (tests
   (names config_tests convert_tests)
   (deps
-    (file test_emails/10-BURNETTA))
+    (file test_emails/test_email_1.eml))
   (libraries lib ounit2))

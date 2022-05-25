@@ -40,3 +40,4 @@ lib/application.pdf
 /notes.org
 *.pdf
 /utop.out
+/tests/test_emails
