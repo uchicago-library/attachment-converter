@@ -19,9 +19,10 @@ module Formats = struct
 
   let mime_type_to_extension mt =
     match mt with
-    | "application/pdf" -> ".pdf"
-    | "text/plain"      -> ".txt"
+    | "application/pdf"           -> ".pdf"
+    | "text/plain"                -> ".txt"
     | "text/tab-separated-values" -> ".tsv"
+    | "image/tiff"                -> ".tif"
     | _ -> "" (* TODO: default to no extension should be logged *)
  end
 
