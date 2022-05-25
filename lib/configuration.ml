@@ -48,18 +48,11 @@ module ParseConfig = struct
       ]
 
     let message err =
-      let config_error_line key line_num =
-        match key with
-        | SourceType   -> line_num
-        | TargetType   -> line_num + 1
-        | TargetExt    -> line_num + 2
-        | ShellCommand -> line_num + 3
-      in
       match err with
       | `ConfigData (line_num, key)  ->
           Printf.sprintf
-            "Config Data Error: (line %d) Missing key '%s'"
-            (config_error_line key line_num)
+            "Config Data Error: (entry starting at line %d) Missing key '%s'"
+            line_num
             (string_of_config_key key)
       | `ReferParse (line_num, line) ->
           Printf.sprintf
