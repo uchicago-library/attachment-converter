@@ -136,22 +136,23 @@ module Conversion_ocamlnet = struct
   let equals_sign star = if star
                          then "*="
                          else "="
-
-  (** updates the name in just the 'filename=' part of the string *)
-  let update_filename_string ?(ext="") ?(star=false) str =
-    let timestamp () =
-      Unix.time ()
+  let timestamp () =
+    Unix.time ()
       |> string_of_float
       |> fun x -> String.(sub x 0 (length x - 1))
-    in
-    let new_name ?(star=false) header_key prefix ext =
-      String.concat "" [ header_key ;
-                         equals_sign star ;
-                         prefix ;
-                         "_CONVERTED_" ;
-                         timestamp () ;
-                         ext ; ]
-    in 
+
+  let new_filename ?(tstamped=true) ?(star=false) header_key prefix ext =
+    String.concat "" [ header_key                                  ;
+                       equals_sign star                            ;
+                       prefix                                      ;
+                       "_CONVERTED"                                ;
+                       if tstamped then "_" ^ timestamp () else "" ;
+                       ext                                         ;
+                       ";"                                         ;
+                     ]
+
+  (** updates the name in just the 'filename=' part of the string *)
+  let update_filename_string ?(ext="") ?(tstamped=true) str =
     match String.split ~sep:"=" str with
     | [ header_key; filename ] ->
        let prefix, e =
@@ -159,16 +160,16 @@ module Conversion_ocamlnet = struct
          remove_extension filename, extension filename
        in
        let extn =
-         if e = ""
-         then ext
-         else e
+         if   ext = ""
+         then e
+         else ext
        in
-       new_name ~star:star header_key prefix extn
+       new_filename ~tstamped:tstamped header_key prefix extn
     | _ -> str
 
   (** updates the filename within an entire header string; uses
       OCaml's pure regular expression library ocaml-re *)
-  let update_filename ?(ext="") ?(star=false) hstr =
+  let update_filename ?(ext="") ?(tstamped=false) ?(star=false) hstr =
     let open Re in
     let open Option in
     let ( let* ) = (>>=) in
@@ -188,7 +189,7 @@ module Conversion_ocamlnet = struct
     in
     let updated_header =
       old_string_opt
-      >>| update_filename_string ~ext:ext
+      >>| update_filename_string ~ext:ext ~tstamped:tstamped
       >>| update_header
     in
     match updated_header with
@@ -202,23 +203,22 @@ module Conversion_ocamlnet = struct
     << update_filename ~ext:ext ~star:true
 
   let transform hd bd trans_entry =
-    let open Netmime                                                in
-    let open Configuration.Formats                                  in
-    let data      = bd # value                                      in
-    let conv_data = convert trans_entry.shell_command data          in
+    let open Netmime                                       in
+    let open Configuration.Formats                         in
+    let data      = bd # value                             in
+    let conv_data = convert trans_entry.shell_command data in
     let conv_hd   =
-      let ct     = ("Content-Type", trans_entry.target_type)   in
-      let cte    = ("Content-Transfer-Encoding", "base64")     in
+      let ct     = ("Content-Type", trans_entry.target_type) in
+      let cte    = ("Content-Transfer-Encoding", "base64")   in
       let fields =
         try
-          let dis = hd # field "content-disposition" in
-          [ct; cte; ("Content-Disposition", dis)]
+          let dis         = hd # field "content-disposition"                       in
+          let updated_dis = update_both_filenames ~ext:trans_entry.target_type dis in
+          [ct; cte; ("Content-Disposition", updated_dis)]
         with Not_found ->
           (* TODO: Better error handling *)
-          [ct; cte]                                            in
-      let hd_str = header_to_string (basic_mime_header fields) in
-      header_from_string
-        (update_both_filenames ~ext:trans_entry.target_type hd_str) in
+          [ct; cte]                                          in
+      basic_mime_header fields                             in
     match trans_entry.variety with
     | NoChange      -> hd,      `Body bd
     | DataOnly      -> hd,      `Body (memory_mime_body conv_data)

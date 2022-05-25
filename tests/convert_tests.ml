@@ -2,6 +2,80 @@ open OUnit2
 open Lib.Convert.Conversion_ocamlnet
 open Prelude
 
+let new_filename_test_0 =
+  let description = "basic new filename test (no star, no time stamp)"  in
+  let check _     = assert_equal
+    "filename=test_CONVERTED.gif;"
+    (new_filename ~tstamped:false ~star:false "filename" "test" ".gif")
+    ~printer:id                                                         in
+  description >:: check
+
+let new_filename_test_1 =
+  let description = "basic new filename test (with star, no time stamp)" in
+  let check _     = assert_equal
+    "filename*=test_CONVERTED.gif;"
+    (new_filename ~tstamped:false ~star:true "filename" "test" ".gif")
+    ~printer:id                                                          in
+  description >:: check
+
+let update_filename_string_test_0 =
+  let description = "basic filename conversion test (no star, gif to tiff)" in
+  let check _     = assert_equal
+    "filename=test_CONVERTED.tiff;"
+    (update_filename_string
+      ~ext:".tiff"
+      ~tstamped:false
+      "filename=test.gif")
+     ~printer:id                                                            in
+  description >:: check
+
+let update_filename_string_test_1 =
+  let description = "basic filename conversion test (with star, gif to tiff)" in
+  let check _     = assert_equal
+    "filename*=test_CONVERTED.tiff;"
+    (update_filename_string
+      ~ext:".tiff"
+      ~tstamped:false
+      "filename*=test.gif")
+    ~printer:id                                                               in
+  description >:: check
+
+let basic_cont_dis =
+"attachment;    filename*=utf-8''test.gif;    filename=\"test.gif\""
+
+let basic_cont_dis_conv_0 =
+"attachment;    filename*=utf-8''test_CONVERTED.tiff;    filename=\"test.gif\""
+
+let basic_cont_dis_conv_1 =
+"attachment;    filename*=utf-8''test.gif;    filename=\"test_CONVERTED.tiff\""
+
+
+let update_filename_test_0 =
+  let description = "basic filename update test (with star, gif to tiff)" in
+  let check _     = assert_equal
+    basic_cont_dis_conv_0
+    (update_filename
+      ~ext:".tiff"
+      ~tstamped:false
+      ~star:true
+      basic_cont_dis)
+    ~printer:id                                                           in
+  description >:: check
+
+let update_filename_test_1 =
+  let description = "basic filename update test (no star, gif to tiff)" in
+  let check _     = assert_equal
+    basic_cont_dis_conv_1
+    (update_filename
+      ~ext:".tiff"
+      ~tstamped:false
+      ~star:false
+      basic_cont_dis)
+    ~printer:id                                                         in
+  description >:: check
+
+
+
 let empty_config_test_0 tree =
   let description = "empty config is okay on email"     in
   let open Lib.Configuration.Formats                    in
@@ -115,8 +189,14 @@ let basic_test_email_all =
 
 let tests =
   "all tests" >:::
-    [ basic_test_email_all   ;
-      test_noop_transform    ;
-    ]
+    [ basic_test_email_all          ;
+      test_noop_transform           ;
+      new_filename_test_0           ;
+      new_filename_test_1           ;
+      update_filename_string_test_0 ;
+      update_filename_string_test_1 ;
+      update_filename_test_0        ;
+      update_filename_test_1        ;
+     ]
 
 let _ = run_test_tt_main tests
