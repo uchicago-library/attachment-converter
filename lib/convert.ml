@@ -199,8 +199,13 @@ module Conversion_ocamlnet = struct
   (** updates both the filename= and the filename*= filenames in an
       attachment *)
   let update_both_filenames ?(ext="") =
-    update_filename ~ext:ext ~star:false
-    << update_filename ~ext:ext ~star:true
+    update_filename ~ext:ext ~tstamped:true ~star:false
+    << update_filename ~ext:ext ~tstamped:true ~star:true
+
+  let mime_type_to_ext t =
+    match t with
+    | "image/tiff" -> ".tiff"
+    | _ -> "DUMMY OUTPUT FOR NOW"
 
   let transform hd bd trans_entry =
     let open Netmime                                       in
@@ -212,8 +217,9 @@ module Conversion_ocamlnet = struct
       let cte    = ("Content-Transfer-Encoding", "base64")   in
       let fields =
         try
-          let dis         = hd # field "content-disposition"                       in
-          let updated_dis = update_both_filenames ~ext:trans_entry.target_type dis in
+          let dis         = hd # field "content-disposition"         in
+          let ext         = mime_type_to_ext trans_entry.target_type in
+          let updated_dis = update_both_filenames ~ext:ext dis       in
           [ct; cte; ("Content-Disposition", updated_dis)]
         with Not_found ->
           (* TODO: Better error handling *)
