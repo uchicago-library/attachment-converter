@@ -11,8 +11,8 @@ open Prelude
 let report ?(params = false) () =
   let open Lib.Report                                  in
   let module M =  Map.Make(String)                     in
-  let types    = attachment_types ~params:params stdin in
-  print "Attachment Types:";
+  let types    = content_types ~params:params stdin    in
+  print "Content Types:";
   M.iter
     (fun k v -> print ("  " ^ k ^ " : " ^ (Int.to_string v)))
     types
