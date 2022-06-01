@@ -29,7 +29,7 @@ let convert ?(single_email=false) () =
          let  input    = read stdin                                       in
          let* config   = parse_config_file default_config_name            in
          let  conv     = if single_email then acopy_email else acopy_mbox in
-         if conv config input
+         conv config input
        in
        match converted with
        | Error err    -> print (Error.message err)
@@ -46,8 +46,8 @@ let main = if   Array.length Sys.argv > 1
            then match Sys.argv.(1) with
                 | "--report"        -> report                     ()
                 | "--report-params" -> report ~params:true        ()
-                | "--single-email"  -> convert ~single_email=true ()
-                | unknown_flag      -> write stderr ("unknown flag: " ^ Sys.argv(1))
+                | "--single-email"  -> convert ~single_email:true ()
+                | unknown_flag      -> write stderr ("unknown flag: " ^ unknown_flag)
            else convert ()
 
 (*

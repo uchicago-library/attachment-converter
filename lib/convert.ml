@@ -286,6 +286,8 @@ module Conversion_ocamlnet = struct
     let*  tree          = parse email       in
     let* converted_tree = acopy config tree in
     Ok (to_string converted_tree)
+
+  let acopy_mbox config mbox = Error `EmailParse
 end
 
 module _ : CONVERT = Conversion_ocamlnet
