@@ -28,8 +28,9 @@ let convert ?(single_email=false) () =
          let  ( let* ) = Result.(>>=)                                     in
          let  input    = read stdin                                       in
          let* config   = parse_config_file default_config_name            in
-         let  conv     = if single_email then acopy_email else acopy_mbox in
-         conv config input
+         if   single_email
+         then acopy_email config input
+         else acopy_mbox  config input
        in
        match converted with
        | Error err    -> print (Error.message err)

@@ -287,7 +287,14 @@ module Conversion_ocamlnet = struct
     let* converted_tree = acopy config tree in
     Ok (to_string converted_tree)
 
-  let acopy_mbox config mbox = Error `EmailParse
+  let acopy_mbox config mbox =
+    let open Mbox in
+    let module T = IteratorFunctions (MBoxIterator (LineIterator)) (StringLog) in
+    let converter (_, em) =
+      match acopy_email config em with
+      | Ok converted -> converted
+      | Error _      -> write stderr "Conversion failure"; em (* TODO: better error handling *) in
+    Ok (T.convert mbox () converter)
 end
 
 module _ : CONVERT = Conversion_ocamlnet

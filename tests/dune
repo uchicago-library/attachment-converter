@@ -1,5 +1,5 @@
 (tests
-  (names config_tests convert_tests)
+  (names config_tests convert_tests mbox_tests)
   (deps
     (file test_emails/test_email_1.eml)
     (file test_emails/test_email_2.eml)

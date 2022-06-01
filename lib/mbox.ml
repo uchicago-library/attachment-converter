@@ -136,6 +136,26 @@ module LineIterator : ITERATOR
       raise End_of_input
 end
 
+module StdInIterator : ITERATOR
+  with type s = unit
+  with type o = string
+  = struct
+  type s = unit
+  type t = unit
+  type o = string
+
+  let opens () = ()
+  let close () = ()
+
+  exception End_of_input
+
+  let next () =
+    try
+      read_line ()
+    with End_of_file ->
+      raise End_of_input
+end
+
 module MBoxIterator
   ( L : ITERATOR with type o = string )
   : ITERATOR
