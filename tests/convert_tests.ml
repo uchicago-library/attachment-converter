@@ -217,10 +217,25 @@ let basic_test_email fname =
       noop_gif_config_test_0 (parse email) ;
     ]
 
+let email_4_structure =
+  let email       = readfile "test_emails/test_email_4.eml" in
+  let description = "test_email_4 structure"                in
+  let check _ = assert_equal
+    (Parts [Body ; Parts [Body; Parts [Body; Body]]])
+    (parsetree_to_mailtree (parse email))
+    ~printer:mailtree_to_string                             in
+  description >:: check
+  
 (* add emails as necessary *)
 let basic_test_email_all =
   "basic tests for many emails" >:::
-    [ basic_test_email "test_emails/test_email_1.eml" ]
+    [ basic_test_email "test_emails/test_email_1.eml" ;
+      basic_test_email "test_emails/test_email_2.eml" ;
+      basic_test_email "test_emails/test_email_3.eml" ;
+      basic_test_email "test_emails/test_email_4.eml" ;
+      basic_test_email "test_emails/test_email_5.eml" ;
+      basic_test_email "test_emails/test_email_6.eml" ;
+    ]
 
 let tests =
   "all tests" >:::
@@ -234,6 +249,7 @@ let tests =
       update_filename_test_1        ;
       update_both_filenames_test_0  ;
       update_both_filenames_test_1  ;
+      (* email_4_structure             ; *)
     ]
 
 let _ = run_test_tt_main tests
