@@ -208,13 +208,21 @@ let header_change_gif_config_test_0 tree =
   in
   description >:: check
 
+let parse_okay email =
+  let description = "check parse is okay" in
+  let check _     =
+    assert_bool
+      "Actually not Ok"
+      (Result.good (parse email))         in
+  description >:: check
 
 let basic_test_email fname =
   let email = readfile fname in
   "basic test suite for email: " ^ fname >:::
-    [ empty_config_test_0    (parse email) ;
-      empty_config_test_1    (parse email) ;
-      noop_gif_config_test_0 (parse email) ;
+    [ parse_okay email                                     ;
+      empty_config_test_0    (Result.get_ok (parse email)) ;
+      empty_config_test_1    (Result.get_ok (parse email)) ;
+      noop_gif_config_test_0 (Result.get_ok (parse email)) ;
     ]
 
 let email_4_structure =
@@ -222,7 +230,7 @@ let email_4_structure =
   let description = "test_email_4 structure"                in
   let check _ = assert_equal
     (Parts [Body ; Parts [Body; Parts [Body; Body]]])
-    (parsetree_to_mailtree (parse email))
+    (parsetree_to_mailtree (Result.get_ok (parse email)))
     ~printer:mailtree_to_string                             in
   description >:: check
   

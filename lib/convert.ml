@@ -3,31 +3,31 @@ open Prelude
 module type CONVERT =
 sig
   type error
-  type filepath
   type parsetree
   type htransform = string -> string
   type btransform = string -> string
-  val parse : string -> parsetree (* TODO: make output a result *)
+  val parse : string -> (parsetree, error) result
   val amap : Configuration.Formats.t -> parsetree -> (parsetree, error) result
   val acopy : Configuration.Formats.t -> parsetree -> (parsetree, error) result
   val to_string : parsetree -> string
-  val convert : filepath -> (string -> string) (* TODO: make output a result *)
+  val convert : string -> (string -> string)
   val acopy_email : (Configuration.Formats.t) -> string -> (string, error) result
 end
 
 module Conversion_ocamlnet = struct
 
   module Error = struct
-    type t = [ | `DummyError ] (* TODO: more possible error variants *)
+    type t = [
+      | `EmailParse (* TODO: More data *)
+    ]
 
     let message err =
       match err with
-      | `DummyError -> "Dummy error message"
+      | `EmailParse -> "Error parsing the given email"
   end
 
   type htransform = string -> string
   type btransform = string -> string
-  type filepath   = string
   type parsetree  = Netmime.complex_mime_message
   type error      = Error.t
 
@@ -35,12 +35,16 @@ module Conversion_ocamlnet = struct
   let parse s =
     let input = new Netchannels.input_string s in
     let ch = new Netstream.input_stream input in
-    let f ch =
-      Netmime_channels.read_mime_message
-        ~multipart_style:`Deep
-        ch
-    in
-    Netchannels.with_in_obj_channel ch f
+    try
+      let f ch =
+        Netmime_channels.read_mime_message
+          ~multipart_style:`Deep
+          ch
+      in
+      Ok (Netchannels.with_in_obj_channel ch f)
+    with _ ->
+      Error `EmailParse (* TODO: more fine-grained error handling *)
+
   (* see
      http://projects.camlcity.org/projects/dl/ocamlnet-4.1.9/doc/html-main/Netmime_tut.html
      -- I /think/ that with_in_obj_channel should close both the Netchannels and
@@ -90,8 +94,11 @@ module Conversion_ocamlnet = struct
          channel_reader)
 
   let convert script str =
-    let args = split script in
-  Unix.Proc.rw args str
+    try
+      let args = split script in
+      Unix.Proc.rw args str
+    with (Failure msg) ->
+      write stderr ("Conversion Failure: " ^ msg); str (* TODO: Better logging *)
 
   (** serialize a parsetree into a string *)
   let to_string tree =
@@ -235,7 +242,7 @@ module Conversion_ocamlnet = struct
     let rec copy_or_skip lst =
       match lst with
       | (bhd, `Body b) :: rs ->
-          let converted =
+          let converted = if is_attachment (bhd, `Body b) then
             try
               let src = bhd # field "content-type" in
               let  trans_lst = Option.default []
@@ -247,6 +254,7 @@ module Conversion_ocamlnet = struct
             with Not_found ->
               (* TODO: better logging *)
               [(bhd, `Body b)]
+          else [(bhd, `Body b)]
           in
           let* next_lst  = copy_or_skip rs in
           Ok (converted @ next_lst)
@@ -257,7 +265,7 @@ module Conversion_ocamlnet = struct
       | [] -> Ok []
     in
     match tree with
-    | _, `Body _ -> Ok tree
+    | _, `Body _ -> Ok tree (* TODO: Handle case with no body *)
     | header, `Parts p_lst ->
         let* cmp_lst = copy_or_skip p_lst in
         Ok (header, `Parts cmp_lst)
@@ -274,7 +282,7 @@ module Conversion_ocamlnet = struct
 
   let acopy_email config email =
     let  ( let* )       = Result.bind       in
-    let  tree           = parse email       in
+    let*  tree          = parse email       in
     let* converted_tree = acopy config tree in
     Ok (to_string converted_tree)
 end
@@ -343,7 +351,7 @@ module REPLTesting = struct
   (** quick access to the PDF attachment part of our example Christmas
       tree email *)
   let xmas_tree () =
-    let _, parts = parse (readfile "2843") in
+    let _, parts = Result.get_ok (parse (readfile "2843")) in
     match unparts parts with
       _ :: attached :: _ -> attached
     | _ -> assert false

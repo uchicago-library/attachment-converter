@@ -13,7 +13,7 @@ module _ : ERROR with
 
 module _ : ERROR with
   type t = [
-    | `DummyError
+    | `EmailParse
   ] = Convert.Conversion_ocamlnet.Error
 
 module Error : ERROR with

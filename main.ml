@@ -9,12 +9,13 @@
 open Prelude
 
 let report ?(params = false) () =
-  let open Lib.Report                                   in
-  let open String                                       in
-  let module SS = Set.Make(String)                      in
-  let types     = attachment_types ~params:params stdin in
+  let open Lib.Report                                  in
+  let module M =  Map.Make(String)                     in
+  let types    = attachment_types ~params:params stdin in
   print "Attachment Types:";
-  SS.iter (prepend "  " >> print) types
+  M.iter
+    (fun k v -> print ("  " ^ k ^ " : " ^ (Int.to_string v)))
+    types
 
 let default_config_name = ".default-config"
 
