@@ -36,7 +36,8 @@ lib/application.pdf
 /sample.txt
 /party.b64
 /lib/*utop*
-/2843*
+2843*
 /notes.org
 *.pdf
 /utop.out
+/tests/test_emails

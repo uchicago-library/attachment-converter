@@ -10,7 +10,7 @@
  (synopsis "does something")
  (description "cf. synopsis")
  (depends
-  (ocaml (= 4.12.0))
+  (ocaml (>= 4.12.0))
   dune
   prelude
   ocamlbuild
@@ -20,4 +20,5 @@
   (qtest :dev)
   (utop :dev)
   (ocamlformat :dev)
+  (ocp-index :dev)
   (merlin :dev)))

@@ -80,14 +80,14 @@ let wf_trans_data_correct =
     "entry with source = target converts to transform_data"
     "application/pdf"
     "soffice-to-pdfa.sh"
-    DataOnly
+    DataAndHeader
 
 let extra_trans_data_correct =
   check_trans_data (Result.get_ok (entry_of_assoc extra))
     "entry with source = target converts to transform_data"
     "application/pdf"
     "soffice-to-pdfa.sh"
-    DataOnly
+    DataAndHeader
 
 let t_neq_s =
   [ ("source_type"  , "a") ;
@@ -105,20 +105,24 @@ let t_neq_s_trans_data_correct =
 let wf_cs =
 "%source_type a
 %target_type b
+%target_extension q
 %shell_command c d e
 
 %source_type f
 %target_type g
+%target_extension q
 %shell_command h"
 
 let extra_cs =
 "%source_type a
 %target_type b
+%target_extension q
 %shell_command c d e
 %test test
 
 %source_type f
 %target_type g
+%target_extension q
 %shell_command h
 %test test"
 
@@ -136,12 +140,14 @@ let missing_cs_to_data_error = check_error parse_config_str "parse_config_str" m
 
 let e1 =
   { target_type   = "b"           ;
+    target_ext    = "q"           ;
     shell_command = "c d e"       ;
     variety       = DataAndHeader ;
   }
 
 let e2 =
   { target_type   = "g"           ;
+    target_ext    = "q"           ;
     shell_command = "h"           ;
     variety       = DataAndHeader ;
   }
@@ -164,8 +170,7 @@ let check_error result error =
 let missing_cs_error_msg =
   check_error
     (parse_config_str missing_cs)
-    (`ConfigData
-      "Entry starting at Line 1, Config File Error: no script path given")
+    (`ConfigData (1, ShellCommand))
 
 let bad_refer_cs =
 "%source_type a
@@ -181,16 +186,17 @@ not a real line
 let bad_refer_cs_msg =
   check_error
     (parse_config_str bad_refer_cs)
-      (`ReferParse
-        "Line 5, Refer Parse Error: Cannot parse 'not a real line'")
+      (`ReferParse (5, "not a real line"))
 
 let double_entry_cs =
 "%source_type a
 %target_type b
+%target_extension q
 %shell_command c d e
 
 %source_type a
 %target_type g
+%target_extension q
 %shell_command h"
 
 let check_double_entry_cs =

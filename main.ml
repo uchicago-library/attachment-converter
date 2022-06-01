@@ -8,45 +8,47 @@
 
 open Prelude
 
-let report ?(params = false) () =
-  let open Lib.Report                                   in
-  let open String                                       in
-  let module SS = Set.Make(String)                      in
-  let types     = attachment_types ~params:params stdin in
-  print "Attachment Types:";
-  SS.iter (prepend "  " >> print) types;
-  Ok ()
+let report ?(params=false) () =
+  let open Lib.Report                                  in
+  let module M =  Map.Make(String)                     in
+  let types    = content_types ~params:params stdin    in
+  print "Content Types:";
+  M.iter
+    (fun k v -> print ("  " ^ k ^ " : " ^ (Int.to_string v)))
+    types
 
-let default_config () =
-  Lib.Configuration.ParseConfig.parse_config_file
-    ".default-config"
+let default_config_name = ".config"
 
-let convert_email () =
-  let open Lib.Conversion_ocamlnet                        in
-  let  ( let* )  = Result.(>>=)                           in
-  let* config    = default_config ()                      in
-  let* converted = full_convert_email config (read stdin) in
-  Ok (write stdout converted)
-
-let convert_mbox () =
-  let open Lib.Conversion_ocamlnet  in
-  let  ( let* ) = Result.(>>=)      in
-  let* config   = default_config () in
-  acopy_mbox config
+let convert ?(single_email=false) () =
+  let open Lib.Convert.Conversion_ocamlnet in
+  let open Lib.Configuration.ParseConfig   in
+  let open Lib.ErrorHandling               in
+  if   Sys.file_exists default_config_name
+  then let converted =
+         let  ( let* ) = Result.(>>=)                                     in
+         let  input    = read stdin                                       in
+         let* config   = parse_config_file default_config_name            in
+         let  conv     = if single_email then acopy_email else acopy_mbox in
+         if conv config input
+       in
+       match converted with
+       | Error err    -> print (Error.message err)
+       | Ok converted -> write stdout converted
+  else
+    write
+      stderr
+      (Printf.sprintf
+        "Error: missing config file '%s'\n"
+        default_config_name)
 
 (* A _very_ minimal executable *)
 let main = if   Array.length Sys.argv > 1
            then match Sys.argv.(1) with
-                | "--report"        -> report              ()
-                | "--report-params" -> report ~params:true ()
-                | "--single-email"  -> convert_email       ()
-                | unknown_flag      -> Error (`UnknownFlag unknown_flag)
-           else convert_mbox ()
-
-let print_error =
-  match main with
-  | Error err -> write stderr (Lib.Error.message err)
-  | _ -> ()
+                | "--report"        -> report                     ()
+                | "--report-params" -> report ~params:true        ()
+                | "--single-email"  -> convert ~single_email=true ()
+                | unknown_flag      -> write stderr ("unknown flag: " ^ Sys.argv(1))
+           else convert ()
 
 (*
  * Copyright (c) 2021 Matt Teichman
