@@ -34,16 +34,16 @@ module Conversion_ocamlnet = struct
   (** parse email string into a parse tree *)
   let parse s =
     let input = new Netchannels.input_string s in
-    let ch = new Netstream.input_stream input in
-    try
-      let f ch =
-        Netmime_channels.read_mime_message
-          ~multipart_style:`Deep
-          ch
-      in
-      Ok (Netchannels.with_in_obj_channel ch f)
-    with _ ->
-      Error `EmailParse (* TODO: more fine-grained error handling *)
+    let ch = new Netstream.input_stream input  in
+    let f ch =
+      Netmime_channels.read_mime_message
+        ~multipart_style:`Deep
+        ch                                     in
+    (* TODO: more fine-grained error handling *)
+    Result.trapc
+      `EmailParse
+      (Netchannels.with_in_obj_channel ch)
+      f
 
   (* see
      http://projects.camlcity.org/projects/dl/ocamlnet-4.1.9/doc/html-main/Netmime_tut.html
@@ -94,11 +94,12 @@ module Conversion_ocamlnet = struct
          channel_reader)
 
   let convert script str =
-    try
-      let args = split script in
-      Unix.Proc.rw args str
-    with (Failure msg) ->
-      write stderr ("Conversion Failure: " ^ msg); str (* TODO: Better logging *)
+    let args = split script in
+    match Unix.Proc.rw args str with
+    | exception (Failure msg) ->
+        write stderr ("Conversion Failure: " ^ msg); str (* TODO: Better logging *)
+    | exception e -> raise e
+    | converted -> converted
 
   (** serialize a parsetree into a string *)
   let to_string tree =
@@ -219,14 +220,13 @@ module Conversion_ocamlnet = struct
       let ct     = ("Content-Type", trans_entry.target_type) in
       let cte    = ("Content-Transfer-Encoding", "base64")   in
       let fields =
-        try
-          let dis         = hd # field "content-disposition"   in
-          let ext         = trans_entry.target_ext             in
-          let updated_dis = update_both_filenames ~ext:ext dis in
-          [ct; cte; ("Content-Disposition", updated_dis)]
-        with Not_found ->
-          (* TODO: Better error handling *)
-          [ct; cte]                                          in
+        match hd # field "content-disposition" with
+        | exception Not_found -> [ct; cte]
+        | exception e         -> raise e   (*TODO: Better logging and error handling *)
+        | dis                 ->
+            let ext         = trans_entry.target_ext             in
+            let updated_dis = update_both_filenames ~ext:ext dis in
+            [ct; cte; ("Content-Disposition", updated_dis)]  in
       basic_mime_header fields                             in
     match trans_entry.variety with
     | NoChange      -> hd,      `Body bd
