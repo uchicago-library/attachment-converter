@@ -1,13 +1,11 @@
-(*
-  2022-04-06, Yoinked by Nathan Mull verbatim, including header
- *)
-
 (** {1 Mbox parser ({i Xavier Leroy})}
 
   Snarfed from: <{{:http://cristal.inria.fr/~xleroy/software.html#spamoracle}http://cristal.inria.fr/~xleroy/software.html#spamoracle}>
 
   Hacked by KW 2010-05-13 <{{:http://www.lib.uchicago.edu/keith/}http://www.lib.uchicago.edu/keith/}>
     - added map and fold functionals
+
+  Borrowed by Nathan Mull 2022-04-06 for Attachment Converter
 
   @author Xavier Leroy, projet Cristal, INRIA Rocquencourt
  *)
