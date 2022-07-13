@@ -27,102 +27,86 @@
 
 open Prelude
 
-module type ITERATOR =
-  sig
-    type s
-    type t
-    type o
-    val  opens : s -> t
-    val  close : t -> unit
-    val  next  : t -> o
-    exception End_of_input
-  end
-
-module type LOG =
-  sig
-    type s
-    type t
-    type i
-    type o
-    val opens : s -> t
-    val close : t -> unit
-    val write : t -> i -> unit
-    val value : t -> o
-  end
-
-module StringLog : LOG
-  with type s = unit
-  with type i = string
-  with type o = string
-  = struct
-  type s = unit
-  type t = { mutable curr : string }
-  type i = string
-  type o = string
-
-  let opens () = { curr = "" }
-  let close _  = ()
-  let write t str = t.curr <- t.curr ^ str
-  let value t = t.curr
+module type OUTPUT =
+sig
+  type s
+  type t
+  type o
+  val create: s -> t
+  val write: t -> string -> unit
+  val value: t -> o
 end
 
-module StdOutLog : LOG = struct
-  type s = unit
-  type t = unit
-  type i = string
+module ChannelOutput
+  : OUTPUT
+  with type s = out_channel
+  with type o = unit
+  = struct
+  type s = out_channel
+  type t = out_channel
   type o = unit
 
-  let opens () = ()
-  let close _  = ()
-  let write _  = print
-  let value _  = ()
+  let create chan = chan
+  let write chan str = Prelude.write chan str
+  let value _ = ()
 end
 
-module FileIterator : ITERATOR
-  with type s = string
+module StringOutput
+  : OUTPUT
+  with type s = unit
   with type o = string
   = struct
-  type s = string (* filename *)
-  type t = { zipped : bool       ;
-             ic     : in_channel ;
-           }
+  type s = unit
+  type t = { mutable out : string }
   type o = string
 
-  let opens filename =
-    if   Filename.check_suffix filename ".gz"
-    then { ic     = Unix.open_process_in ("gunzip -c " ^filename) ;
-           zipped = true                                          ;
-         }
-    else { ic     = open_in filename                              ;
-           zipped = false                                         ;
-         }
+  let create () = { out = "" }
+  let write t str = t.out <- t.out ^ str
+  let value t = t.out
+end
 
-  let close t =
-    if   t.zipped
-    then ignore(Unix.close_process_in t.ic)
-    else close_in t.ic
+module type INPUT =
+sig
+  type s
+  type t
+  type o
+  val create: s -> t
+  val next: t -> o
+  exception End_of_input
+end
+
+module ChannelInput
+  : INPUT
+  with type s = in_channel
+  with type o = string
+  = struct
+  type s = in_channel
+  type t = in_channel
+  type o = string
 
   exception End_of_input
 
-  let next t =
+  let create chan = chan
+
+  let next chan =
     try
-      input_line t.ic
+      readline chan
     with End_of_file ->
       raise End_of_input
 end
 
-module LineIterator : ITERATOR
+module StringInput
+  : INPUT
   with type s = string
   with type o = string
   = struct
-  type s = string (* mbox body *)
+  type s = string
   type t = { mutable lines : string list }
   type o = string
 
-  let opens s = { lines = String.split ~sep:"\n" s }
-  let close _ = ()
-
   exception End_of_input
+
+  let create s = { lines = String.split ~sep:"\n" s }
 
   let next t =
     try
@@ -134,69 +118,48 @@ module LineIterator : ITERATOR
       raise End_of_input
 end
 
-module StdInIterator : ITERATOR
-  with type s = unit
-  with type o = string
-  = struct
-  type s = unit
-  type t = unit
-  type o = string
-
-  let opens () = ()
-  let close () = ()
-
-  exception End_of_input
-
-  let next () =
-    try
-      read_line ()
-    with End_of_file ->
-      raise End_of_input
-end
-
 module MBoxIterator
-  ( L : ITERATOR with type o = string )
-  : ITERATOR
-  with type s = L.s
+  (I: INPUT with type o = string)
+  : INPUT
+  with type s = I.s
   with type o = string * string
   = struct
-  type s = L.s
-  type t = { input         : L.t      ;
-             mutable start : string   ;
-             buf           : Buffer.t ;
-           }
+  type s = I.s
+  type t =
+    { input : I.t ;
+      mutable start: string ;
+      buf : Buffer.t ;
+    }
   type o = string * string
 
-  let opens s = { input = L.opens s           ;
-                  start = ""                  ;
-                  buf   = Buffer.create 50000 ;
-                }
-
-  let close t = L.close t.input
+  let create s =
+    { input = I.create s ;
+      start = "" ;
+      buf = Buffer.create 50000 ;
+    }
 
   exception End_of_input
 
   let next t =
     Buffer.clear t.buf;
     let rec read () =
-      let line = L.next t.input in
-      if   String.length line >= 5
-           && String.sub line 0 5 = "From "
-      then let fromline = t.start in begin
-             t.start <- line;
-             if   Buffer.length t.buf > 0
-             then (fromline, Buffer.contents t.buf)
-             else read ()
-           end
-      else begin
-             Buffer.add_string t.buf line;
-             Buffer.add_char t.buf '\n';
-             read ()
-           end
+      let line = I.next t.input in
+        if   String.length line >= 5 && String.sub line 0 5 = "From "
+        then let fromline = t.start in begin
+               t.start <- line;
+               if   Buffer.length t.buf > 0
+               then (fromline, Buffer.contents t.buf)
+               else read ()
+             end
+        else begin
+               Buffer.add_string t.buf line;
+               Buffer.add_char t.buf '\n';
+               read ()
+             end
     in
     try
       read ()
-    with L.End_of_input ->
+    with I.End_of_input ->
       if   Buffer.length t.buf > 0
       then let from_line = t.start in begin
            t.start <- "";
@@ -205,28 +168,19 @@ module MBoxIterator
       else raise End_of_input
 end
 
-module IteratorFunctions (I : ITERATOR) (L : LOG) = struct
-
-  include I
-
-  let iter s fn =
-    let t = I.opens s in
-      try
-        while true do fn (I.next t) done
-      with I.End_of_input ->
-        I.close t
-
-  let convert s log_s fn =
-    let t   = I.opens s in
-    let log = L.opens log_s in
+module Conversion (I: INPUT) (O: OUTPUT) = struct
+  let convert si so converter =
+    let iterator = I.create si in
+    let output   = O.create so in
     let rec loop () =
-      match try Some (fn (I.next t)) with I.End_of_input -> None with
-      | Some converted -> L.write log converted; loop ()
+      match try Some (converter (I.next iterator)) with I.End_of_input -> None with
+      | Some converted -> O.write output converted; loop () (* TODO: Better output/logging *)
       | None -> ()
-    in begin
+    in
       loop ();
-      I.close t;
-      L.close log;
-      L.value log;
-    end
+      O.value output
 end
+
+let convert_mbox in_chan converter =
+  let open Conversion(MBoxIterator(ChannelInput))(ChannelOutput) in
+  convert in_chan stdout converter

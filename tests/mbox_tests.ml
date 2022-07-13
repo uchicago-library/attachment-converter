@@ -9,12 +9,11 @@ line 3"
 
 let line_iterator_test_1 =
   let description = "Check multiple lines of line iterator"   in
-  let module L    = LineIterator                              in
-  let l           = L.opens test_lines                        in
+  let module L    = StringInput                               in
+  let l           = L.create test_lines                       in
   let line_1      = L.next  l                                 in
   let line_2      = L.next  l                                 in
   let line_3      = L.next  l                                 in
-  let _           = L.close l                                 in
   let check_1 _   = assert_equal "line 1" line_1 ~printer:id  in
   let check_2 _   = assert_equal "line 2" line_2 ~printer:id  in
   let check_3 _   = assert_equal "line 3" line_3 ~printer:id  in
@@ -50,9 +49,10 @@ let to_mbox_test_1 =
   let check _     = assert_equal (dummy_mbox_expected ^ "\n") dummy_mbox in
   description >:: check
 
+
 let to_mbox_test_2 =
   let description = "test_email to_mbox test" in
-  let email = readfile "test_email" in
+  let email = "THIS IS A DUMMY EMAIL" in
   let mbox = to_mbox [email ; email] in
   let check _ =
     assert_equal
@@ -60,15 +60,13 @@ let to_mbox_test_2 =
       (String.trim "\n" mbox) ~printer:id in
   description >:: check
 
-
 let mbox_iter_test_1 =
   let description = "basic mbox iterator test"                in
-  let module T    = MBoxIterator (LineIterator)               in
-  let t           = T.opens dummy_mbox_expected               in
-  let (f1, m1)    = T.next  t                                 in
-  let (f2, m2)    = T.next  t                                 in
-  let (f3, m3)    = T.next  t                                 in
-  let _           = T.close t                                 in
+  let module T    = MBoxIterator (StringInput)                in
+  let t           = T.create dummy_mbox_expected              in
+  let (f1, m1)    = T.next t                                  in
+  let (f2, m2)    = T.next t                                  in
+  let (f3, m3)    = T.next t                                  in
   let checkf1 _   = assert_equal "From BLAH" f1 ~printer:id   in
   let checkf2 _   = assert_equal "From BLAH" f2 ~printer:id   in
   let checkf3 _   = assert_equal "From BLAH" f3 ~printer:id   in
@@ -84,10 +82,11 @@ let mbox_iter_test_1 =
         "email check"    >:: checkm3 ;
       ]
 
+
 let basic_convert_test f expected description =
-  let module T = IteratorFunctions (MBoxIterator (LineIterator)) (StringLog) in
-  let output   = T.convert dummy_mbox_expected () f                          in
-  let check _ = assert_equal expected output ~printer:id                     in
+  let module T = Conversion (MBoxIterator(StringInput)) (StringOutput) in
+  let output   = T.convert dummy_mbox_expected () f                    in
+  let check _ = assert_equal expected output ~printer:id               in
     description >:: check
 
 let convert_test_1 =
@@ -100,7 +99,7 @@ let convert_test_2 =
 
 let convert_test_3 =
   let description = "read in file and apply identity conversion" in
-  let module T = IteratorFunctions (MBoxIterator (LineIterator)) (StringLog) in
+  let module T = Conversion (MBoxIterator (StringInput)) (StringOutput) in
   let email = "testing\ntesting" in
   let mbox = to_mbox [email; email] in
   let output = T.convert mbox () (fun (x, y) -> x ^ "\n" ^ y) in
@@ -118,3 +117,4 @@ let tests = "test suite for mbox conversion" >:::
   ]
 
 let _ = run_test_tt_main tests
+
