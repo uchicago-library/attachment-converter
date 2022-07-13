@@ -288,10 +288,10 @@ module Conversion_ocamlnet = struct
     Ok (to_string converted_tree)
 
   let acopy_mbox config in_chan =
-    let converter (_, em) =
+    let converter (fromline, em) =
       match acopy_email config em with
-      | Ok converted -> converted
-      | Error _ -> write stderr "Conversion failure"; em (* TODO: better logging *)
+      | Ok converted -> fromline ^ "\n" ^ converted
+      | Error _ -> write stderr "Conversion failure\n"; fromline ^ "\n" ^ em (* TODO: better logging *)
     in
       Ok (Mbox.convert_mbox in_chan converter)
 end
@@ -305,7 +305,7 @@ module REPLTesting = struct
 
   include Conversion_ocamlnet
 
-  let unparts_opt = function 
+  let unparts_opt = function
     | Ok (_, `Parts lst) -> lst
     | _ -> assert false
 
