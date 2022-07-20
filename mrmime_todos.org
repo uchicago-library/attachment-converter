@@ -1,0 +1,94 @@
+#+TITLE: Digital Archives: Email Attachment Converter
+#+begin_quote
+Archivists collect rare objects that are known to be of historical significance,
+or that they have good reason to think will be significant to future historians,
+scholars, and scientists. But today, an increasing proportion of the items
+coming into our archives are digital---they could be text documents, images,
+source code, executable software, or any kind of data. Dealing with digital
+collections presents a host of new challenges, given that we have to preserve
+not only the data, but also the means of decoding it in the intended way, as
+well as a medium on which to store it without loss of information. Digital
+formats come in and out of use, and it can often take a mere decade for old
+storage media or old file formats to be entirely unreadable with present-day
+technology.
+#+end_quote
+
+See: https://practicum.cs.uchicago.edu/2021/winter/projects/231
+* Status:
+This project is still very much a work in progress.
+** (DONE) Parse an input email file
+We use the [[https://github.com/mirage/mrmime][Mr. Mime]] ocaml library to parse our input, leaving us with a tree
+like the following:
+#+begin_example ocaml
+...
+    Mrmime.Mail.Multipart
+     {Mrmime.Mail.header = <abstr>;
+      body =
+       [Some
+         (Mrmime.Mail.Leaf
+           {Mrmime.Mail.header = <abstr>;
+            body =
+             "Dr. [REDACTED],\r\n\n\r\n\nI hope you are doing well and ... "});
+        Some
+         (Mrmime.Mail.Leaf
+           {Mrmime.Mail.header = <abstr>;
+            body =
+             "JVBERi0xLjQNJeLjz9MNCjM3IDAgb2JqDTw8IA0vTGluZWFyaXplZCA ..."});
+        Some
+         (Mrmime.Mail.Leaf
+           {Mrmime.Mail.header = <abstr>;
+            body =
+             "JVBERi0xLjQNJeLjz9MNCjMwIDAgb2JqDTw8IA0vTGluZWFyaXplZCA ..."});
+        Some
+         (Mrmime.Mail.Leaf
+           {Mrmime.Mail.header = <abstr>;
+            body =
+             "JVBERi0xLjQNJeLjz9MNCjI4OCAwIG9iag08PCANL0xpbmVhcml6ZWQ .."})]})
+#+end_example
+** (~DONE) extract attachment info from tree
+Some pieces of information has proven easier to extract from the MrMime
+representation than others -- for instance, we can pick out /which/ leaves are
+attachments as well as their MIME type (e.g. ~application/pdf~), but finding
+something like the original name of those attachments is currently beyond us
+(fortunately, what we have should be enough).
+
+** (DONE) Decode attachments
+We can take a parsed piece of mail (i.e. a ~MrMime.Mail.t~) and decode the
+contents of any attachment-bearing leaves from their base64 representation
+to a stream or file.
+
+** (TODO) Invoke external conversion utility
+:PROPERTIES:
+:ID:       da044ce5-b84e-4c43-a6ff-0b5da9d721ff
+:END:
+We do not yet attempt to convert the attachments programmatically, but this is a
+good next step. It should be fairly straightforward (famous last words) to
+invoke something like [[https://pandoc.org][pandoc]] or the [[https://www.libreoffice.org/][libreoffice CLI]] on the decoded leaf
+contents.
+
+** (~DONE) re-encode file/stream as attachments
+Mirroring what we've implemented to decode a base64-encoded attachment
+(which appears as the body of a ~MrMime.Mail.Leaf~) we have functionality to
+convert the stream back to base64, (which appears as the body of a new leaf,
+at the same depth as the original).
+
+** (TODO) Write contents of mail tree to new MIME file or stream
+This is harder than it sounds, especially considering how easy it was to do the
+reverse. Currently pending advice/inspiration from one of the people responsible
+for the otherwise lovely MrMime library.
+
+** (TODO) Command line interface
+This project is eventually going to be used as a standalone command line
+utility. The final implementation ought to be configurable enough for users to
+specify /how/ they'd like the various attachments to be converted, e.g. a config
+file associating a MIME type like ~application/pdf~ or ~application/msword~ with the appropriate
+external command line invocation.
+
+** (TODO) Batch processing
+Finally, the eventual program ought to be able to process pieces of mail in
+batch, so that (once properly configured) it only needs to be invoked once on an
+entire inbox.
+
+
+
+
