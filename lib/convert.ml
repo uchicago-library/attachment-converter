@@ -126,7 +126,8 @@ module Conversion_ocamlnet = struct
     let header, _ = tree in
     let s = try header # field "content-disposition"
       with Not_found -> ""
-    in Strings.prefix "attachment" (String.lowercase_ascii s)
+    in Strings.prefix "attachment" (String.lowercase_ascii s) ||
+       Strings.prefix "inline" (String.lowercase_ascii s)
 
   (** updates the MIME type in a header string *)
   let update_mimetype oldtype newtype hstr =
@@ -221,6 +222,7 @@ module Conversion_ocamlnet = struct
       let fields =
         try
           let dis         = hd # field "content-disposition"   in
+          let dis         = "attachment" ^ (Strings.dropwhile (not << (String.contains ";")) dis) in
           let ext         = trans_entry.target_ext             in
           let updated_dis = update_both_filenames ~ext:ext dis in
           [ct; cte; ("Content-Disposition", updated_dis)]
@@ -245,9 +247,9 @@ module Conversion_ocamlnet = struct
       | (bhd, `Body b) :: rs ->
           let converted = if is_attachment (bhd, `Body b) then
             try
-              let src = bhd # field "content-type" in
-              let  trans_lst = Option.default []
-                                 (Configuration.Formats.Dict.find_opt src dict)
+              let src = Strings.takewhile (not << String.contains ";") (bhd # field "content-type") in
+              let trans_lst = Option.default []
+                                (Configuration.Formats.Dict.find_opt src dict)
               in
               if   copy || empty trans_lst
               then (List.map (transform bhd b) trans_lst) @ [(bhd, `Body b)]

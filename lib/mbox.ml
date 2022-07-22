@@ -182,5 +182,5 @@ module Conversion (I: INPUT) (O: OUTPUT) = struct
 end
 
 let convert_mbox in_chan converter =
-  let open Conversion(MBoxIterator(ChannelInput))(ChannelOutput) in
+  let open Conversion (MBoxIterator (ChannelInput)) (ChannelOutput) in
   convert in_chan stdout converter
