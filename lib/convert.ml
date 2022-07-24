@@ -211,6 +211,46 @@ module Conversion_ocamlnet = struct
     update_filename ~ext:ext ~tstamped:tstamped ~star:false
     << update_filename ~ext:ext ~tstamped:tstamped ~star:true
 
+  module SemiColonSep = struct
+    let rec split_on_sep lst sep =
+      match lst with
+      | [] -> ([], [])
+      | x :: xs ->
+        if prefix sep lst then
+          ([], drop (length sep) lst)
+        else
+          let (left, right) = split_on_sep xs sep in
+            (x :: left, right)
+
+    let opt_split_on_sep lst sep =
+      let (left, right) = split_on_sep lst sep in
+        match right with
+        | [] -> None
+        | _  -> Some (left, right)
+
+    let opt_split_on_sep_str str sep =
+      let open String in
+      match opt_split_on_sep (explode str) (explode sep) with
+      | None -> None
+      | Some (left, right) -> Some (implode left, implode right)
+
+    let parse_eq_sep str =
+      match opt_split_on_sep_str str "*=" with
+      | None -> opt_split_on_sep_str str "="
+      | out -> out
+
+    let parse str =
+      let vs = split ~sep:";\t" str in
+      let ps = List.map parse_eq_sep vs in
+      let rec red ls =
+        match ls with
+        | [] -> Some []
+        | None :: _ -> None
+        | Some p :: rest -> Option.map (fun xs -> p :: xs) (red rest)
+      in
+        red ps
+  end
+
   let transform hd bd trans_entry =
     let open Netmime                                       in
     let open Configuration.Formats                         in
