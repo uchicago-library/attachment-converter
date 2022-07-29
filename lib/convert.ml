@@ -219,7 +219,7 @@ module Conversion_ocamlnet = struct
     }
 
     type value = {
-      first: string;
+      head: string;
       params: parameter list;
     }
 
@@ -248,28 +248,14 @@ module Conversion_ocamlnet = struct
     let parse_eq_sep str =
       let ( let* ) = Option.(>>=) in
       let* (attr, value) = opt_split_on_sep_str str "=" in
-      
-      let star_eq =
-        let* (attr, value) = opt_split_on_sep_str str "*=" in
-          Some {
-            attr = attr;
-            value = value;
-            star = true;
-          }
-      in
-        match star_eq with
-        | None ->
-            let* (attr, value) = opt_split_on_sep_str str "=" in
-              Some {
-                attr = attr;
-                value = value;
-                star = false;
-              }
-        | out -> out
+      Some {
+        attr = attr;
+        value = value;
+      }
 
     let parse str =
       let open String in
-      let vs = split ~sep:";\n\t" str in
+      let vs = split ~sep:";" str in
       let vs = List.map (trim whitespace) vs in (* not sure if trimming is necessary or should be done *)
       let rec red ls =
         match ls with
@@ -279,21 +265,20 @@ module Conversion_ocamlnet = struct
       in
         match vs with
         | [] -> None
-        | first :: params ->
+        | head :: params ->
             match red (List.map parse_eq_sep params) with
             | None -> None
             | Some params ->
                 Some {
-                  first = first;
+                  head = head;
                   params = params;
                 }
 
-      let param_to_string param =
-        param.attr ^ (if param.star then "*=" else "=") ^ param.value
-
-      let to_string { first; params } =
-        let f curr next = curr ^ ";\n\t" ^ param_to_string next in
-          first ^ ";\n\t" ^ List.foldl f "" params
+      let to_string { head ; params } =
+        let f curr { attr; value } = curr ^ ";\n\t" ^ attr ^ "=" ^ value in
+          match params with
+          | [] -> head ^ ";"
+          | _  -> List.foldl f head params
 
       let lookup_param attr hv =
         let rec lookup attr ls =
@@ -306,6 +291,9 @@ module Conversion_ocamlnet = struct
                 lookup attr ps
         in
           lookup attr hv.params
+
+      let update_head new_head hv =
+        { hv with head = new_head }
 
       let update_param attr new_val hv =
         let rec update attr new_val ls =
