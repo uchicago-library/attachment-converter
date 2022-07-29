@@ -121,14 +121,6 @@ module Conversion_ocamlnet = struct
       channel_writer ;
     Stdlib.Buffer.contents buf
 
-  (** predicate for email parts that are attachments *)
-  let is_attachment tree =
-    let header, _ = tree in
-    let s = try header # field "content-disposition"
-      with Not_found -> ""
-    in Strings.prefix "attachment" (String.lowercase_ascii s) ||
-       Strings.prefix "inline" (String.lowercase_ascii s)
-
   (** updates the MIME type in a header string *)
   let update_mimetype oldtype newtype hstr =
     let open String in
@@ -216,6 +208,7 @@ module Conversion_ocamlnet = struct
     type parameter = {
       attr: string;
       value: string;
+      quoted: bool;
     }
 
     type value = {
@@ -245,13 +238,22 @@ module Conversion_ocamlnet = struct
       | None -> None
       | Some (left, right) -> Some (implode left, implode right)
 
+    let is_quoted str = String.prefix "\"" str && String.suffix "\"" str
+    let unquoted str = String.trim "\"" str
+
     let parse_eq_sep str =
       let ( let* ) = Option.(>>=) in
       let* (attr, value) = opt_split_on_sep_str str "=" in
-      Some {
-        attr = attr;
-        value = value;
-      }
+        Some (if is_quoted value then
+          { attr = attr;
+            value = unquoted value;
+            quoted = true;
+          }
+        else
+          { attr = attr;
+            value = value;
+            quoted = false;
+          })
 
     let parse str =
       let open String in
@@ -274,8 +276,15 @@ module Conversion_ocamlnet = struct
                   params = params;
                 }
 
+      let unsafe_parse = Option.get << parse
+
       let to_string { head ; params } =
-        let f curr { attr; value } = curr ^ ";\n\t" ^ attr ^ "=" ^ value in
+        let f curr { attr; value ; quoted } =
+            curr ^
+            ";\n\t" ^
+            attr ^ "=" ^
+            (if quoted then "\"" ^ value ^ "\"" else value)
+        in
           match params with
           | [] -> head ^ ";"
           | _  -> List.foldl f head params
@@ -306,30 +315,64 @@ module Conversion_ocamlnet = struct
                 p :: update attr new_val ps
         in
           { hv with params = update attr new_val hv.params }
+
+      let map_param attr f hv =
+        match (lookup_param attr hv) with
+        | None -> hv
+        | Some value -> update_param attr (f value) hv
   end
 
+  (** predicate for email parts that are attachments *)
+  let is_attachment tree =
+    let header, _ = tree in
+    let s =
+      try
+        String.lowercase_ascii
+          (HeaderValue.unsafe_parse (header # field "content-disposition")).head
+      with Not_found -> ""
+    in s = "attachment" || s = "inline"
+
+  let renamed_file id new_ext filename =
+    let base = Filename.remove_extension filename in
+    String.concat ""
+      [ base ;
+        "_CONVERTED" ;
+        id;
+        new_ext ;
+      ]
+
   let transform hd bd trans_entry =
-    let open Netmime                                       in
-    let open Configuration.Formats                         in
-    let data      = bd # value                             in
+    let open Netmime in
+    let open Configuration.Formats in
+    let open HeaderValue in
+    let data = bd # value in
     let conv_data = convert trans_entry.shell_command data in
-    let conv_hd   =
-      let ct     = ("Content-Type", trans_entry.target_type) in
-      let cte    = ("Content-Transfer-Encoding", "base64")   in
+    let new_ext = trans_entry.target_ext in
+    let ts = timestamp () in
+    let conv_hd =
+      let ct =
+        ("Content-Type",
+          (unsafe_parse >>
+          (update_head trans_entry.target_type) >>
+          (map_param "name" (renamed_file ts new_ext)) >>
+          to_string) (hd # field "content-type")) in
+      let cte = ("Content-Transfer-Encoding", "base64") in
       let fields =
         try
-          let dis         = hd # field "content-disposition"   in
-          let dis         = "attachment" ^ (Strings.dropwhile (not << (String.contains ";")) dis) in
-          let ext         = trans_entry.target_ext             in
-          let updated_dis = update_both_filenames ~ext:ext dis in
-          [ct; cte; ("Content-Disposition", updated_dis)]
+          let updated_dis =
+            (unsafe_parse >>
+            update_head "attachment" >>
+            map_param "filename" (renamed_file ts new_ext) >>
+            map_param "filename*" (renamed_file ts new_ext) >>
+            to_string) (hd # field "content-disposition") in
+          [ct; cte; ("Content-Disposition", updated_dis)] (* TODO: Other header fields? *)
         with Not_found ->
           (* TODO: Better error handling *)
-          [ct; cte]                                          in
-      basic_mime_header fields                             in
+          [ct; cte] in
+        basic_mime_header fields in
     match trans_entry.variety with
-    | NoChange      -> hd,      `Body bd
-    | DataOnly      -> hd,      `Body (memory_mime_body conv_data)
+    | NoChange -> hd, `Body bd
+    | DataOnly -> hd, `Body (memory_mime_body conv_data)
     | DataAndHeader -> conv_hd, `Body (memory_mime_body conv_data)
 
     (* Notes: Content-Disposition headers provide information about how
@@ -344,7 +387,7 @@ module Conversion_ocamlnet = struct
       | (bhd, `Body b) :: rs ->
           let converted = if is_attachment (bhd, `Body b) then
             try
-              let src = Strings.takewhile (not << String.contains ";") (bhd # field "content-type") in
+              let src = (HeaderValue.unsafe_parse (bhd # field "content-type")).head in
               let trans_lst = Option.default []
                                 (Configuration.Formats.Dict.find_opt src dict)
               in
