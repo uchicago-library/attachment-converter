@@ -4,14 +4,13 @@ module type CONVERT =
 sig
   type error
   type parsetree
-  type htransform = string -> string
-  type btransform = string -> string
+  val convert : string -> (string -> string)
   val parse : string -> (parsetree, error) result
   val amap : Configuration.Formats.t -> parsetree -> (parsetree, error) result
   val acopy : Configuration.Formats.t -> parsetree -> (parsetree, error) result
   val to_string : parsetree -> string
-  val convert : string -> (string -> string)
-  val acopy_email : (Configuration.Formats.t) -> string -> (string, error) result
+  val acopy_email : Configuration.Formats.t -> string -> (string, error) result
+  val acopy_mbox : Configuration.Formats.t -> in_channel -> (unit, error) result
 end
 
 module Conversion_ocamlnet = struct
@@ -26,10 +25,15 @@ module Conversion_ocamlnet = struct
       | `EmailParse -> "Error parsing the given email"
   end
 
-  type htransform = string -> string
-  type btransform = string -> string
   type parsetree  = Netmime.complex_mime_message
   type error      = Error.t
+
+  let convert script str =
+    try
+      let args = split script in
+      Unix.Proc.rw args str
+    with (Failure msg) ->
+      write stderr ("Conversion Failure: " ^ msg); str (* TODO: Better logging *)
 
   (** parse email string into a parse tree *)
   let parse s =
@@ -93,13 +97,6 @@ module Conversion_ocamlnet = struct
          (new Netchannels.input_string s)
          channel_reader)
 
-  let convert script str =
-    try
-      let args = split script in
-      Unix.Proc.rw args str
-    with (Failure msg) ->
-      write stderr ("Conversion Failure: " ^ msg); str (* TODO: Better logging *)
-
   (** serialize a parsetree into a string *)
   let to_string tree =
     let (header, _) = tree in
@@ -133,82 +130,12 @@ module Conversion_ocamlnet = struct
           header_to_string hdr)
     else hstr
 
-  let equals_sign star = if star
-                         then "*="
-                         else "="
-
-  let timestamp () =
-    Unix.time ()
-      |> string_of_float
-      |> fun x -> String.(sub x 0 (length x - 1))
-
-  let new_filename ?(tstamped=true) ?(star=false) header_key prefix ext =
-    let newname = String.concat "" [ prefix                                      ;
-                                     "_CONVERTED"                                ;
-                                     if tstamped then "_" ^ timestamp () else "" ;
-                                     ext                                         ;
-                                   ]
-    in
-    if   star
-    then header_key ^ "*="  ^ newname
-    else header_key ^ "=\"" ^ newname ^ "\""
-
-  (** updates the name in just the 'filename=' part of the string *)
-  let update_filename_string ?(tstamped=true) ?(star=false) ext str =
-    match String.split ~sep:(equals_sign star) str with
-    | [ header_key; filename ] ->
-       let name   = if star then filename else String.trim "\"" filename in
-       let prefix = Filename.remove_extension name                       in
-       new_filename ~tstamped:tstamped ~star:star header_key prefix ext
-    | _ -> str
-
-  (** updates the filename within an entire header string; uses
-      OCaml's pure regular expression library ocaml-re *)
-  let update_filename ?(ext="") ?(tstamped=false) ?(star=false) hstr =
-    let open Re in
-    let open Option in
-    let ( let* ) = (>>=) in
-    let pattern =
-      if   star
-      then [ str "filename" ;
-             Re.str "*=" ;
-             rep1 (diff any (set "\n;")) ; ]
-      else [ str "filename" ;
-             Re.str "=" ;
-             char '"' ;
-             rep1 (diff any (set "\n\"")) ;
-             char '"' ; ]
-    in
-    let rex = compile @@ seq pattern in
-    let old_string_opt =
-      let* grp = exec_opt rex hstr in
-      let* matched = Group.get_opt grp 0 in
-      Some matched
-    in
-    let update_header new_h =
-      replace_string ~all:false rex ~by:new_h hstr
-    in
-    let updated_header =
-      old_string_opt
-      >>| update_filename_string ~tstamped:tstamped ~star:star ext
-      >>| update_header
-    in
-    match updated_header with
-    | None -> hstr
-    | Some h -> h
-
-  (** updates both the filename= and the filename*= filenames in an
-      attachment *)
-  let update_both_filenames ?(ext="") ?(tstamped=true) =
-    update_filename ~ext:ext ~tstamped:tstamped ~star:false
-    << update_filename ~ext:ext ~tstamped:tstamped ~star:true
-
   module HeaderValue = struct
 
     type parameter = {
       attr: string;
       value: string;
-      quoted: bool;
+      quotes: bool;
     }
 
     type value = {
@@ -240,6 +167,7 @@ module Conversion_ocamlnet = struct
 
     let is_quoted str = String.prefix "\"" str && String.suffix "\"" str
     let unquoted str = String.trim "\"" str
+    let quoted str = "\"" ^ str ^ "\'"
 
     let parse_eq_sep str =
       let ( let* ) = Option.(>>=) in
@@ -247,12 +175,12 @@ module Conversion_ocamlnet = struct
         Some (if is_quoted value then
           { attr = attr;
             value = unquoted value;
-            quoted = true;
+            quotes = true;
           }
         else
           { attr = attr;
             value = value;
-            quoted = false;
+            quotes = false;
           })
 
     let parse str =
@@ -279,11 +207,11 @@ module Conversion_ocamlnet = struct
       let unsafe_parse = Option.get << parse
 
       let to_string { head ; params } =
-        let f curr { attr; value ; quoted } =
+        let f curr { attr; value ; quotes } =
             curr ^
             ";\n\t" ^
             attr ^ "=" ^
-            (if quoted then "\"" ^ value ^ "\"" else value)
+            (if quotes then quoted value else value)
         in
           match params with
           | [] -> head ^ ";"
@@ -321,6 +249,11 @@ module Conversion_ocamlnet = struct
         | None -> hv
         | Some value -> update_param attr (f value) hv
   end
+
+  let timestamp () =
+    Unix.time ()
+      |> string_of_float
+      |> fun x -> String.(sub x 0 (length x - 1))
 
   (** predicate for email parts that are attachments *)
   let is_attachment tree =
@@ -439,120 +372,3 @@ module Conversion_ocamlnet = struct
 end
 
 module _ : CONVERT = Conversion_ocamlnet
-
-module REPLTesting = struct
-
-  (* for reference, MBOX From line:
-   * From root@gringotts.lib.uchicago.edu Fri Jan 21 11:48:27 2022 *)
-
-  include Conversion_ocamlnet
-
-  let unparts_opt = function
-    | Ok (_, `Parts lst) -> lst
-    | _ -> assert false
-
-  let get_header = function
-    | (hd, _) -> hd
-
-  let parse_file str = 
-    Configuration.ParseConfig.parse_config_file str
-
-  let print_error err = Printf.printf "%s\n" (Error.message err)
-
-  let tree () = let pdf_h = Netmime.basic_mime_header ["content-type", "application/pdf"] in
-    let pdf_data = Unix.Proc.read ["cat"; "/Users/cormacduhamel/Downloads/Nietzsche.pdf"] in
-    (pdf_h, `Parts [(pdf_h, `Body (Netmime.memory_mime_body pdf_data))])
-
-  let err_tree () = let pdf_h = Netmime.basic_mime_header ["content-type", "application/pdf"] in
-  let txt_h = Netmime.basic_mime_header ["content-type", "text/plain"] in
-  let pdf_data = Unix.Proc.read ["cat"; "/Users/cormacduhamel/Downloads/Nietzsche.pdf"] in
-  (pdf_h, `Parts [(pdf_h, `Body (Netmime.memory_mime_body pdf_data)); (txt_h, `Body (Netmime.memory_mime_body "str_data"))])
-
-  let dict () = 
-    parse_file "/Users/cormacduhamel/sample_refer.txt"
-
-  let test_acopy () =
-    let ( let* ) = Result.(>>=) in
-    let tree = tree () in
-    let* dict = Result.witherrc (`DummyError) (dict ()) in
-    acopy dict tree
-
-  (** convenience function for unwrapping a `Parts; for REPL only *)
-  let unparts = function
-    | `Parts plist -> plist
-    | _ -> assert false
-
-  (** convenience function for unwrapping a `Body; for REPL only *)
-  let unbody = function
-    | `Body b -> b
-    | _ -> assert false
-
-  let to_mbox ?(escape=false) ?(eol="\n") =
-    let fromline = "From jorge@babel.lib Thu Aug 24 12:00:00 1899" ^ eol in
-    if escape then
-      let open Strings in
-      let escape_froms = replace (eol ^ "From ") (eol ^ ">From ") << replace (eol ^ ">From ") (eol ^ ">>From ") in
-      fold_left (fun acc email -> acc ^ fromline ^ email ^ eol) "" << map escape_froms
-    else
-      fold_left (fun acc email -> acc ^ fromline ^ email ^ eol) ""
-         
-  let get_body = function
-  | (_, bd) -> unbody bd
-    
-  (** quick access to the PDF attachment part of our example Christmas
-      tree email *)
-  let xmas_tree () =
-    let _, parts = Result.get_ok (parse (readfile "2843")) in
-    match unparts parts with
-      _ :: attached :: _ -> attached
-    | _ -> assert false
-
-  (** function to change the mime type to PDF *)
-  let header_func hstring =
-    let hs = String.lowercase_ascii hstring in
-    match Strings.(
-      (substr "content-disposition: attachment;" hs,
-       substr "content-type: application/vnd.openxmlformats-officedocument.wordprocessingml.document" hs
-      )
-          )
-    with
-      (Some _, Some _) -> update_mimetype
-                            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                            "application/pdf"
-                            (update_both_filenames ~ext:".pdf" hstring)
-    | _ -> hstring (* noop when not a pdf and attachment *)
-
-  (** constant function that returns an example PDF-A as an output;
-      assumes you have a file by that name in your project that is a
-      PDF-A *)
-  let body_func _ = readfile "xmas-PDFA.pdf"
-
-  (** function from filepath pointing at input email to output email
-      as a string *)
-  (* let docx_convert_test fname =
-    let tree = parse (readfile fname) in
-    let converted_tree = acopy header_func body_func tree in
-    to_string converted_tree *)
-
-  (* let upcase_header_and_delete_body fname =
-    let f = String.uppercase_ascii in
-    let g = fun _ -> "" in
-    let tree = parse (Prelude.readfile fname) in
-    Prelude.writefile ~fn:(fname ^ "_upcased_and_deleted") (tree |> (amap f g) |> to_string)
-
-  let omit_gore_y_details fname =
-    let f = Fun.const "Content-Type: application/json\r\n\r\n" in
-    (* let f = fun _ -> "From: Bill Clinton <president@whitehouse.gov>\r\n\r\n" in *)
-    let g = Fun.const "" in
-    let tree = parse (Prelude.readfile fname) in
-    Prelude.writefile ~fn:(fname ^ "_contented") (tree |> (amap f g) |> to_string)
-
-  (** takes filepath as input and writes a new file with extra spaces
-      in the headers *)
-  let extra_spaces_in_header fname =
-    let double_space c = if c == ' ' then "  " else String.make 1 c in
-    let f s = s |> String.foldr (fun c l -> double_space c :: l) [] |> String.concat "" in
-    let tree = parse (Prelude.readfile fname) in
-    Prelude.writefile ~fn:(fname ^ "_extra_spaces_in_header") (tree |> (amap f id) |> to_string)
-  (* Not sure if this should be possible, may throw an execption *) *)
-end

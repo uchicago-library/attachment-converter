@@ -95,8 +95,8 @@ let opt_split_on_sep_str_tests =
 let parse_test_1 =
   let open HeaderValue in
   let description = "parsing basic_cont_dis" in
-  let param1 = { attr = "filename*"; value = "utf-8''test.gif"; quoted = false } in
-  let param2 = { attr = "filename"; value = "test.gif"; quoted = true } in
+  let param1 = { attr = "filename*"; value = "utf-8''test.gif"; quotes = false } in
+  let param2 = { attr = "filename"; value = "test.gif"; quotes = true } in
   let out = Some { head = "attachment"; params = [param1 ; param2 ] } in
   let check _ = assert_equal out (parse basic_cont_dis) in
     description >:: check
@@ -118,8 +118,8 @@ let to_string_test_2 =
 let update_test_1 =
   let open HeaderValue in
   let description = "simple update_param test" in
-  let param1 = { attr = "filename*"; value = "TESTING"; quoted = false } in
-  let param2 = { attr = "filename"; value = "test.gif"; quoted = true } in
+  let param1 = { attr = "filename*"; value = "TESTING"; quotes = false } in
+  let param2 = { attr = "filename"; value = "test.gif"; quotes = true } in
   let out = { head = "attachment"; params = [param1 ; param2 ] } in
   let check _ = assert_equal out (update_param "filename*" "TESTING" (Option.get (parse basic_cont_dis))) in
     description >:: check
@@ -127,8 +127,8 @@ let update_test_1 =
 let update_test_2 =
   let open HeaderValue in
   let description = "simple update_head test" in
-  let param1 = { attr = "filename*"; value = "utf-8''test.gif"; quoted = false } in
-  let param2 = { attr = "filename"; value = "test.gif"; quoted = true } in
+  let param1 = { attr = "filename*"; value = "utf-8''test.gif"; quotes = false } in
+  let param2 = { attr = "filename"; value = "test.gif"; quotes = true } in
   let out = { head = "inline"; params = [param1 ; param2 ] } in
   let check _ = assert_equal out (update_head "inline" (Option.get (parse basic_cont_dis))) in
     description >:: check
