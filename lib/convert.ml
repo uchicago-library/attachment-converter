@@ -211,7 +211,18 @@ module Conversion_ocamlnet = struct
     update_filename ~ext:ext ~tstamped:tstamped ~star:false
     << update_filename ~ext:ext ~tstamped:tstamped ~star:true
 
-  module SemiColonSep = struct
+  module HeaderValue = struct
+
+    type parameter = {
+      attr: string;
+      value: string;
+    }
+
+    type value = {
+      first: string;
+      params: parameter list;
+    }
+
     let rec split_on_sep lst sep =
       match lst with
       | [] -> ([], [])
@@ -235,20 +246,78 @@ module Conversion_ocamlnet = struct
       | Some (left, right) -> Some (implode left, implode right)
 
     let parse_eq_sep str =
-      match opt_split_on_sep_str str "*=" with
-      | None -> opt_split_on_sep_str str "="
-      | out -> out
+      let ( let* ) = Option.(>>=) in
+      let* (attr, value) = opt_split_on_sep_str str "=" in
+      
+      let star_eq =
+        let* (attr, value) = opt_split_on_sep_str str "*=" in
+          Some {
+            attr = attr;
+            value = value;
+            star = true;
+          }
+      in
+        match star_eq with
+        | None ->
+            let* (attr, value) = opt_split_on_sep_str str "=" in
+              Some {
+                attr = attr;
+                value = value;
+                star = false;
+              }
+        | out -> out
 
     let parse str =
-      let vs = split ~sep:";\t" str in
-      let ps = List.map parse_eq_sep vs in
+      let open String in
+      let vs = split ~sep:";\n\t" str in
+      let vs = List.map (trim whitespace) vs in (* not sure if trimming is necessary or should be done *)
       let rec red ls =
         match ls with
         | [] -> Some []
         | None :: _ -> None
-        | Some p :: rest -> Option.map (fun xs -> p :: xs) (red rest)
+        | Some p :: ps -> Option.map (fun xs -> p :: xs) (red ps)
       in
-        red ps
+        match vs with
+        | [] -> None
+        | first :: params ->
+            match red (List.map parse_eq_sep params) with
+            | None -> None
+            | Some params ->
+                Some {
+                  first = first;
+                  params = params;
+                }
+
+      let param_to_string param =
+        param.attr ^ (if param.star then "*=" else "=") ^ param.value
+
+      let to_string { first; params } =
+        let f curr next = curr ^ ";\n\t" ^ param_to_string next in
+          first ^ ";\n\t" ^ List.foldl f "" params
+
+      let lookup_param attr hv =
+        let rec lookup attr ls =
+          match ls with
+          | [] -> None
+          | p :: ps ->
+              if p.attr = attr then
+                Some p.value
+              else
+                lookup attr ps
+        in
+          lookup attr hv.params
+
+      let update_param attr new_val hv =
+        let rec update attr new_val ls =
+          match ls with
+          | [] -> []
+          | p :: ps ->
+              if p.attr = attr then
+                { p with value = new_val } :: ps
+              else
+                p :: update attr new_val ps
+        in
+          { hv with params = update attr new_val hv.params }
   end
 
   let transform hd bd trans_entry =
