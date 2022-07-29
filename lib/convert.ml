@@ -167,7 +167,7 @@ module Conversion_ocamlnet = struct
 
     let is_quoted str = String.prefix "\"" str && String.suffix "\"" str
     let unquoted str = String.trim "\"" str
-    let quoted str = "\"" ^ str ^ "\'"
+    let quoted str = "\"" ^ str ^ "\""
 
     let parse_eq_sep str =
       let ( let* ) = Option.(>>=) in
