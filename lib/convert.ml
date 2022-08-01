@@ -203,12 +203,13 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
   let is_attachment tree =
     let ( let* ) = Result.(>>=) in
     let header, _ = tree in
-      try
-        let* hv = HeaderValue.parse (header # field "content-disposition") in
-        let s = String.lowercase_ascii hv.head in
-          Ok (s = "attachment" || s = "inline")
-      with Not_found ->
-        Ok false
+      match header # field "content-disposition" with
+      | exception Not_found -> Ok false
+      | exception e -> raise e (* TODO: Better logging and error handling *)
+      | hd ->
+          let* hv = HeaderValue.parse hd in
+          let s = String.lowercase_ascii hv.head in
+            Ok (s = "attachment" || s = "inline")
 
   let renamed_file id new_ext filename =
     let base = Filename.remove_extension filename in
