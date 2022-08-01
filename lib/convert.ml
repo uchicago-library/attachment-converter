@@ -7,11 +7,12 @@ end
 
 module Attach_conv: ATTACHMENT_CONVERTER = struct
   let convert script str =
-    try
-      let args = split script in
-      Unix.Proc.rw args str
-    with (Failure msg) ->
-      write stderr ("Conversion Failure: " ^ msg); str (* TODO: Better logging *)
+    let args = split script in
+      match Unix.Proc.rw args str with
+      | exception (Failure msg) ->
+          write stderr ("Conversion Failure: " ^ msg); str (* TODO: Better logging *)
+      | exception e -> raise e
+      | converted -> converted
 end
 
 module type CONVERT =
@@ -156,16 +157,16 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
   (** parse email string into a parse tree *)
   let parse s =
     let input = new Netchannels.input_string s in
-    let ch = new Netstream.input_stream input in
-    try
-      let f ch =
-        Netmime_channels.read_mime_message
-          ~multipart_style:`Deep
-          ch
-      in
-      Ok (Netchannels.with_in_obj_channel ch f)
-    with _ ->
-      Error `EmailParse (* TODO: more fine-grained error handling *)
+    let ch = new Netstream.input_stream input  in
+    let f ch =
+      Netmime_channels.read_mime_message
+        ~multipart_style:`Deep
+        ch                                     in
+    (* TODO: more fine-grained error handling *)
+    Result.trapc
+      `EmailParse
+      (Netchannels.with_in_obj_channel ch)
+      f
 
   (* see
      http://projects.camlcity.org/projects/dl/ocamlnet-4.1.9/doc/html-main/Netmime_tut.html
@@ -236,22 +237,25 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
           to_string) hv) in
       let cte = ("Content-Transfer-Encoding", "base64") in
       let* fields =
-        try
-          let* hv = HeaderValue.parse (hd # field "content-disposition") in
-          let updated_dis =
-            (update_head "attachment" >>
-            map_param "filename" (renamed_file ts new_ext) >>
-            map_param "filename*" (renamed_file ts new_ext) >>
-            to_string) hv in
-          Ok [ct; cte; ("Content-Disposition", updated_dis)] (* TODO: Other header fields? *)
-        with Not_found ->
-          (* TODO: Better error handling *)
-          Ok [ct; cte] in
-        Ok (basic_mime_header fields) in
-    Ok (match trans_entry.variety with
-    | NoChange -> hd, `Body bd
-    | DataOnly -> hd, `Body (memory_mime_body conv_data)
-    | DataAndHeader -> conv_hd, `Body (memory_mime_body conv_data))
+        match hd # field "content-disposition" with
+        | exception Not_found -> Ok [ct; cte]
+        | exception e -> raise e (* TODO: Better logging and error handling *)
+        | dis ->
+            let* hv = HeaderValue.parse dis in
+            let updated_dis =
+              (update_head "attachment" >>
+              map_param "filename" (renamed_file ts new_ext) >>
+              map_param "filename*" (renamed_file ts new_ext) >>
+              to_string) hv
+            in
+              Ok [ct; cte; ("Content-Disposition", updated_dis)] (* TODO: Other header fields? *)
+      in
+        Ok (basic_mime_header fields)
+    in
+      Ok (match trans_entry.variety with
+        | NoChange -> hd, `Body bd
+        | DataOnly -> hd, `Body (memory_mime_body conv_data)
+        | DataAndHeader -> conv_hd, `Body (memory_mime_body conv_data))
 
     (* Notes: Content-Disposition headers provide information about how
         to present a message or a body part. When a body part is to be
@@ -266,19 +270,18 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
           let* check = is_attachment (bhd, `Body b) in
           let* converted =
             if   check
-            then try
-                   let* hv = HeaderValue.parse (bhd # field "content-type") in
-                   let src = hv.head in
-                   let trans_lst = Option.default []
-                                     (Configuration.Formats.Dict.find_opt src dict)
-                   in
-                     Ok (
-                       (Result.reduce (List.map (transform bhd b) trans_lst)) @
-                       if copy || empty trans_lst then [(bhd, `Body b)] else []) (* TODO: better logging *)
-                 with Not_found ->
-                   (* TODO: better logging *)
-                   Ok [(bhd, `Body b)]
-          else Ok [(bhd, `Body b)]
+            then match bhd # field "content-type" with
+                 | exception Not_found -> Ok [(bhd, `Body b)]
+                 | exception e -> raise e (* TODO: Better logging and error handling *)
+                 | ct ->
+                     let* hv = HeaderValue.parse ct in
+                     let src = hv.head in
+                     let trans_lst = Option.default []
+                                       (Configuration.Formats.Dict.find_opt src dict)
+                     in
+                       Ok ((Result.reduce (List.map (transform bhd b) trans_lst)) @
+                         if copy || empty trans_lst then [(bhd, `Body b)] else []) (* TODO: better logging *)
+            else Ok [(bhd, `Body b)]
           in
           let* next_lst  = copy_or_skip rs in
             Ok (converted @ next_lst)
