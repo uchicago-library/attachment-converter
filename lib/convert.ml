@@ -202,9 +202,12 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
   let is_attachment tree =
     let ( let* ) = Result.(>>=) in
     let header, _ = tree in
-    let* hv = HeaderValue.parse (header # field "content-disposition") in
-    let s = try String.lowercase_ascii hv.head with Not_found -> "" in
-      Ok (s = "attachment" || s = "inline")
+      try
+        let* hv = HeaderValue.parse (header # field "content-disposition") in
+        let s = String.lowercase_ascii hv.head in
+          Ok (s = "attachment" || s = "inline")
+      with Not_found ->
+        Ok false
 
   let renamed_file id new_ext filename =
     let base = Filename.remove_extension filename in
@@ -271,7 +274,7 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
                    in
                      Ok (
                        (Result.reduce (List.map (transform bhd b) trans_lst)) @
-                       if copy || empty trans_lst then [(bhd, `Body b)] else [])
+                       if copy || empty trans_lst then [(bhd, `Body b)] else []) (* TODO: better logging *)
                  with Not_found ->
                    (* TODO: better logging *)
                    Ok [(bhd, `Body b)]
@@ -302,10 +305,10 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
     amap_or_copy dict tree true
 
   let acopy_email config email =
-    let  ( let* )       = Result.bind       in
-    let*  tree          = parse email       in
+    let ( let* ) = Result.bind in
+    let* tree = parse email in
     let* converted_tree = acopy config tree in
-    Ok (to_string converted_tree)
+      Ok (to_string converted_tree)
 
   let acopy_mbox config in_chan =
     let converter (fromline, em) =
