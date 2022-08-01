@@ -1,19 +1,32 @@
 open Prelude
 
+module type ATTACHMENT_CONVERTER =
+sig
+  val convert: string -> (string -> string)
+end
+
+module Attach_conv: ATTACHMENT_CONVERTER = struct
+  let convert script str =
+    try
+      let args = split script in
+      Unix.Proc.rw args str
+    with (Failure msg) ->
+      write stderr ("Conversion Failure: " ^ msg); str (* TODO: Better logging *)
+end
+
 module type CONVERT =
 sig
   type error
   type parsetree
-  val convert : string -> (string -> string)
   val parse : string -> (parsetree, error) result
+  val to_string : parsetree -> string
   val amap : Configuration.Formats.t -> parsetree -> (parsetree, error) result
   val acopy : Configuration.Formats.t -> parsetree -> (parsetree, error) result
-  val to_string : parsetree -> string
   val acopy_email : Configuration.Formats.t -> string -> (string, error) result
   val acopy_mbox : Configuration.Formats.t -> in_channel -> (unit, error) result
 end
 
-module Conversion_ocamlnet = struct
+module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
 
   module Error = struct
     type t = [
@@ -27,13 +40,6 @@ module Conversion_ocamlnet = struct
 
   type parsetree  = Netmime.complex_mime_message
   type error      = Error.t
-
-  let convert script str =
-    try
-      let args = split script in
-      Unix.Proc.rw args str
-    with (Failure msg) ->
-      write stderr ("Conversion Failure: " ^ msg); str (* TODO: Better logging *)
 
   (** parse email string into a parse tree *)
   let parse s =
@@ -53,6 +59,28 @@ module Conversion_ocamlnet = struct
      http://projects.camlcity.org/projects/dl/ocamlnet-4.1.9/doc/html-main/Netmime_tut.html
      -- I /think/ that with_in_obj_channel should close both the Netchannels and
      the Netstream input bits, but it's worth keeping an eye on. *)
+
+  (** serialize a parsetree into a string *)
+  let to_string tree =
+    let (header, _) = tree in
+    (* defaulting to a megabyte seems like a nice round number *)
+    let n =
+      Exn.default
+        (1024*1024)
+        Netmime_header.get_content_length header
+    in
+    let buf = Stdlib.Buffer.create n in
+    let channel_writer ch =
+      Netmime_channels.write_mime_message
+        ?crlf:(Some false)
+        ch
+        tree
+    in
+    Netchannels.with_out_obj_channel
+      (new Netchannels.output_buffer buf)
+      channel_writer ;
+    Stdlib.Buffer.contents buf
+
 
   (** parse the header field parameters into an association list *)
   let field_params_alist header fieldname =
@@ -97,27 +125,6 @@ module Conversion_ocamlnet = struct
          (new Netchannels.input_string s)
          channel_reader)
 
-  (** serialize a parsetree into a string *)
-  let to_string tree =
-    let (header, _) = tree in
-    (* defaulting to a megabyte seems like a nice round number *)
-    let n =
-      Exn.default
-        (1024*1024)
-        Netmime_header.get_content_length header
-    in
-    let buf = Stdlib.Buffer.create n in
-    let channel_writer ch =
-      Netmime_channels.write_mime_message
-        ?crlf:(Some false)
-        ch
-        tree
-    in
-    Netchannels.with_out_obj_channel
-      (new Netchannels.output_buffer buf)
-      channel_writer ;
-    Stdlib.Buffer.contents buf
-
   (** updates the MIME type in a header string *)
   let update_mimetype oldtype newtype hstr =
     let open String in
@@ -143,35 +150,17 @@ module Conversion_ocamlnet = struct
       params: parameter list;
     }
 
-    let rec split_on_sep lst sep =
-      match lst with
-      | [] -> ([], [])
-      | x :: xs ->
-        if prefix sep lst then
-          ([], drop (length sep) lst)
-        else
-          let (left, right) = split_on_sep xs sep in
-            (x :: left, right)
-
-    let opt_split_on_sep lst sep =
-      let (left, right) = split_on_sep lst sep in
-        match right with
-        | [] -> None
-        | _  -> Some (left, right)
-
-    let opt_split_on_sep_str str sep =
-      let open String in
-      match opt_split_on_sep (explode str) (explode sep) with
-      | None -> None
-      | Some (left, right) -> Some (implode left, implode right)
-
     let is_quoted str = String.prefix "\"" str && String.suffix "\"" str
     let unquoted str = String.trim "\"" str
     let quoted str = "\"" ^ str ^ "\""
 
     let parse_eq_sep str =
+      let cut_or_none str = match String.cut ~sep:"=" str with
+        | left, Some right -> Some (left, right)
+        | _, None -> None
+      in
       let ( let* ) = Option.(>>=) in
-      let* (attr, value) = opt_split_on_sep_str str "=" in
+      let* (attr, value) = cut_or_none str in
         Some (if is_quoted value then
           { attr = attr;
             value = unquoted value;
@@ -185,7 +174,7 @@ module Conversion_ocamlnet = struct
 
     let parse str =
       let open String in
-      let vs = split ~sep:";" str in
+      let vs = cuts ~sep:";" str in
       let vs = List.map (trim whitespace) vs in (* not sure if trimming is necessary or should be done *)
       let rec red ls =
         match ls with
@@ -279,7 +268,7 @@ module Conversion_ocamlnet = struct
     let open Configuration.Formats in
     let open HeaderValue in
     let data = bd # value in
-    let conv_data = convert trans_entry.shell_command data in
+    let conv_data = C.convert trans_entry.shell_command data in
     let new_ext = trans_entry.target_ext in
     let ts = timestamp () in
     let conv_hd =
@@ -371,4 +360,5 @@ module Conversion_ocamlnet = struct
       Ok (Mbox.convert_mbox in_chan converter)
 end
 
+module Conversion_ocamlnet = Conversion_ocamlnet_F (Attach_conv)
 module _ : CONVERT = Conversion_ocamlnet
