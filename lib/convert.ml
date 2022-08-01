@@ -28,60 +28,14 @@ end
 
 module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
 
-  module Error = struct
-    type t = [
-      | `EmailParse (* TODO: More data *)
-    ]
-
-    let message err =
-      match err with
-      | `EmailParse -> "Error parsing the given email"
-  end
-
-  type parsetree  = Netmime.complex_mime_message
-  type error      = Error.t
-
-  (** parse email string into a parse tree *)
-  let parse s =
-    let input = new Netchannels.input_string s in
-    let ch = new Netstream.input_stream input in
-    try
-      let f ch =
-        Netmime_channels.read_mime_message
-          ~multipart_style:`Deep
-          ch
-      in
-      Ok (Netchannels.with_in_obj_channel ch f)
-    with _ ->
-      Error `EmailParse (* TODO: more fine-grained error handling *)
-
-  (* see
-     http://projects.camlcity.org/projects/dl/ocamlnet-4.1.9/doc/html-main/Netmime_tut.html
-     -- I /think/ that with_in_obj_channel should close both the Netchannels and
-     the Netstream input bits, but it's worth keeping an eye on. *)
-
-  (** serialize a parsetree into a string *)
-  let to_string tree =
-    let (header, _) = tree in
-    (* defaulting to a megabyte seems like a nice round number *)
-    let n =
-      Exn.default
-        (1024*1024)
-        Netmime_header.get_content_length header
-    in
-    let buf = Stdlib.Buffer.create n in
-    let channel_writer ch =
-      Netmime_channels.write_mime_message
-        ?crlf:(Some false)
-        ch
-        tree
-    in
-    Netchannels.with_out_obj_channel
-      (new Netchannels.output_buffer buf)
-      channel_writer ;
-    Stdlib.Buffer.contents buf
-
   module HeaderValue = struct
+    module Error = struct
+      type t = [
+        | `ParameterParse
+      ]
+
+      let message _ = "Error reading parameters" (* TODO: more data *)
+    end
 
     type parameter = {
       attr: string;
@@ -127,17 +81,17 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
         | Some p :: ps -> Option.map (fun xs -> p :: xs) (process ps)
       in
         match vs with
-        | [] -> None
+        | [] -> Error `ParameterParse
         | head :: params ->
             match process (List.map parse_eq_sep params) with
-            | None -> None
+            | None -> Error `ParameterParse
             | Some params ->
-                Some {
+                Ok {
                   head = head;
                   params = params;
                 }
 
-      let unsafe_parse = Option.get << parse
+      let unsafe_parse = Result.get_ok << parse
 
       let to_string { head ; params } =
         let f curr { attr; value ; quotes } =
@@ -183,6 +137,62 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
         | Some value -> update_param attr (f value) hv
   end
 
+  module Error = struct
+    type t = [
+      | `EmailParse (* TODO: More data *)
+      | HeaderValue.Error.t
+    ]
+
+    let message err =
+      match err with
+      | `EmailParse -> "Error parsing the given email"
+      | #HeaderValue.Error.t as e ->
+          HeaderValue.Error.message e
+  end
+
+  type parsetree  = Netmime.complex_mime_message
+  type error      = Error.t
+
+  (** parse email string into a parse tree *)
+  let parse s =
+    let input = new Netchannels.input_string s in
+    let ch = new Netstream.input_stream input in
+    try
+      let f ch =
+        Netmime_channels.read_mime_message
+          ~multipart_style:`Deep
+          ch
+      in
+      Ok (Netchannels.with_in_obj_channel ch f)
+    with _ ->
+      Error `EmailParse (* TODO: more fine-grained error handling *)
+
+  (* see
+     http://projects.camlcity.org/projects/dl/ocamlnet-4.1.9/doc/html-main/Netmime_tut.html
+     -- I /think/ that with_in_obj_channel should close both the Netchannels and
+     the Netstream input bits, but it's worth keeping an eye on. *)
+
+  (** serialize a parsetree into a string *)
+  let to_string tree =
+    let (header, _) = tree in
+    (* defaulting to a megabyte seems like a nice round number *)
+    let n =
+      Exn.default
+        (1024*1024)
+        Netmime_header.get_content_length header
+    in
+    let buf = Stdlib.Buffer.create n in
+    let channel_writer ch =
+      Netmime_channels.write_mime_message
+        ?crlf:(Some false)
+        ch
+        tree
+    in
+    Netchannels.with_out_obj_channel
+      (new Netchannels.output_buffer buf)
+      channel_writer ;
+    Stdlib.Buffer.contents buf
+
   let timestamp () =
     Unix.time ()
       |> string_of_float
@@ -190,13 +200,11 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
 
   (** predicate for email parts that are attachments *)
   let is_attachment tree =
+    let ( let* ) = Result.(>>=) in
     let header, _ = tree in
-    let s =
-      try
-        String.lowercase_ascii
-          (HeaderValue.unsafe_parse (header # field "content-disposition")).head
-      with Not_found -> ""
-    in s = "attachment" || s = "inline"
+    let* hv = HeaderValue.parse (header # field "content-disposition") in
+    let s = try String.lowercase_ascii hv.head with Not_found -> "" in
+      Ok (s = "attachment" || s = "inline")
 
   let renamed_file id new_ext filename =
     let base = Filename.remove_extension filename in
@@ -211,35 +219,36 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
     let open Netmime in
     let open Configuration.Formats in
     let open HeaderValue in
+    let ( let* ) = Result.(>>=) in
     let data = bd # value in
     let conv_data = C.convert trans_entry.shell_command data in
     let new_ext = trans_entry.target_ext in
     let ts = timestamp () in
-    let conv_hd =
+    let* conv_hd =
+      let* hv = HeaderValue.parse (hd # field "content-type") in
       let ct =
         ("Content-Type",
-          (unsafe_parse >>
-          (update_head trans_entry.target_type) >>
+          ((update_head trans_entry.target_type) >>
           (map_param "name" (renamed_file ts new_ext)) >>
-          to_string) (hd # field "content-type")) in
+          to_string) hv) in
       let cte = ("Content-Transfer-Encoding", "base64") in
-      let fields =
+      let* fields =
         try
+          let* hv = HeaderValue.parse (hd # field "content-disposition") in
           let updated_dis =
-            (unsafe_parse >>
-            update_head "attachment" >>
+            (update_head "attachment" >>
             map_param "filename" (renamed_file ts new_ext) >>
             map_param "filename*" (renamed_file ts new_ext) >>
-            to_string) (hd # field "content-disposition") in
-          [ct; cte; ("Content-Disposition", updated_dis)] (* TODO: Other header fields? *)
+            to_string) hv in
+          Ok [ct; cte; ("Content-Disposition", updated_dis)] (* TODO: Other header fields? *)
         with Not_found ->
           (* TODO: Better error handling *)
-          [ct; cte] in
-        basic_mime_header fields in
-    match trans_entry.variety with
+          Ok [ct; cte] in
+        Ok (basic_mime_header fields) in
+    Ok (match trans_entry.variety with
     | NoChange -> hd, `Body bd
     | DataOnly -> hd, `Body (memory_mime_body conv_data)
-    | DataAndHeader -> conv_hd, `Body (memory_mime_body conv_data)
+    | DataAndHeader -> conv_hd, `Body (memory_mime_body conv_data))
 
     (* Notes: Content-Disposition headers provide information about how
         to present a message or a body part. When a body part is to be
@@ -251,22 +260,25 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
     let rec copy_or_skip lst =
       match lst with
       | (bhd, `Body b) :: rs ->
-          let converted = if is_attachment (bhd, `Body b) then
-            try
-              let src = (HeaderValue.unsafe_parse (bhd # field "content-type")).head in
-              let trans_lst = Option.default []
-                                (Configuration.Formats.Dict.find_opt src dict)
-              in
-              if   copy || empty trans_lst
-              then (List.map (transform bhd b) trans_lst) @ [(bhd, `Body b)]
-              else List.map (transform bhd b) trans_lst
-            with Not_found ->
-              (* TODO: better logging *)
-              [(bhd, `Body b)]
-          else [(bhd, `Body b)]
+          let* check = is_attachment (bhd, `Body b) in
+          let* converted =
+            if   check
+            then try
+                   let* hv = HeaderValue.parse (bhd # field "content-type") in
+                   let src = hv.head in
+                   let trans_lst = Option.default []
+                                     (Configuration.Formats.Dict.find_opt src dict)
+                   in
+                     Ok (
+                       (Result.reduce (List.map (transform bhd b) trans_lst)) @
+                       if copy || empty trans_lst then [(bhd, `Body b)] else [])
+                 with Not_found ->
+                   (* TODO: better logging *)
+                   Ok [(bhd, `Body b)]
+          else Ok [(bhd, `Body b)]
           in
           let* next_lst  = copy_or_skip rs in
-          Ok (converted @ next_lst)
+            Ok (converted @ next_lst)
       | (phd, `Parts p) :: rs ->
           let* conv_lst = copy_or_skip p in
           let* next_lst = copy_or_skip rs in
