@@ -20,45 +20,12 @@ let basic_cont_dis_1 =
 let basic_cont_dis_conv_3 =
 "attachment;    filename=\"test_CONVERTED.tiff\";    filename*=utf-8''test_CONVERTED.tiff"
 
-let split_on_sep_tests =
-  let open HeaderValue in
-  let f = split_on_sep in
-  let t d a b = d >:: (fun _ -> assert_equal a b) in
-  "split_on_sep tests" >:::
-    [ t "simple test" (f [1;2;3;4;5] [3;4]) ([1;2], [5]) ;
-      t "simple empty" (f [1;2;3;4;5] [6]) ([1;2;3;4;5], []);
-      t "simple empty first" (f [1;1;1;1;1] [1;1]) ([], [1;1;1]);
-      t "simple duplicate" (f [1;2;3;1;2;3] [2;3]) ([1], [1;2;3]);
-    ]
-
-let opt_split_on_sep_tests =
-  let open HeaderValue in
-  let f = opt_split_on_sep in
-  let t d a b = d >:: (fun _ -> assert_equal a b) in
-  "opt_split_on_sep tests" >:::
-    [ t "simple test" (f [1;2;3;4;5] [3;4]) (Some ([1;2], [5])) ;
-      t "simple empty" (f [1;2;3;4;5] [6]) None;
-      t "simple empty first" (f [1;1;1;1;1] [1;1]) (Some ([], [1;1;1]));
-      t "simple duplicate" (f [1;2;3;1;2;3] [2;3]) (Some ([1], [1;2;3]));
-    ]
-
-let opt_split_on_sep_str_tests =
-  let open HeaderValue in
-  let f = opt_split_on_sep_str in
-  let t d a b = d >:: (fun _ -> assert_equal a b) in
-  "opt_split_on_sep tests" >:::
-    [ t "simple test" (f "abcde" "cd") (Some ("ab", "e")) ;
-      t "simple empty" (f "abcde" "f") None;
-      t "simple empty first" (f "aaaaa" "aa") (Some ("", "aaa"));
-      t "simple duplicate" (f "abcabc" "bc") (Some ("a", "abc"));
-    ]
-
 let parse_test_1 =
   let open HeaderValue in
   let description = "parsing basic_cont_dis" in
   let param1 = { attr = "filename*"; value = "utf-8''test.gif"; quotes = false } in
   let param2 = { attr = "filename"; value = "test.gif"; quotes = true } in
-  let out = Some { head = "attachment"; params = [param1 ; param2 ] } in
+  let out = Ok { head = "attachment"; params = [param1 ; param2 ] } in
   let check _ = assert_equal out (parse basic_cont_dis) in
     description >:: check
 
@@ -66,14 +33,14 @@ let to_string_test_1 =
   let open HeaderValue in
   let description = "simple to_string of basic_cont_dis test" in
   let out = "attachment;\n\tfilename*=utf-8''test.gif;\n\tfilename=\"test.gif\"" in
-  let check _ = assert_equal out (to_string (Option.get (parse basic_cont_dis))) ~printer:id in
+  let check _ = assert_equal out (to_string (Result.get_ok (parse basic_cont_dis))) ~printer:id in
     description >:: check
 
 let to_string_test_2 =
   let open HeaderValue in
   let description = "simple to_string without params" in
   let out = "attachment;" in
-  let check _ = assert_equal out (to_string (Option.get (parse "attachment"))) ~printer:id in
+  let check _ = assert_equal out (to_string (Result.get_ok (parse "attachment"))) ~printer:id in
     description >:: check
 
 let update_test_1 =
@@ -82,7 +49,7 @@ let update_test_1 =
   let param1 = { attr = "filename*"; value = "TESTING"; quotes = false } in
   let param2 = { attr = "filename"; value = "test.gif"; quotes = true } in
   let out = { head = "attachment"; params = [param1 ; param2 ] } in
-  let check _ = assert_equal out (update_param "filename*" "TESTING" (Option.get (parse basic_cont_dis))) in
+  let check _ = assert_equal out (update_param "filename*" "TESTING" (Result.get_ok (parse basic_cont_dis))) in
     description >:: check
 
 let update_test_2 =
@@ -91,21 +58,18 @@ let update_test_2 =
   let param1 = { attr = "filename*"; value = "utf-8''test.gif"; quotes = false } in
   let param2 = { attr = "filename"; value = "test.gif"; quotes = true } in
   let out = { head = "inline"; params = [param1 ; param2 ] } in
-  let check _ = assert_equal out (update_head "inline" (Option.get (parse basic_cont_dis))) in
+  let check _ = assert_equal out (update_head "inline" (Result.get_ok (parse basic_cont_dis))) in
     description >:: check
 
 
 let header_value_parser_tests =
   "all header_value tests" >:::
-    [ split_on_sep_tests ;
-      opt_split_on_sep_tests ;
-      opt_split_on_sep_str_tests ;
-      parse_test_1 ;
+    [ parse_test_1 ;
       to_string_test_1 ;
       to_string_test_2 ;
       update_test_1 ;
       update_test_2 ;
-     ]
+    ]
 
 let empty_config_test_0 tree =
   let description = "empty config is okay on email"     in
@@ -164,7 +128,7 @@ let test_noop_transform =
   let body        = new memory_mime_body "This is nothing"              in
   let config      = hd (Dict.find "image/gif" noop_gif_config)          in
   let trans       = transform header body config                        in
-  let check _     = assert_equal_trees (header, `Body body) trans       in
+  let check _     = assert_equal_trees (header, `Body body) (Result.get_ok trans) in
   description >:: check
 
 type mailtree =
@@ -223,16 +187,6 @@ let basic_test_email fname =
       noop_gif_config_test_0 (Result.get_ok (parse email)) ;
     ]
 
-(*
-let email_4_structure =
-  let email       = readfile "test_emails/test_email_4.eml" in
-  let description = "test_email_4 structure"                in
-  let check _ = assert_equal
-    (Parts [Body ; Parts [Body; Parts [Body; Body]]])
-    (parsetree_to_mailtree (Result.get_ok (parse email)))
-    ~printer:mailtree_to_string                             in
-  description >:: check
-
 (* add emails as necessary *)
 let basic_test_email_all =
   "basic tests for many emails" >:::
@@ -243,11 +197,10 @@ let basic_test_email_all =
       basic_test_email "test_emails/test_email_5.eml" ;
       basic_test_email "test_emails/test_email_6.eml" ;
     ]
-*)
 
 let tests =
   "all tests" >:::
-    [ (* basic_test_email_all          ; *)
+    [ basic_test_email_all          ;
       test_noop_transform           ;
       header_value_parser_tests     ;
     ]
