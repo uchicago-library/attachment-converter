@@ -81,62 +81,6 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
       channel_writer ;
     Stdlib.Buffer.contents buf
 
-
-  (** parse the header field parameters into an association list *)
-  let field_params_alist header fieldname =
-    let fields =
-      String.cuts ~sep:";" (header#field fieldname)
-    in
-    match tail fields with
-    (* Case 1: no params, alist is just field name/value *)
-    | Some [] -> [fieldname, (header#field fieldname)]
-    (* Case 2: split on "=" then zip together as alist*)
-    | Some params ->
-       let kvpairs = map (String.cut ~sep:"=") params in
-       let process = function
-         | key, Some v -> key, v
-         | key, None -> key, ""
-       in
-      map process kvpairs
-    | None -> assert false
-
-  (** to_string for Netmime headers *)
-  let header_to_string h =
-    let buf = Stdlib.Buffer.create 1024 in
-    let channel_writer ch =
-      Netmime_string.write_header ch (h#fields)
-    in
-    Netchannels.with_out_obj_channel
-      (new Netchannels.output_buffer buf)
-      channel_writer ;
-    Stdlib.Buffer.contents buf
-
-  (** from_string for Netmime headers *)
-  let header_from_string s =
-    let channel_reader ch =
-      let stream = new Netstream.input_stream ch in
-      Netmime_string.read_header
-        ?downcase:(Some false)
-        ?unfold:None
-        stream
-    in
-    new Netmime.basic_mime_header
-      (Netchannels.with_in_obj_channel
-         (new Netchannels.input_string s)
-         channel_reader)
-
-  (** updates the MIME type in a header string *)
-  let update_mimetype oldtype newtype hstr =
-    let open String in
-    let hdr = header_from_string hstr in
-    let s = try hdr # field "content-type"
-            with Not_found -> ""
-    in
-    if lowercase_ascii s = lowercase_ascii oldtype
-    then (hdr # update_field "content-type" newtype;
-          header_to_string hdr)
-    else hstr
-
   module HeaderValue = struct
 
     type parameter = {
@@ -161,31 +105,31 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
       in
       let ( let* ) = Option.(>>=) in
       let* (attr, value) = cut_or_none str in
-        Some (if is_quoted value then
-          { attr = attr;
-            value = unquoted value;
-            quotes = true;
-          }
-        else
-          { attr = attr;
-            value = value;
-            quotes = false;
-          })
+        Some (
+          if is_quoted value then
+            { attr = attr;
+              value = unquoted value;
+              quotes = true;
+            }
+          else
+            { attr = attr;
+              value = value;
+              quotes = false;
+            })
 
     let parse str =
-      let open String in
-      let vs = cuts ~sep:";" str in
-      let vs = List.map (trim whitespace) vs in (* not sure if trimming is necessary or should be done *)
-      let rec red ls =
+      let vs = String.cuts ~sep:";" str in
+      let vs = List.map String.(trim whitespace) vs in (* not sure if trimming is necessary or should be done *)
+      let rec process ls =
         match ls with
         | [] -> Some []
         | None :: _ -> None
-        | Some p :: ps -> Option.map (fun xs -> p :: xs) (red ps)
+        | Some p :: ps -> Option.map (fun xs -> p :: xs) (process ps)
       in
         match vs with
         | [] -> None
         | head :: params ->
-            match red (List.map parse_eq_sep params) with
+            match process (List.map parse_eq_sep params) with
             | None -> None
             | Some params ->
                 Some {
