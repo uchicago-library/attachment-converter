@@ -220,39 +220,50 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
         new_ext ;
       ]
 
-  let transform hd bd trans_entry =
-    let open Netmime in
+  let updated_header hd trans_entry =
     let open Configuration.Formats in
     let open HeaderValue in
     let ( let* ) = Result.(>>=) in
-    let data = bd # value in
-    let conv_data = C.convert trans_entry.shell_command data in
     let new_ext = trans_entry.target_ext in
     let ts = timestamp () in
-    let* conv_hd =
-      let* hv = HeaderValue.parse (hd # field "content-type") in
-      let ct =
-        ("Content-Type",
-          ((update_head trans_entry.target_type) >>
-          (map_param "name" (renamed_file ts new_ext)) >>
-          to_string) hv) in
-      let cte = ("Content-Transfer-Encoding", "base64") in
-      let* fields =
-        match hd # field "content-disposition" with
-        | exception Not_found -> Ok [ct; cte]
-        | exception e -> raise e (* TODO: Better logging and error handling *)
-        | dis ->
-            let* hv = HeaderValue.parse dis in
-            let updated_dis =
-              (update_head "attachment" >>
-              map_param "filename" (renamed_file ts new_ext) >>
-              map_param "filename*" (renamed_file ts new_ext) >>
-              to_string) hv
-            in
-              Ok [ct; cte; ("Content-Disposition", updated_dis)] (* TODO: Other header fields? *)
+    let new_header = Oo.copy hd in
+    let* new_ct =
+      let process =
+        update_head trans_entry.target_type >>
+        map_param "name" (renamed_file ts new_ext) >>
+        to_string
       in
-        Ok (basic_mime_header fields)
+      let* ct_hv = HeaderValue.parse (new_header # field "content-type") in
+        Ok (process ct_hv)
     in
+    let* _ =
+      let process =
+        update_head "attachment" >>
+        map_param "filename" (renamed_file ts new_ext) >>
+        map_param "filename*" (renamed_file ts new_ext) >>
+        to_string
+      in
+      match new_header # field "content-disposition" with
+      | exception Not_found -> Ok ()
+      | exception e -> raise e (* TODO: better logging *)
+      | dis ->
+          let* dis_hv = HeaderValue.parse dis in
+            new_header # update_field
+              "content-disposition"
+              (process dis_hv);
+            Ok ()
+    in
+      new_header # update_field "content-type" new_ct;
+      new_header # update_field "content-transfer-encoding" "base64";
+      (* Ok new_header *) Ok hd
+
+  let transform hd bd trans_entry =
+    let open Netmime in
+    let open Configuration.Formats in
+    let ( let* ) = Result.(>>=) in
+    let data = bd # value in
+    let conv_data = C.convert trans_entry.shell_command data in
+    let* conv_hd = updated_header hd trans_entry in
       Ok (match trans_entry.variety with
         | NoChange -> hd, `Body bd
         | DataOnly -> hd, `Body (memory_mime_body conv_data)
