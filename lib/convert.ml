@@ -255,7 +255,7 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
     in
       new_header # update_field "content-type" new_ct;
       new_header # update_field "content-transfer-encoding" "base64";
-      (* Ok new_header *) Ok hd
+      Ok new_header
 
   let transform hd bd trans_entry =
     let open Netmime in
