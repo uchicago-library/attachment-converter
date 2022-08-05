@@ -224,46 +224,47 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
     let open Configuration.Formats in
     let open HeaderValue in
     let ( let* ) = Result.(>>=) in
-    let new_ext = trans_entry.target_ext in
     let ts = timestamp () in
-    let new_header = Oo.copy hd in
+    let new_ext = trans_entry.target_ext in
     let* new_ct =
       let process =
         update_head trans_entry.target_type >>
         map_param "name" (renamed_file ts new_ext) >>
         to_string
       in
-      let* ct_hv = HeaderValue.parse (new_header # field "content-type") in
+      let* ct_hv = HeaderValue.parse (hd # field "content-type") in
         Ok (process ct_hv)
     in
-    let* _ =
+    let* new_dis =
       let process =
         update_head "attachment" >>
         map_param "filename" (renamed_file ts new_ext) >>
         map_param "filename*" (renamed_file ts new_ext) >>
         to_string
       in
-      match new_header # field "content-disposition" with
-      | exception Not_found -> Ok ()
+      match hd # field "content-disposition" with
+      | exception Not_found -> Ok "attachment"
       | exception e -> raise e (* TODO: better logging *)
       | dis ->
-          let* dis_hv = HeaderValue.parse dis in
-            new_header # update_field
-              "content-disposition"
-              (process dis_hv);
-            Ok ()
+          match HeaderValue.parse dis with
+          | Ok dis_hv -> Ok (process dis_hv)
+          | Error _ -> Ok dis
     in
-      new_header # update_field "content-type" new_ct;
-      new_header # update_field "content-transfer-encoding" "base64";
-      Ok new_header
+    let fields =
+      Assoc.(
+       replace ("Content-Type", new_ct) >>
+       replace ("Content-Transfer-Encoding", "base64") >>
+       replace ("Content-Disposition", new_dis)) (hd # fields)
+    in
+      Ok (Netmime.basic_mime_header fields)
 
   let transform hd bd trans_entry =
     let open Netmime in
     let open Configuration.Formats in
     let ( let* ) = Result.(>>=) in
+    let* conv_hd = updated_header hd trans_entry in
     let data = bd # value in
     let conv_data = C.convert trans_entry.shell_command data in
-    let* conv_hd = updated_header hd trans_entry in
       Ok (match trans_entry.variety with
         | NoChange -> hd, `Body bd
         | DataOnly -> hd, `Body (memory_mime_body conv_data)
