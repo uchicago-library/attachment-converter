@@ -23,8 +23,8 @@ let basic_cont_dis_conv_3 =
 let parse_test_1 =
   let open HeaderValue in
   let description = "parsing basic_cont_dis" in
-  let param1 = { attr = "filename*"; value = "utf-8''test.gif"; quotes = false } in
-  let param2 = { attr = "filename"; value = "test.gif"; quotes = true } in
+  let param1 : HeaderValue.Parameter.t = { attr = "filename*"; value = "utf-8''test.gif"; quotes = false } in
+  let param2 : HeaderValue.Parameter.t = { attr = "filename"; value = "test.gif"; quotes = true } in
   let out = Ok { head = "attachment"; params = [param1 ; param2 ] } in
   let check _ = assert_equal out (parse basic_cont_dis) in
     description >:: check
@@ -45,22 +45,21 @@ let to_string_test_2 =
 
 let update_test_1 =
   let open HeaderValue in
-  let description = "simple update_param test" in
-  let param1 = { attr = "filename*"; value = "TESTING"; quotes = false } in
-  let param2 = { attr = "filename"; value = "test.gif"; quotes = true } in
+  let description = "simple replace_val test" in
+  let param1: HeaderValue.Parameter.t = { attr = "filename*"; value = "TESTING"; quotes = false } in
+  let param2: HeaderValue.Parameter.t = { attr = "filename"; value = "test.gif"; quotes = true } in
   let out = { head = "attachment"; params = [param1 ; param2 ] } in
-  let check _ = assert_equal out (update_param "filename*" "TESTING" (Result.get_ok (parse basic_cont_dis))) in
+  let check _ = assert_equal out (replace_val "filename*" "TESTING" (Result.get_ok (parse basic_cont_dis))) in
     description >:: check
 
 let update_test_2 =
   let open HeaderValue in
   let description = "simple update_head test" in
-  let param1 = { attr = "filename*"; value = "utf-8''test.gif"; quotes = false } in
-  let param2 = { attr = "filename"; value = "test.gif"; quotes = true } in
+  let param1: HeaderValue.Parameter.t = { attr = "filename*"; value = "utf-8''test.gif"; quotes = false } in
+  let param2: HeaderValue.Parameter.t = { attr = "filename"; value = "test.gif"; quotes = true } in
   let out = { head = "inline"; params = [param1 ; param2 ] } in
   let check _ = assert_equal out (update_head "inline" (Result.get_ok (parse basic_cont_dis))) in
     description >:: check
-
 
 let header_value_parser_tests =
   "all header_value tests" >:::

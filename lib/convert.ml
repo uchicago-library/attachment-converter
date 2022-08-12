@@ -38,39 +38,54 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
       let message _ = "Error reading parameters" (* TODO: more data *)
     end
 
-    type parameter = {
-      attr: string;
-      value: string;
-      quotes: bool;
-    }
+    module Parameter = struct
+      type t = {
+        attr: string;
+        value: string;
+        quotes: bool;
+      }
 
-    type value = {
+      let map_attr f p = { p with attr = f p.attr }
+      let map_val f p = { p with value = f p.value }
+      let map_qt f p = { p with quotes = f p.quotes }
+
+      let is_quoted str = String.prefix "\"" str && String.suffix "\"" str
+      let unquoted str = String.trim "\"" str
+      let quoted str = "\"" ^ str ^ "\""
+
+      let parse str =
+        let cut_or_none str = match String.cut ~sep:"=" str with
+          | left, Some right -> Some (left, right)
+          | _, None -> None
+        in
+        let ( let* ) = Option.(>>=) in
+        let* (attr, value) = cut_or_none str in
+          Some (
+            if is_quoted value then
+              { attr = attr;
+                value = unquoted value;
+                quotes = true;
+              }
+            else
+              { attr = attr;
+                value = value;
+                quotes = false;
+              })
+
+      let to_string { attr; value; quotes } =
+        attr ^ "=" ^ (if quotes then quoted value else value)
+
+      let from_attr_val ?(quotes=false) attr value =
+        { attr = attr;
+          value = value;
+          quotes = quotes;
+        }
+    end
+
+    type t = {
       head: string;
-      params: parameter list;
+      params: Parameter.t list;
     }
-
-    let is_quoted str = String.prefix "\"" str && String.suffix "\"" str
-    let unquoted str = String.trim "\"" str
-    let quoted str = "\"" ^ str ^ "\""
-
-    let parse_eq_sep str =
-      let cut_or_none str = match String.cut ~sep:"=" str with
-        | left, Some right -> Some (left, right)
-        | _, None -> None
-      in
-      let ( let* ) = Option.(>>=) in
-      let* (attr, value) = cut_or_none str in
-        Some (
-          if is_quoted value then
-            { attr = attr;
-              value = unquoted value;
-              quotes = true;
-            }
-          else
-            { attr = attr;
-              value = value;
-              quotes = false;
-            })
 
     let parse str =
       let vs = String.cuts ~sep:";" str in
@@ -84,7 +99,7 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
         match vs with
         | [] -> Error `ParameterParse
         | head :: params ->
-            match process (List.map parse_eq_sep params) with
+            match process (List.map Parameter.parse params) with
             | None -> Error `ParameterParse
             | Some params ->
                 Ok {
@@ -92,50 +107,59 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
                   params = params;
                 }
 
-      let unsafe_parse = Result.get_ok << parse
+    let unsafe_parse = Result.get_ok << parse
 
-      let to_string { head ; params } =
-        let f curr { attr; value ; quotes } =
-            curr ^
-            ";\n\t" ^
-            attr ^ "=" ^
-            (if quotes then quoted value else value)
-        in
-          match params with
-          | [] -> head ^ ";"
-          | _  -> List.foldl f head params
+    let to_string { head ; params } =
+      let f curr p = curr ^ ";\n\t" ^ Parameter.to_string p in
+        match params with
+        | [] -> head ^ ";"
+        | _  -> List.foldl f head params
 
-      let lookup_param attr hv =
-        let rec lookup attr ls =
-          match ls with
-          | [] -> None
-          | p :: ps ->
-              if p.attr = attr then
-                Some p.value
-              else
-                lookup attr ps
-        in
-          lookup attr hv.params
+    let lookup_param attr hv =
+      let rec lookup attr ls =
+        match ls with
+        | [] -> None
+        | p :: ps ->
+            if p.Parameter.attr = attr then
+              Some p.value
+            else
+              lookup attr ps
+      in
+        lookup attr hv.params
 
-      let update_head new_head hv =
-        { hv with head = new_head }
+    let update_head new_head hv =
+      { hv with head = new_head }
 
-      let update_param attr new_val hv =
-        let rec update attr new_val ls =
-          match ls with
-          | [] -> []
-          | p :: ps ->
-              if p.attr = attr then
-                { p with value = new_val } :: ps
-              else
-                p :: update attr new_val ps
-        in
-          { hv with params = update attr new_val hv.params }
+    let update_param attr f hv =
+      let cons_op x ls = Option.either (List.snoc ls) ls x in
+      let rec update ls =
+        match ls with
+        | [] -> cons_op (f None) []
+        | p :: ps ->
+            if p.Parameter.attr = attr then
+              cons_op (f (Some p)) ps
+            else
+              p :: update ps
+      in
+        { hv with params = update hv.params }
 
-      let map_param attr f hv =
-        match (lookup_param attr hv) with
-        | None -> hv
-        | Some value -> update_param attr (f value) hv
+    let map_val attr f =
+      update_param attr (Option.map (Parameter.map_val f))
+
+    let replace_val attr new_value =
+      map_val attr (k new_value)
+
+    let remove_val attr =
+      update_param attr (k None)
+
+    let add_param ?(quotes=false) attr value =
+      update_param attr
+        (k (Some (Parameter.from_attr_val ~quotes:quotes attr value)))
+
+    let new_hv head =
+      { head = head;
+        params = [];
+      }
   end
 
   module Error = struct
@@ -220,6 +244,18 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
         new_ext ;
       ]
 
+  let meta_header_name = "X-Attachment-Converter"
+
+  let create_meta_header_val timestamp trans_entry : HeaderValue.t =
+    let params =
+      [ "target-type", trans_entry.Configuration.Formats.target_type;
+        "time-stamp", timestamp;
+      ]
+    in
+      { head = "Converted";
+        params = map (uncurry HeaderValue.Parameter.from_attr_val) params;
+      }
+
   let updated_header hd trans_entry =
     let open Configuration.Formats in
     let open HeaderValue in
@@ -229,7 +265,7 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
     let* new_ct =
       let process =
         update_head trans_entry.target_type >>
-        map_param "name" (renamed_file ts new_ext) >>
+        map_val "name" (renamed_file ts new_ext) >>
         to_string
       in
       let* ct_hv = HeaderValue.parse (hd # field "content-type") in
@@ -238,8 +274,8 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
     let* new_dis =
       let process =
         update_head "attachment" >>
-        map_param "filename" (renamed_file ts new_ext) >>
-        map_param "filename*" (renamed_file ts new_ext) >>
+        map_val "filename" (renamed_file ts new_ext) >>
+        map_val "filename*" (renamed_file ts new_ext) >>
         to_string
       in
       match hd # field "content-disposition" with
@@ -254,7 +290,9 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
       Assoc.(
        replace ("Content-Type", new_ct) >>
        replace ("Content-Transfer-Encoding", "base64") >>
-       replace ("Content-Disposition", new_dis)) (hd # fields)
+       replace ("Content-Disposition", new_dis) >>
+       add meta_header_name (HeaderValue.to_string (create_meta_header_val ts trans_entry)))
+         (hd # fields)
     in
       Ok (Netmime.basic_mime_header fields)
 
