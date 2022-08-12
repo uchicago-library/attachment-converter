@@ -126,7 +126,7 @@ let test_noop_transform =
   let header      = new basic_mime_header ["content-type", "image/gif"] in
   let body        = new memory_mime_body "This is nothing"              in
   let config      = hd (Dict.find "image/gif" noop_gif_config)          in
-  let trans       = transform header body config                        in
+  let trans       = transform header body "image/gif" config            in
   let check _     = assert_equal_trees (header, `Body body) (Result.get_ok trans) in
   description >:: check
 

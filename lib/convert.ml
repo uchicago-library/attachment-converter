@@ -246,17 +246,20 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
 
   let meta_header_name = "X-Attachment-Converter"
 
-  let create_meta_header_val timestamp trans_entry : HeaderValue.t =
+  let create_meta_header_val src tar ts : HeaderValue.t =
     let params =
-      [ "target-type", trans_entry.Configuration.Formats.target_type;
-        "time-stamp", timestamp;
+      [ "source-type", src;
+        "target-type", tar;
+        "time-stamp", ts;
+        "conversion-id", "TODO";
+        "original-file-hash", "TODO";
       ]
     in
-      { head = "Converted";
+      { head = "converted";
         params = map (uncurry HeaderValue.Parameter.from_attr_val) params;
       }
 
-  let updated_header hd trans_entry =
+  let updated_header hd src trans_entry =
     let open Configuration.Formats in
     let open HeaderValue in
     let ( let* ) = Result.(>>=) in
@@ -288,19 +291,24 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
     in
     let fields =
       Assoc.(
-       replace ("Content-Type", new_ct) >>
-       replace ("Content-Transfer-Encoding", "base64") >>
-       replace ("Content-Disposition", new_dis) >>
-       add meta_header_name (HeaderValue.to_string (create_meta_header_val ts trans_entry)))
-         (hd # fields)
+        replace ("Content-Type", new_ct) >>
+        replace ("Content-Transfer-Encoding", "base64") >>
+        replace ("Content-Disposition", new_dis) >>
+        add meta_header_name
+          (HeaderValue.to_string
+            (create_meta_header_val
+              src
+              trans_entry.target_type
+              ts)))
+          (hd # fields)
     in
       Ok (Netmime.basic_mime_header fields)
 
-  let transform hd bd trans_entry =
+  let transform hd bd src trans_entry =
     let open Netmime in
     let open Configuration.Formats in
     let ( let* ) = Result.(>>=) in
-    let* conv_hd = updated_header hd trans_entry in
+    let* conv_hd = updated_header hd src trans_entry in
     let data = bd # value in
     let conv_data = C.convert trans_entry.shell_command data in
       Ok (match trans_entry.variety with
@@ -330,7 +338,7 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
                      let trans_lst = Option.default []
                                        (Configuration.Formats.Dict.find_opt src dict)
                      in
-                       Ok ((Result.reduce (List.map (transform bhd b) trans_lst)) @
+                       Ok ((Result.reduce (List.map (transform bhd b src) trans_lst)) @
                          if copy || empty trans_lst then [(bhd, `Body b)] else []) (* TODO: better logging *)
             else Ok [(bhd, `Body b)]
           in
