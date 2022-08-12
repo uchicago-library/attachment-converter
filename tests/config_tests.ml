@@ -15,6 +15,7 @@ let wf =
   [ ("source_type"  , "application/pdf"   ) ;
     ("target_type"  , "application/pdf"   ) ;
     ("shell_command", "soffice-to-pdfa.sh") ;
+    ("id"   , "id"                        ) ;
   ]
 
 let extra = ("extra", "extra") :: wf
@@ -93,6 +94,7 @@ let t_neq_s =
   [ ("source_type"  , "a") ;
     ("target_type"  , "b") ;
     ("shell_command", "c") ;
+    ("id"           , "id");
   ]
 
 let t_neq_s_trans_data_correct =
@@ -107,11 +109,13 @@ let wf_cs =
 %target_type b
 %target_extension q
 %shell_command c d e
+%id id
 
 %source_type f
 %target_type g
 %target_extension q
-%shell_command h"
+%shell_command h
+%id id"
 
 let extra_cs =
 "%source_type a
@@ -119,12 +123,14 @@ let extra_cs =
 %target_extension q
 %shell_command c d e
 %test test
+%id id
 
 %source_type f
 %target_type g
 %target_extension q
 %shell_command h
-%test test"
+%test test
+%id id"
 
 let missing_cs =
 "%source_type a
@@ -142,6 +148,7 @@ let e1 =
   { target_type   = "b"           ;
     target_ext    = "q"           ;
     shell_command = "c d e"       ;
+    convert_id    = "id"          ;
     variety       = DataAndHeader ;
   }
 
@@ -149,6 +156,7 @@ let e2 =
   { target_type   = "g"           ;
     target_ext    = "q"           ;
     shell_command = "h"           ;
+    convert_id    = "id"          ;
     variety       = DataAndHeader ;
   }
 
@@ -176,28 +184,32 @@ let bad_refer_cs =
 "%source_type a
 %target_type b
 %shell_command c d e
+%id id
 
 not a real line
 
 %source_type f
 %target_type g
-%shell_command h"
+%shell_command h
+%id id"
 
 let bad_refer_cs_msg =
   check_error
     (parse_config_str bad_refer_cs)
-      (`ReferParse (5, "not a real line"))
+      (`ReferParse (6, "not a real line"))
 
 let double_entry_cs =
 "%source_type a
 %target_type b
 %target_extension q
 %shell_command c d e
+%id id
 
 %source_type a
 %target_type g
 %target_extension q
-%shell_command h"
+%shell_command h
+%id id"
 
 let check_double_entry_cs =
   let description = "checking access for double_entry_cs"  in

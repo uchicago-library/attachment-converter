@@ -91,6 +91,7 @@ let noop_gif_config =
     [{ target_type   = "image/tiff" ;
        target_ext    = ".tiff"      ;
        shell_command = "cat"        ;
+       convert_id    = "id"         ;
        variety       = DataOnly     ;
     }]
     Dict.empty
@@ -102,6 +103,7 @@ let header_change_gif_config =
     [{ target_type   = "image/tiff"  ;
        target_ext    = ".tiff"       ;
        shell_command = "cat"         ;
+       convert_id    = "id"          ;
        variety       = DataAndHeader ;
     }]
     Dict.empty

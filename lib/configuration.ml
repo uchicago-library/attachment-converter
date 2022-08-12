@@ -10,7 +10,8 @@ module Formats = struct
     { target_type   : string;
       target_ext    : string;
       shell_command : string;
-      variety       : variety
+      convert_id    : string;
+      variety       : variety;
     }
 
   module Dict = Map.Make (String)
@@ -34,6 +35,7 @@ module ParseConfig = struct
     | TargetType
     | TargetExt
     | ShellCommand
+    | ConvertID
 
   let string_of_config_key key =
     match key with
@@ -41,6 +43,7 @@ module ParseConfig = struct
     | TargetType   -> "target_type"
     | TargetExt    -> "target_extension"
     | ShellCommand -> "shell_command"
+    | ConvertID    -> "id"
 
   module Error = struct
     type t =
@@ -67,14 +70,16 @@ module ParseConfig = struct
       target_type   : string ;
       target_ext    : string ;
       shell_command : string ;
+      convert_id    : string ;
     }
 
   let entry_of_assoc config_assoc =
-    let construct_config_entry st tt te ss =
+    let construct_config_entry st tt te ss id =
       { source_type   = st ;
         target_type   = tt ;
         target_ext    = te ;
         shell_command = ss ;
+        convert_id    = id ;
       }
     in
     let check key =
@@ -90,12 +95,14 @@ module ParseConfig = struct
                       (mime_type_to_extension tt)
                       (check TargetExt)
     in
-    Ok (construct_config_entry st tt te ss)
+    let* id       = check ConvertID    in
+    Ok (construct_config_entry st tt te ss id)
 
   let transform_data_of_entry entry =
     { target_type   = entry.target_type   ;
       target_ext    = entry.target_ext    ;
       shell_command = entry.shell_command ;
+      convert_id    = entry.convert_id    ;
       variety       = DataAndHeader       ;
     }
 

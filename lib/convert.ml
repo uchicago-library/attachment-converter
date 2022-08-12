@@ -246,12 +246,12 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
 
   let meta_header_name = "X-Attachment-Converter"
 
-  let create_meta_header_val src tar ts : HeaderValue.t =
+  let create_meta_header_val src tar ts cid : HeaderValue.t =
     let params =
       [ "source-type", src;
         "target-type", tar;
         "time-stamp", ts;
-        "conversion-id", "TODO";
+        "conversion-id", cid;
         "original-file-hash", "TODO";
       ]
     in
@@ -299,7 +299,8 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
             (create_meta_header_val
               src
               trans_entry.target_type
-              ts)))
+              ts
+              trans_entry.convert_id)))
           (hd # fields)
     in
       Ok (Netmime.basic_mime_header fields)
