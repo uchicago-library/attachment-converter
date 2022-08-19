@@ -246,20 +246,20 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
 
   let meta_header_name = "X-Attachment-Converter"
 
-  let create_meta_header_val src tar ts cid : HeaderValue.t =
+  let create_meta_header_val src tar ts cid hd : HeaderValue.t =
     let params =
       [ "source-type", src;
         "target-type", tar;
         "time-stamp", ts;
         "conversion-id", cid;
-        "original-file-hash", "TODO";
+        "original-file-hash", hd;
       ]
     in
       { head = "converted";
         params = map (uncurry HeaderValue.Parameter.from_attr_val) params;
       }
 
-  let updated_header hd src trans_entry =
+  let updated_header hd src trans_entry hashed_data =
     let open Configuration.Formats in
     let open HeaderValue in
     let ( let* ) = Result.(>>=) in
@@ -300,7 +300,8 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
               src
               trans_entry.target_type
               ts
-              trans_entry.convert_id)))
+              trans_entry.convert_id
+              (string_of_int hashed_data))))
           (hd # fields)
     in
       Ok (Netmime.basic_mime_header fields)
@@ -309,8 +310,9 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
     let open Netmime in
     let open Configuration.Formats in
     let ( let* ) = Result.(>>=) in
-    let* conv_hd = updated_header hd src trans_entry in
     let data = bd # value in
+    let hashed_data = Hashtbl.hash data in
+    let* conv_hd = updated_header hd src trans_entry hashed_data in
     let conv_data = C.convert trans_entry.shell_command data in
       Ok (match trans_entry.variety with
         | NoChange -> hd, `Body bd
