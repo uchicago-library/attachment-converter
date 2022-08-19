@@ -290,19 +290,21 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
           | Ok dis_hv -> Ok (process dis_hv)
           | Error _ -> Ok dis
     in
-    let fields =
+    let meta_header_hv =
+      HeaderValue.to_string
+        (create_meta_header_val
+          src
+          trans_entry.target_type
+          ts
+          trans_entry.convert_id
+          (string_of_int hashed_data))
+     in
+     let fields =
       Assoc.(
         replace ("Content-Type", new_ct) >>
         replace ("Content-Transfer-Encoding", "base64") >>
         replace ("Content-Disposition", new_dis) >>
-        add meta_header_name
-          (HeaderValue.to_string
-            (create_meta_header_val
-              src
-              trans_entry.target_type
-              ts
-              trans_entry.convert_id
-              (string_of_int hashed_data))))
+        add meta_header_name meta_header_hv)
           (hd # fields)
     in
       Ok (Netmime.basic_mime_header fields)
@@ -359,7 +361,7 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
           let* hv = HeaderValue.parse ct in
           Ok (HeaderValue.head hv)
 
-  let conversion_table dict tree copy =
+  let already_converted tree =
     let ( let* ) = Result.bind in
     let rec build lst tree =
       match tree with
