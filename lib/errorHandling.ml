@@ -19,6 +19,7 @@ module _ : ERROR with
 module _ : ERROR with
   type t = [
     | `EmailParse
+    | `MissingContentType
     | Convert.Conversion_ocamlnet.HeaderValue.Error.t
   ] = Convert.Conversion_ocamlnet.Error
 
