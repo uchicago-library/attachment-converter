@@ -9,6 +9,7 @@ module Report        = Report
 module Mbox          = Mbox
 module Convert       = Convert
 module ErrorHandling = ErrorHandling
+module Header        = Header
 
 (*
  * Copyright (c) 2021 Matt Teichman

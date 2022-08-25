@@ -1,6 +1,7 @@
 open OUnit2
 open Lib.Convert.Conversion_ocamlnet
 open Prelude
+open Lib.Header
 
 let basic_cont_dis =
 "attachment;    filename*=utf-8''test.gif;    filename=\"test.gif\""
@@ -21,44 +22,44 @@ let basic_cont_dis_conv_3 =
 "attachment;    filename=\"test_CONVERTED.tiff\";    filename*=utf-8''test_CONVERTED.tiff"
 
 let parse_test_1 =
-  let open HeaderValue in
+  let open Field.Value in
   let description = "parsing basic_cont_dis" in
-  let param1 : HeaderValue.Parameter.t = { attr = "filename*"; value = "utf-8''test.gif"; quotes = false } in
-  let param2 : HeaderValue.Parameter.t = { attr = "filename"; value = "test.gif"; quotes = true } in
-  let out = Ok { head = "attachment"; params = [param1 ; param2 ] } in
+  let param1 : Field.Value.Parameter.t = { attr = "filename*"; value = "utf-8''test.gif"; quotes = false } in
+  let param2 : Field.Value.Parameter.t = { attr = "filename"; value = "test.gif"; quotes = true } in
+  let out = Ok { value = "attachment"; params = [param1 ; param2 ] } in
   let check _ = assert_equal out (parse basic_cont_dis) in
     description >:: check
 
 let to_string_test_1 =
-  let open HeaderValue in
+  let open Field.Value in
   let description = "simple to_string of basic_cont_dis test" in
   let out = "attachment;\n\tfilename*=utf-8''test.gif;\n\tfilename=\"test.gif\"" in
   let check _ = assert_equal out (to_string (Result.get_ok (parse basic_cont_dis))) ~printer:id in
     description >:: check
 
 let to_string_test_2 =
-  let open HeaderValue in
+  let open Field.Value in
   let description = "simple to_string without params" in
-  let out = "attachment;" in
+  let out = "attachment" in
   let check _ = assert_equal out (to_string (Result.get_ok (parse "attachment"))) ~printer:id in
     description >:: check
 
 let update_test_1 =
-  let open HeaderValue in
+  let open Field.Value in
   let description = "simple replace_val test" in
-  let param1: HeaderValue.Parameter.t = { attr = "filename*"; value = "TESTING"; quotes = false } in
-  let param2: HeaderValue.Parameter.t = { attr = "filename"; value = "test.gif"; quotes = true } in
-  let out = { head = "attachment"; params = [param1 ; param2 ] } in
+  let param1: Field.Value.Parameter.t = { attr = "filename*"; value = "TESTING"; quotes = false } in
+  let param2: Field.Value.Parameter.t = { attr = "filename"; value = "test.gif"; quotes = true } in
+  let out = { value = "attachment"; params = [param1 ; param2 ] } in
   let check _ = assert_equal out (replace_val "filename*" "TESTING" (Result.get_ok (parse basic_cont_dis))) in
     description >:: check
 
 let update_test_2 =
-  let open HeaderValue in
-  let description = "simple update_head test" in
-  let param1: HeaderValue.Parameter.t = { attr = "filename*"; value = "utf-8''test.gif"; quotes = false } in
-  let param2: HeaderValue.Parameter.t = { attr = "filename"; value = "test.gif"; quotes = true } in
-  let out = { head = "inline"; params = [param1 ; param2 ] } in
-  let check _ = assert_equal out (update_head "inline" (Result.get_ok (parse basic_cont_dis))) in
+  let open Field.Value in
+  let description = "simple update_value test" in
+  let param1: Field.Value.Parameter.t = { attr = "filename*"; value = "utf-8''test.gif"; quotes = false } in
+  let param2: Field.Value.Parameter.t = { attr = "filename"; value = "test.gif"; quotes = true } in
+  let out = { value = "inline"; params = [param1 ; param2 ] } in
+  let check _ = assert_equal out (update_value "inline" (Result.get_ok (parse basic_cont_dis))) in
     description >:: check
 
 let header_value_parser_tests =

@@ -29,151 +29,19 @@ end
 
 module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
 
-  module HeaderValue = struct
-    module Error = struct
-      type t = [
-        | `ParameterParse
-      ]
-
-      let message _ = "Error reading parameters" (* TODO: more data *)
-    end
-
-    module Parameter = struct
-      type t = {
-        attr: string;
-        value: string;
-        quotes: bool;
-      }
-
-      let map_attr f p = { p with attr = f p.attr }
-      let map_val f p = { p with value = f p.value }
-      let map_qt f p = { p with quotes = f p.quotes }
-
-      let attr p = p.attr
-      let value p = p.value
-      let quotes p = p.quotes
-
-      let param ?(quotes=false) attr value =
-        { attr = attr;
-          value = value;
-          quotes = quotes;
-        }
-
-      let is_quoted str = String.prefix "\"" str && String.suffix "\"" str
-      let unquoted str = String.trim "\"" str
-      let quoted str = "\"" ^ str ^ "\""
-
-      let parse str =
-        let cut_or_none str = match String.cut ~sep:"=" str with
-          | left, Some right -> Some (left, right)
-          | _, None -> None
-        in
-        let ( let* ) = Option.(>>=) in
-        let* (attr, value) = cut_or_none str in
-          Some (
-            if is_quoted value then
-              param ~quotes:true attr (unquoted value)
-            else
-              param attr value
-          )
-
-      let to_string { attr; value; quotes } =
-        attr ^ "=" ^ (if quotes then quoted value else value)
-    end
-
-    type t = {
-      head: string;
-      params: Parameter.t list;
-    }
-
-    let head hv = hv.head
-    let params hv = hv.params
-
-    let header_val ?(params=[]) head =
-      { head = head;
-        params = params;
-      }
-
-    let parse str =
-      let vs = String.cuts ~sep:";" str in
-      let vs = List.map String.(trim whitespace) vs in (* not sure if trimming is necessary or should be done *)
-      let rec process ls =
-        match ls with
-        | [] -> Some []
-        | None :: _ -> None
-        | Some p :: ps -> Option.map (fun xs -> p :: xs) (process ps)
-      in
-        match vs with
-        | [] -> Error `ParameterParse
-        | head :: params ->
-            match process (List.map Parameter.parse params) with
-            | None -> Error `ParameterParse
-            | Some params ->
-                Ok (header_val ~params:params head)
-
-    let unsafe_parse = Result.get_ok << parse
-
-    let to_string { head ; params } =
-      let f curr p = curr ^ ";\n\t" ^ Parameter.to_string p in
-        match params with
-        | [] -> head ^ ";"
-        | _  -> List.foldl f head params
-
-    let lookup_param attr hv =
-      let rec lookup attr ls =
-        match ls with
-        | [] -> None
-        | p :: ps ->
-            if Parameter.attr p = attr then
-              Some (Parameter.value p)
-            else
-              lookup attr ps
-      in
-        lookup attr (params hv)
-
-    let update_head new_head hv =
-      { hv with head = new_head }
-
-    let update_param attr f hv =
-      let cons_op x ls = Option.either (List.snoc ls) ls x in
-      let rec update ls =
-        match ls with
-        | [] -> cons_op (f None) []
-        | p :: ps ->
-            if Parameter.attr p = attr then
-              cons_op (f (Some p)) ps
-            else
-              p :: update ps
-      in
-        { hv with params = update hv.params }
-
-    let map_val attr f =
-      update_param attr (Option.map (Parameter.map_val f))
-
-    let replace_val attr new_value =
-      map_val attr (k new_value)
-
-    let remove_val attr =
-      update_param attr (k None)
-
-    let add_param ?(quotes=false) attr value =
-      update_param attr
-        (k (Some (Parameter.param ~quotes:quotes attr value)))
-  end
-
   module Error = struct
     type t = [
       | `EmailParse (* TODO: More data *)
       | `MissingContentType
-      | HeaderValue.Error.t
+      | Header.Field.Value.Error.t
     ]
 
     let message err =
       match err with
       | `EmailParse -> "Error parsing the given email"
       | `MissingContentType -> "Content type missing"
-      | #HeaderValue.Error.t as e ->
-          HeaderValue.Error.message e
+      | #Header.Field.Value.Error.t as e ->
+          Header.Field.Value.Error.message e
   end
 
   type parsetree  = Netmime.complex_mime_message
@@ -232,22 +100,22 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
       | exception Not_found -> Ok false
       | exception e -> raise e (* TODO: Better logging and error handling *)
       | hd ->
-          let* hv = HeaderValue.parse hd in
-          let s = String.lowercase_ascii hv.head in
+          let* hv = Header.Field.Value.parse hd in
+          let s = String.lowercase_ascii (Header.Field.Value.value hv) in
             Ok (s = "attachment" || s = "inline")
 
   let renamed_file id new_ext filename =
     let base = Filename.remove_extension filename in
     String.concat ""
-      [ base ;
-        "_CONVERTED" ;
+      [ base;
+        "_CONVERTED";
         id;
-        new_ext ;
+        new_ext;
       ]
 
   let meta_header_name = "X-Attachment-Converter" (* TODO: MOVE SOMEWHERE ELSE, CODE SMELL *)
 
-  let create_meta_header_val src tar ts cid hd : HeaderValue.t =
+  let create_meta_header_val src tar ts cid hd : Header.Field.Value.t =
     let params =
       [ "source-type", src;
         "target-type", tar;
@@ -256,28 +124,66 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
         "original-file-hash", hd;
       ]
     in
-      { head = "converted";
-        params = map (uncurry HeaderValue.Parameter.param) params;
-      }
+      Header.Field.Value.hf_value
+        ~params:(map (uncurry Header.Field.Value.Parameter.param) params)
+        "converted"
 
   let updated_header hd src trans_entry hashed_data =
+    let open Header.Field.Value in
     let open Configuration.Formats in
-    let open HeaderValue in
+    let ( let* ) = Result.(>>=) in
+    let ts = timestamp () in
+    let rename = renamed_file ts trans_entry.target_ext in
+    let update_ct =
+      update_value trans_entry.target_type >>
+      map_val "name" rename
+    in
+    let update_cd =
+      update_value "attachment" >>
+      map_val "filename" rename >>
+      map_val "filename*" rename
+    in
+    let update_cte = update_value "base64" in
+    let update_fields = let open Header in
+      update_or_noop update_ct "Content-Type" >>
+      update_or_default update_cd (hf_value "attachment") "Content-Disposition" >>
+      update_or_noop update_cte "Content-Transfer-Encoding">>
+      add
+        (create_meta_header_val
+          src
+          trans_entry.target_type
+          ts
+          trans_entry.convert_id
+          (string_of_int hashed_data))
+        meta_header_name
+    in
+    let* fields = Header.from_assoc_list (hd # fields) in
+    let process =
+      update_fields >>
+      Header.to_assoc_list >>
+      Netmime.basic_mime_header >>
+      Result.ok
+    in
+      process fields
+(*
+  let updated_header hd src trans_entry hashed_data =
+    let open Configuration.Formats in
+    let open Header.Field.Value in
     let ( let* ) = Result.(>>=) in
     let ts = timestamp () in
     let new_ext = trans_entry.target_ext in
     let* new_ct =
       let process =
-        update_head trans_entry.target_type >>
+        update_value trans_entry.target_type >>
         map_val "name" (renamed_file ts new_ext) >>
         to_string
       in
-      let* ct_hv = HeaderValue.parse (hd # field "content-type") in
+      let* ct_hv = Header.Field.Value.parse (hd # field "content-type") in
         Ok (process ct_hv)
     in
     let* new_dis =
       let process =
-        update_head "attachment" >>
+        update_value "attachment" >>
         map_val "filename" (renamed_file ts new_ext) >>
         map_val "filename*" (renamed_file ts new_ext) >>
         to_string
@@ -286,12 +192,12 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
       | exception Not_found -> Ok "attachment"
       | exception e -> raise e (* TODO: better logging *)
       | dis ->
-          match HeaderValue.parse dis with
+          match Header.Field.Value.parse dis with
           | Ok dis_hv -> Ok (process dis_hv)
           | Error _ -> Ok dis
     in
     let meta_header_hv =
-      HeaderValue.to_string
+      Header.Field.Value.to_string
         (create_meta_header_val
           src
           trans_entry.target_type
@@ -308,6 +214,7 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
           (hd # fields)
     in
       Ok (Netmime.basic_mime_header fields)
+*)
 
   let transform hd bd src trans_entry =
     let open Netmime in
@@ -327,30 +234,13 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
         treated as an attached file, the Content-Disposition header will
         include a file name parameter. *)
 
-  module List = struct (* TODO: MOVE SOMEWHERE ELSE! *)
-    include List
-
-    let symm_diff eq l1 l2 =
-      let rec process l r =
-        match l, r with
-        | xs, [] -> xs
-        | [], ys -> ys
-        | x :: xs, y :: ys ->
-            if eq x y then
-              process xs ys
-            else
-              x :: y :: process xs ys
-      in
-        process l1 l2
-  end
-
   let conversion_id header =
     match header # field meta_header_name with
     | exception Not_found -> None
     | exception e -> raise e
     | mh ->
-        let hv = HeaderValue.unsafe_parse mh in
-          HeaderValue.lookup_param "conversion-id" hv
+        let hv = Header.Field.Value.unsafe_parse mh in
+          Header.Field.Value.lookup_param "conversion-id" hv
 
   let content_type header =
     let ( let* ) = Result.bind in
@@ -358,27 +248,17 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
       | exception Not_found -> Error `MissingContentType
       | exception e -> raise e (* TODO: Better logging and error handling *)
       | ct ->
-          let* hv = HeaderValue.parse ct in
-          Ok (HeaderValue.head hv)
+          let* hv = Header.Field.Value.parse ct in
+          Ok (Header.Field.Value.value hv)
 
   let already_converted tree =
     let ( let* ) = Result.bind in
     let rec build lst tree =
       match tree with
       | header, `Body body ->
-          let* check = is_attachment (header, `Body body) in
-            if check then
-              match conversion_id header with
-              | Some id -> Ok ((Hashtbl.hash body, id) :: lst)
-              | None ->
-                  let* ct = content_type header in
-                  let conversions = Option.default [] (Configuration.Formats.Dict.find_opt ct dict) in
-                  let format_conversion c = (Hashtbl.hash body, c.Configuration.Formats.convert_id) in
-                  let conversions = List.map format_conversion conversions in
-                  let eq (h1,_) (h2,_) = h1 = h2 in
-                    Ok (List.symm_diff eq conversions lst)
-            else
-              Ok lst
+          (match conversion_id header with
+          | Some id -> Ok ((Hashtbl.hash body, id) :: lst)
+          | None -> Ok lst)
       | _, `Parts parts ->
           let f curr next =
             let* l = curr in
@@ -388,6 +268,25 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
             List.foldl f (Ok []) parts
     in
       build [] tree
+
+(*
+  let amap_or_copy dict tree copy =
+    let ( let* ) = Result.bind in
+    let rec process tree =
+      match tree with
+      | header, `Body body ->
+          let* check = is_attachment header in
+          if check then
+            let* source_type = content_type header in
+            let trans_lst = Configuration.Formats.transformations dict source_type in
+            let converted_attachments =
+              Ok (Result.reduce (List.map (transform header body source_type) trans_lst)) in
+              (
+          else
+            [(body, `Body body)]
+      | header, `Parts parts ->
+          (* map stuff over *)
+*)
 
   let amap_or_copy dict tree copy =
     let ( let* ) = Result.bind in
@@ -401,8 +300,8 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
                  | exception Not_found -> Ok [(bhd, `Body b)]
                  | exception e -> raise e (* TODO: Better logging and error handling *)
                  | ct ->
-                     let* hv = HeaderValue.parse ct in
-                     let src = hv.head in
+                     let* hv = Header.Field.Value.parse ct in
+                     let src = Header.Field.Value.value hv in
                      let trans_lst = Option.default []
                                        (Configuration.Formats.Dict.find_opt src dict)
                      in

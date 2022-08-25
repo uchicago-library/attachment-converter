@@ -14,13 +14,13 @@ module _ : ERROR with
 module _ : ERROR with
   type t = [
     | `ParameterParse
-  ] = Convert.Conversion_ocamlnet.HeaderValue.Error
+  ] = Header.Field.Value.Error
 
 module _ : ERROR with
   type t = [
     | `EmailParse
     | `MissingContentType
-    | Convert.Conversion_ocamlnet.HeaderValue.Error.t
+    | Header.Field.Value.Error.t
   ] = Convert.Conversion_ocamlnet.Error
 
 module Error : ERROR with
