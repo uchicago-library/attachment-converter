@@ -128,7 +128,7 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
         ~params:(map (uncurry Header.Field.Value.Parameter.param) params)
         "converted"
 
-  let updated_header hd src trans_entry hashed_data =
+  let update_header hd src trans_entry hashed_data =
     let open Header.Field.Value in
     let open Configuration.Formats in
     let ( let* ) = Result.(>>=) in
@@ -165,56 +165,6 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
       Result.ok
     in
       process fields
-(*
-  let updated_header hd src trans_entry hashed_data =
-    let open Configuration.Formats in
-    let open Header.Field.Value in
-    let ( let* ) = Result.(>>=) in
-    let ts = timestamp () in
-    let new_ext = trans_entry.target_ext in
-    let* new_ct =
-      let process =
-        update_value trans_entry.target_type >>
-        map_val "name" (renamed_file ts new_ext) >>
-        to_string
-      in
-      let* ct_hv = Header.Field.Value.parse (hd # field "content-type") in
-        Ok (process ct_hv)
-    in
-    let* new_dis =
-      let process =
-        update_value "attachment" >>
-        map_val "filename" (renamed_file ts new_ext) >>
-        map_val "filename*" (renamed_file ts new_ext) >>
-        to_string
-      in
-      match hd # field "content-disposition" with
-      | exception Not_found -> Ok "attachment"
-      | exception e -> raise e (* TODO: better logging *)
-      | dis ->
-          match Header.Field.Value.parse dis with
-          | Ok dis_hv -> Ok (process dis_hv)
-          | Error _ -> Ok dis
-    in
-    let meta_header_hv =
-      Header.Field.Value.to_string
-        (create_meta_header_val
-          src
-          trans_entry.target_type
-          ts
-          trans_entry.convert_id
-          (string_of_int hashed_data))
-     in
-     let fields =
-      Assoc.(
-        replace ("Content-Type", new_ct) >>
-        replace ("Content-Transfer-Encoding", "base64") >>
-        replace ("Content-Disposition", new_dis) >>
-        add meta_header_name meta_header_hv)
-          (hd # fields)
-    in
-      Ok (Netmime.basic_mime_header fields)
-*)
 
   let transform hd bd src trans_entry =
     let open Netmime in
@@ -222,7 +172,7 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
     let ( let* ) = Result.(>>=) in
     let data = bd # value in
     let hashed_data = Hashtbl.hash data in
-    let* conv_hd = updated_header hd src trans_entry hashed_data in
+    let* conv_hd = update_header hd src trans_entry hashed_data in
     let conv_data = C.convert trans_entry.shell_command data in
       Ok (match trans_entry.variety with
         | NoChange -> hd, `Body bd
@@ -234,14 +184,6 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
         treated as an attached file, the Content-Disposition header will
         include a file name parameter. *)
 
-  let conversion_id header =
-    match header # field meta_header_name with
-    | exception Not_found -> None
-    | exception e -> raise e
-    | mh ->
-        let hv = Header.Field.Value.unsafe_parse mh in
-          Header.Field.Value.lookup_param "conversion-id" hv
-
   let content_type header =
     let ( let* ) = Result.bind in
       match header # field "content-type" with
@@ -252,11 +194,11 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
           Ok (Header.Field.Value.value hv)
 
   let already_converted tree =
-    let ( let* ) = Result.bind in
+    let ( let* ) = Result.(>>=) in
     let rec build lst tree =
       match tree with
       | header, `Body body ->
-          (match conversion_id header with
+          (match Header.lookup_param header meta_header_name "conversion-id" with
           | Some id -> Ok ((Hashtbl.hash body, id) :: lst)
           | None -> Ok lst)
       | _, `Parts parts ->
@@ -269,9 +211,9 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
     in
       build [] tree
 
-(*
+
   let amap_or_copy dict tree copy =
-    let ( let* ) = Result.bind in
+    let ( let* ) = Result.(>>=) in
     let rec process tree =
       match tree with
       | header, `Body body ->
@@ -286,7 +228,7 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
             [(body, `Body body)]
       | header, `Parts parts ->
           (* map stuff over *)
-*)
+
 
   let amap_or_copy dict tree copy =
     let ( let* ) = Result.bind in
