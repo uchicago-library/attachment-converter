@@ -13,20 +13,17 @@ type cmd_input = [`Stdin | `File of string]
 type cmd_input_parser = string -> (cmd_input, [`Msg of string]) Stdlib.result
 type cmd_input_printer = cmd_input Arg.printer
 
-(*(string -> ('a, [ `Msg of string ]) Stdlib.result*)
 let cmd_input_parser str = 
   if Sys.file_exists str 
   then Ok (`File str)
   else Error (`Msg ("File: " ^ str ^ " does not exist."))
 
-(*Format.formatter -> `a -> unit*)
 let cmd_input_printer fmt input = let str = 
   match input with
     | `Stdin -> "STDIN"
     | `File fn -> fn
   in Format.pp_print_string fmt str
 
-(*parsed_in conv*)
 let cmd_input_conv = Arg.conv (cmd_input_parser, cmd_input_printer)
 
 let report ?(params = false) inp =
@@ -60,7 +57,6 @@ let convert inp =
        | Ok converted -> write stdout converted
   else Printf.printf "Error: missing config file '%s'\n" default_config_name
 
-(*params matched first in the case both report and params are true*)
 let convert_wrapper rpt rpt_p inp =
   if rpt_p then report ~params:true inp
   else if rpt then report inp
