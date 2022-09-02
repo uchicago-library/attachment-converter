@@ -71,7 +71,7 @@ Arg.(value & pos 0 cmd_input_conv `Stdin & info [] ~doc)
 
 let report_params_t = let doc = "Prints a list of all MIME types in the input along with 
 all header and field parameters that go with it." in
-Arg.(value & flag & info ["p"; "report-params"] ~doc)
+Arg.(value & flag & info ["report-params"] ~doc)
 
 let report_t = let doc = "Provides a list of all attachment types in a given mailbox." in
 Arg.(value & flag & info ["r"; "report"] ~doc)
@@ -79,7 +79,7 @@ Arg.(value & flag & info ["r"; "report"] ~doc)
 let convert_t = Term.(const convert_wrapper $ report_t $ report_params_t $ input_t)
 
 let cmd = let doc = "Converts email attachments." in
-  let info = Cmd.info "convert" ~doc in
+  let info = Cmd.info "attachment-converter" ~doc in
   Cmd.v info convert_t
 
 let main () = exit (Cmd.eval cmd)
