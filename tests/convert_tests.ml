@@ -1,5 +1,5 @@
 open OUnit2
-open Lib.Convert.Conversion_ocamlnet
+open Lib.Convert.Converter
 open Prelude
 open Lib.Header
 
@@ -71,20 +71,12 @@ let header_value_parser_tests =
       update_test_2 ;
     ]
 
-(* let empty_config_test_0 tree =
-  let description = "empty config is okay on email"     in
-  let open Lib.Configuration.Formats                    in
-  let is_okay     = Result.good (acopy Dict.empty tree) in
-  let check _     = assert_bool "is okay" is_okay       in
-  description >:: check
-
 let empty_config_test_1 tree =
-  let description = "empty config is noop"        in
-  let open Lib.Configuration.Formats              in
-  let copied      = acopy Dict.empty tree         in
-  let check _     = assert_equal (Ok tree) copied in
+  let description = "empty config is noop"   in
+  let open Lib.Configuration.Formats         in
+  let copied      = acopy Dict.empty tree    in
+  let check _     = assert_equal tree copied in
   description >:: check
-*)
 
 let noop_gif_config =
   let open Lib.Configuration.Formats in
@@ -183,8 +175,7 @@ let basic_test_email fname =
   let email = readfile fname in
   "basic test suite for email: " ^ fname >:::
     [ parse_okay email                                     ;
-(*      empty_config_test_0    (Result.get_ok (parse email)) ;
-      empty_config_test_1    (Result.get_ok (parse email)) ; *)
+      empty_config_test_1    (Result.get_ok (parse email)) ;
       noop_gif_config_test_0 (Result.get_ok (parse email)) ;
     ]
 

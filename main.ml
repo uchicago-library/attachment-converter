@@ -20,7 +20,7 @@ let report ?(params=false) () =
 let default_config_name = ".config"
 
 let convert ?(single_email=false) () =
-  let open Lib.Convert.Conversion_ocamlnet in
+  let open Lib.Convert.Converter in
   let open Lib.Configuration.ParseConfig in
   let open Lib.ErrorHandling in
   let ( let* ) = Result.(>>=) in

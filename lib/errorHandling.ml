@@ -20,23 +20,23 @@ module _ : ERROR with
   type t = [
     | `EmailParse
     | Header.Field.Value.Error.t
-  ] = Convert.Conversion_ocamlnet.Error
+  ] = Convert.Converter.Error
 
 module Error : ERROR with
   type t = [
-    | Convert.Conversion_ocamlnet.Error.t
+    | Convert.Converter.Error.t
     | Configuration.ParseConfig.Error.t
   ]
   = struct
   type t = [
-    | Convert.Conversion_ocamlnet.Error.t
+    | Convert.Converter.Error.t
     | Configuration.ParseConfig.Error.t
   ]
 
   let message err =
     match err with
-    | #Convert.Conversion_ocamlnet.Error.t as e ->
-        Convert.Conversion_ocamlnet.Error.message e
+    | #Convert.Converter.Error.t as e ->
+        Convert.Converter.Error.message e
     | #Configuration.ParseConfig.Error.t as e ->
         Configuration.ParseConfig.Error.message e
 end
