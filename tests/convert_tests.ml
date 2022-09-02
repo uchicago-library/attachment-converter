@@ -71,7 +71,7 @@ let header_value_parser_tests =
       update_test_2 ;
     ]
 
-let empty_config_test_0 tree =
+(* let empty_config_test_0 tree =
   let description = "empty config is okay on email"     in
   let open Lib.Configuration.Formats                    in
   let is_okay     = Result.good (acopy Dict.empty tree) in
@@ -84,6 +84,7 @@ let empty_config_test_1 tree =
   let copied      = acopy Dict.empty tree         in
   let check _     = assert_equal (Ok tree) copied in
   description >:: check
+*)
 
 let noop_gif_config =
   let open Lib.Configuration.Formats in
@@ -158,8 +159,7 @@ let noop_gif_config_test_0 tree =
   let description = "noop config is noop" in
   let check _ = assert_equal_trees
     tree
-    (Result.get_ok
-      (amap noop_gif_config tree))
+      (amap noop_gif_config tree)
   in
   description >:: check
 
@@ -167,8 +167,7 @@ let header_change_gif_config_test_0 tree =
   let description = "header change config is not noop" in
   let check _ = assert_equal_trees
     tree
-    (Result.get_ok
-      (amap header_change_gif_config tree))
+      (amap header_change_gif_config tree)
   in
   description >:: check
 
@@ -184,8 +183,8 @@ let basic_test_email fname =
   let email = readfile fname in
   "basic test suite for email: " ^ fname >:::
     [ parse_okay email                                     ;
-      empty_config_test_0    (Result.get_ok (parse email)) ;
-      empty_config_test_1    (Result.get_ok (parse email)) ;
+(*      empty_config_test_0    (Result.get_ok (parse email)) ;
+      empty_config_test_1    (Result.get_ok (parse email)) ; *)
       noop_gif_config_test_0 (Result.get_ok (parse email)) ;
     ]
 

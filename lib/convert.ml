@@ -21,8 +21,8 @@ sig
   type parsetree
   val parse : string -> (parsetree, error) result
   val to_string : parsetree -> string
-  val amap : Configuration.Formats.t -> parsetree -> (parsetree, error) result
-  val acopy : Configuration.Formats.t -> parsetree -> (parsetree, error) result
+  val amap : Configuration.Formats.t -> parsetree -> parsetree
+  val acopy : Configuration.Formats.t -> parsetree -> parsetree
   val acopy_email : Configuration.Formats.t -> string -> (string, error) result
   val acopy_mbox : Configuration.Formats.t -> in_channel -> (unit, error) result
 end
@@ -32,14 +32,12 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
   module Error = struct
     type t = [
       | `EmailParse (* TODO: More data *)
-      | `MissingContentType
       | Header.Field.Value.Error.t
     ]
 
     let message err =
       match err with
       | `EmailParse -> "Error parsing the given email"
-      | `MissingContentType -> "Content type missing"
       | #Header.Field.Value.Error.t as e ->
           Header.Field.Value.Error.message e
   end
@@ -103,6 +101,14 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
           let* hv = Header.Field.Value.parse hd in
           let s = String.lowercase_ascii (Header.Field.Value.value hv) in
             Ok (s = "attachment" || s = "inline")
+
+  let is_attach tree =
+    let header, _ = tree in
+      match Header.lookup_value header "content-disposition" with
+      | None -> false
+      | Some cd ->
+          let s = String.lowercase_ascii cd in
+            s = "attachment" || s = "inline"
 
   let renamed_file id new_ext filename =
     let base = Filename.remove_extension filename in
@@ -184,54 +190,81 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
         treated as an attached file, the Content-Disposition header will
         include a file name parameter. *)
 
-  let content_type header =
-    let ( let* ) = Result.bind in
-      match header # field "content-type" with
-      | exception Not_found -> Error `MissingContentType
-      | exception e -> raise e (* TODO: Better logging and error handling *)
-      | ct ->
-          let* hv = Header.Field.Value.parse ct in
-          Ok (Header.Field.Value.value hv)
-
   let already_converted tree =
-    let ( let* ) = Result.(>>=) in
-    let rec build lst tree =
+    let rec build tree =
       match tree with
-      | header, `Body body ->
-          (match Header.lookup_param header meta_header_name "conversion-id" with
-          | Some id -> Ok ((Hashtbl.hash body, id) :: lst)
-          | None -> Ok lst)
-      | _, `Parts parts ->
-          let f curr next =
-            let* l = curr in
-            let* r = build lst next in
-              Ok (l @ r)
+      | header, `Body _ ->
+          let p =
+            let ( let* ) = Option.(>>=) in
+            let* hashed = Header.lookup_param header meta_header_name "original-file-hash" in
+            let* id = Header.lookup_param header meta_header_name "conversion-id" in
+              Some (int_of_string hashed, id)
           in
-            List.foldl f (Ok []) parts
+            Option.to_list p
+      | _, `Parts parts ->
+          List.flatmap build parts
     in
-      build [] tree
+      build tree
 
+  let is_converted tree =
+    let header, _ = tree in
+      Option.something
+        (Header.lookup_value header meta_header_name)
 
-  let amap_or_copy dict tree copy =
-    let ( let* ) = Result.(>>=) in
+  let filter_converted hashed converted to_convert =
+    let rec process l r =
+      match l with
+      | [] -> r
+      | (h, id) :: hs ->
+          if h = hashed then
+            let _ = write stderr "got here" in
+            process hs (List.filter (fun c -> c.Configuration.Formats.convert_id <> id) r)
+          else
+            process hs r
+    in
+      process converted to_convert
+
+  let body_flatmap (f: parsetree -> parsetree list) tree =
+    let create_multipart_header () = Netmime.basic_mime_header [] (* TODO *) in
+    let list_to_tree (l: parsetree list) =
+      Option.default
+        (create_multipart_header (), `Parts l)
+        (List.head l)
+    in
     let rec process tree =
       match tree with
-      | header, `Body body ->
-          let* check = is_attachment header in
-          if check then
-            let* source_type = content_type header in
-            let trans_lst = Configuration.Formats.transformations dict source_type in
-            let converted_attachments =
-              Ok (Result.reduce (List.map (transform header body source_type) trans_lst)) in
-              (
-          else
-            [(body, `Body body)]
+      | header, `Body body -> list_to_tree (f (header, `Body body))
       | header, `Parts parts ->
-          (* map stuff over *)
+          let g t =
+            match t with
+            | h, `Body b -> f (h, `Body b)
+            | h, `Parts p -> [process (h, `Parts p)]
+          in
+            (header, `Parts (List.flatmap g parts))
+    in
+      process tree
 
+  let amap_or_copy dict ?(copy=true) ?(idem=true) tree =
+    let done_converting = if idem then already_converted tree else [] in
+    let converted_attachments tree =
+      match tree with
+      | header, `Body body ->
+          if is_attach (header, `Body body) && (not idem || not (is_converted (header, `Body body))) then
+            match Header.lookup_value header "content-type" with
+            | None -> []
+            | Some ct ->
+               let hashed = Hashtbl.hash (body # value) in (* TODO: pass this to transform *)
+               let conversions = Option.default [] (Configuration.Formats.Dict.find_opt ct dict) in
+               let trans_lst = filter_converted hashed done_converting conversions in
+                 Result.reduce (List.map (transform header body ct) trans_lst) @
+                 if copy || empty trans_lst then [header, `Body body] else []
+          else
+            [header, `Body body]
+      | _, `Parts _ -> [] (* case never reached *)
+    in
+      body_flatmap converted_attachments tree
 
-  let amap_or_copy dict tree copy =
-    let ( let* ) = Result.bind in
+(*    let ( let* ) = Result.bind in
     let rec copy_or_skip lst =
       match lst with
       | (bhd, `Body b) :: rs ->
@@ -264,21 +297,22 @@ module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
     | header, `Parts p_lst ->
         let* cmp_lst = copy_or_skip p_lst in
         Ok (header, `Parts cmp_lst)
+*)
 
   (**applies conversions to the attachment elements of the parsetree, replacing the original
         attachment with the converted versions in the returned parsetree*)
   let amap dict (tree : parsetree) =
-    amap_or_copy dict tree false
+    amap_or_copy dict ~copy:false tree
 
   (**applies conversions to the attachment elements of the parsetree, leaving the original
       attachment with the converted versions in the returned parsetree*)
   let acopy dict (tree : parsetree) =
-    amap_or_copy dict tree true
+    amap_or_copy dict tree
 
   let acopy_email config email =
     let ( let* ) = Result.bind in
     let* tree = parse email in
-    let* converted_tree = acopy config tree in
+    let converted_tree = acopy config tree in
       Ok (to_string converted_tree)
 
   let acopy_mbox config in_chan =

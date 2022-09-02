@@ -180,13 +180,22 @@ let update g name fields =
 
 let update_or_noop f = update (Option.map f)
 let update_or_default f def = update (Option.either (f >> Option.some) (Some def))
-let add new_v = update (k (Some new_v))
+let add new_v = update (k (Some new_v)) (* note: replaces the old conversion *)
 
 let lookup_param header field_name param_name =
-    let ( let* ) = Option.(>>=) in
-      match header # field field_name with
-      | exception Not_found -> None
-      | exception e -> raise e
-      | hv_str ->
-          let* hv = Result.to_option (Field.Value.parse hv_str) in
-            Field.Value.lookup_param param_name hv
+  let ( let* ) = Option.(>>=) in
+    match header # field field_name with
+    | exception Not_found -> None
+    | exception e -> raise e
+    | hv_str ->
+        let* hv = Result.to_option (Field.Value.parse hv_str) in
+          Field.Value.lookup_param param_name hv
+
+let lookup_value header field_name =
+  let ( let* ) = Option.(>>=) in
+    match header # field field_name with
+    | exception Not_found -> None
+    | exception e -> raise e
+    | hv_str ->
+        let* hv = Result.to_option (Field.Value.parse hv_str) in
+          Some (Field.Value.value hv)
