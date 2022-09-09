@@ -133,7 +133,7 @@ module Conversion_ocamlnet = struct
         map_val "filename" rename >>
         map_val "filename*" rename
       in
-      let update_cte = update_value "base64" in
+      let update_cte = update_value Constants.meta_header_cont_dist in
       let update_fields = let open Header in
         update_or_noop update_ct "Content-Type" >>
         update_or_default update_cd (hf_value "attachment") "Content-Disposition" >>
