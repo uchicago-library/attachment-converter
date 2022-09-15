@@ -47,4 +47,4 @@ echo
 echo %source_type image/jpeg
 echo %target_type image/tiff
 echo %shell_command $(pwd)/conversion-scripts/vips-wrapper.sh -i jpeg -o tif
-echo % vips-jpg-to-tif
+echo %id vips-jpg-to-tif

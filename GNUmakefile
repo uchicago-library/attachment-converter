@@ -45,3 +45,12 @@ clean: $(SUBCLEANS)		## clean up build artifacts
 
 -include $(LIB)/Makefile.help
 -include $(LIB)/Makefile.dldc
+
+sandbox::
+	opam switch create . --deps-only --repos dldc=https://dldc.lib.uchicago.edu/opam,default --yes
+PHONY: sandbox
+
+deps::
+	opam repository add dldc https://dldc.lib.uchicago.edu/opam
+	opam install . --deps-only --yes
+PHONY: deps
