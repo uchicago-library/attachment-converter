@@ -156,7 +156,7 @@ module Conversion_ocamlnet = struct
       in
         process fields
 
-    let hash_attach body = Hashtbl.hash (body # value)
+    let hash_attach body = Hashtbl.hash (body # value) (* TODO: replace with better hash function *)
 
     let transform hd bd src trans_entry =
       let open Netmime in
