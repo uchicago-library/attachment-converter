@@ -22,10 +22,10 @@ sig
   type parsetree
   val parse : string -> (parsetree, error) result
   val to_string : parsetree -> string
-  val amap : Configuration.Formats.t -> parsetree -> parsetree
-  val acopy : Configuration.Formats.t -> parsetree -> parsetree
-  val acopy_email : Configuration.Formats.t -> string -> (string, error) result
-  val acopy_mbox : Configuration.Formats.t -> in_channel -> (unit, error) result
+  val amap : ?idem:bool -> Configuration.Formats.t -> parsetree -> parsetree
+  val acopy : ?idem:bool -> Configuration.Formats.t -> parsetree -> parsetree
+  val acopy_email : ?idem:bool -> Configuration.Formats.t -> string -> (string, error) result
+  val acopy_mbox : ?idem:bool -> Configuration.Formats.t -> in_channel -> (unit, error) result
 end
 
 module Conversion_ocamlnet = struct
@@ -204,12 +204,14 @@ module Conversion_ocamlnet = struct
       in
         process converted to_convert
 
+    let create_multipart_header () = Netmime.basic_mime_header []
+
     let body_flatmap (f: parsetree -> parsetree list) tree =
-      let create_multipart_header () = Netmime.basic_mime_header [] (* TODO *) in
       let list_to_tree (l: parsetree list) =
-        Option.default
-          (create_multipart_header (), `Parts l)
-          (List.head l)
+        if len l = 1 then
+          List.hd l
+        else
+          create_multipart_header (), `Parts l
       in
       let rec process tree =
         match tree with
@@ -237,7 +239,7 @@ module Conversion_ocamlnet = struct
         Option.something
           (Header.lookup_value header Constants.meta_header_name)
 
-    let amap_or_copy dict ?(copy=true) ?(idem=true) tree =
+    let amap_or_copy ?(copy=true) ?(idem=true) dict tree =
       let done_converting = if idem then already_converted tree else [] in
       let converted_attachments tree =
         match tree with
@@ -259,23 +261,23 @@ module Conversion_ocamlnet = struct
 
     (**applies conversions to the attachment elements of the parsetree, replacing the original
           attachment with the converted versions in the returned parsetree*)
-    let amap dict (tree : parsetree) =
-      amap_or_copy dict ~copy:false tree
+    let amap ?(idem=true) dict (tree : parsetree) =
+      amap_or_copy ~idem:idem ~copy:false dict tree
 
     (**applies conversions to the attachment elements of the parsetree, leaving the original
         attachment with the converted versions in the returned parsetree*)
-    let acopy dict (tree : parsetree) =
-      amap_or_copy dict tree
+    let acopy ?(idem=true) dict (tree : parsetree) =
+      amap_or_copy ~idem:idem dict tree
 
-    let acopy_email config email =
+    let acopy_email ?(idem=true) config email =
       let ( let* ) = Result.bind in
       let* tree = parse email in
-      let converted_tree = acopy config tree in
+      let converted_tree = acopy ~idem:idem config tree in
         Ok (to_string converted_tree)
 
-    let acopy_mbox config in_chan =
+    let acopy_mbox ?(idem=true) config in_chan =
       let converter (fromline, em) =
-        match acopy_email config em with
+        match acopy_email ~idem:idem config em with
         | Ok converted -> fromline ^ "\n" ^ converted
         | Error _ -> write stderr "Conversion failure\n"; fromline ^ "\n" ^ em (* TODO: better logging *)
       in
