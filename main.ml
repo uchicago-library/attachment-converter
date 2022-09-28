@@ -7,11 +7,29 @@
  *)
 
 open Prelude
+open Cmdliner
 
-let report ?(params=false) () =
+type cmd_input = [`Stdin | `File of string]
+type cmd_input_parser = string -> (cmd_input, [`Msg of string]) Stdlib.result
+type cmd_input_printer = cmd_input Arg.printer
+
+let cmd_input_parser str = 
+  if Sys.file_exists str 
+  then Ok (`File str)
+  else Error (`Msg ("File: " ^ str ^ " does not exist."))
+
+let cmd_input_printer fmt input = let str = 
+  match input with
+    | `Stdin -> "STDIN"
+    | `File fn -> fn
+  in Format.pp_print_string fmt str
+
+let cmd_input_conv = Arg.conv (cmd_input_parser, cmd_input_printer)
+
+let report ?(params=false) ic =
   let open Lib.Report in
   let module M = Map.Make(String) in
-  let types = content_types ~params:params stdin in
+  let types = content_types ~params:params ic in
     print "Content Types:";
     M.iter
       (fun k v -> print ("  " ^ k ^ " : " ^ (Int.to_string v)))
@@ -19,8 +37,8 @@ let report ?(params=false) () =
 
 let default_config_name = ".config"
 
-let convert ?(single_email=false) () =
-  let open Lib.Convert.Converter in
+ let convert ?(single_email=false) ic =
+   let open Lib.Convert.Conversion_ocamlnet in
   let open Lib.Configuration.ParseConfig in
   let open Lib.ErrorHandling in
   let ( let* ) = Result.(>>=) in
@@ -30,10 +48,10 @@ let convert ?(single_email=false) () =
         let* config = parse_config_file default_config_name in
           if single_email
           then
-            let* converted = acopy_email config (read stdin) in
+             let* converted = acopy_email config (read ic) in
               Ok (write stdout converted)
           else
-            acopy_mbox config stdin
+             acopy_mbox config ic
       in
         match processed with
         | Error err -> write stderr (Error.message err) (* TODO: better error handling *)
@@ -44,15 +62,38 @@ let convert ?(single_email=false) () =
           "Error: missing config file '%s'\n"
           default_config_name)
 
-(* A _very_ minimal executable *)
-let main = if   Array.length Sys.argv > 1
-           then match Sys.argv.(1) with
-                | "--report" -> report ()
-                | "--report-params" -> report ~params:true ()
-                | "--single-email" -> convert ~single_email:true ()
-                | unknown_flag -> write stderr ("unknown flag: " ^ unknown_flag)
-           else convert ()
+ let convert_wrapper sem rpt rpt_p inp =
+   let report_or_convert ic = 
+     if rpt_p then report ~params:true ic
+     else if rpt then report ic
+     else convert sem ic in
+   match inp with 
+     | `File fn -> within (report_or_convert) fn
+     | `Stdin -> report_or_convert stdin
+ 
+ let input_t = let doc = "Input file to be converted." in
+ Arg.(value & pos 0 cmd_input_conv `Stdin & info [] ~doc)
+ 
+ let report_params_t = let doc = "Prints a list of all MIME types in the input along with 
+ all header and field parameters that go with it." in
+ Arg.(value & flag & info ["report-params"] ~doc)
+ 
+ let report_t = let doc = "Provides a list of all attachment types in a given mailbox." in
+ Arg.(value & flag & info ["r"; "report"] ~doc)
+ 
+ let single_email_t = let doc = "Converts email attachments assuming the input is a single plain text email." in
+ Arg.(value & flag & info ["single-email"] ~doc)
+ 
+ let convert_t = Term.(const convert_wrapper $ single_email_t $ report_t $ report_params_t $ input_t)
+ 
+ let cmd = let doc = "Converts email attachments." in
+   let info = Cmd.info "attachment-converter" ~doc in
+   Cmd.v info convert_t
+ 
+ let main () = exit (Cmd.eval cmd)
 
+ let () = main ()
+ 
 (*
  * Copyright (c) 2021 Matt Teichman
  *
