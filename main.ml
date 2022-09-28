@@ -1,10 +1,10 @@
 
 (* attachment-converter
-* attachment-converter.ml
-* Copyright (c) 2021 Matt Teichman. All rights reserved.
-* Distributed under the ISC license, see terms at the end of the file.
-* %%NAME%% %%VERSION%%
-*)
+ * attachment-converter.ml
+ * Copyright (c) 2021 Matt Teichman. All rights reserved.
+ * Distributed under the ISC license, see terms at the end of the file.
+ * %%NAME%% %%VERSION%%
+ *)
 
 open Prelude
 open Cmdliner
@@ -37,8 +37,8 @@ let report ?(params=false) ic =
 
 let default_config_name = ".config"
 
-let convert single_email ic =
-  let open Lib.Convert.Conversion_ocamlnet in
+let convert ?(single_email=false) ic =
+  let open Lib.Convert.Converter in
   let open Lib.Configuration.ParseConfig in
   let open Lib.ErrorHandling in
   let ( let* ) = Result.(>>=) in
@@ -66,7 +66,7 @@ let convert_wrapper sem rpt rpt_p inp =
   let report_or_convert ic = 
     if rpt_p then report ~params:true ic
     else if rpt then report ic
-    else convert sem ic in
+    else convert ~single_email:sem ic in
   match inp with 
     | `File fn -> within (report_or_convert) fn
     | `Stdin -> report_or_convert stdin

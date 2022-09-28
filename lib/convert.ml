@@ -1,4 +1,5 @@
 open Prelude
+open Utils
 
 module type ATTACHMENT_CONVERTER =
 sig
@@ -21,366 +22,268 @@ sig
   type parsetree
   val parse : string -> (parsetree, error) result
   val to_string : parsetree -> string
-  val amap : Configuration.Formats.t -> parsetree -> (parsetree, error) result
-  val acopy : Configuration.Formats.t -> parsetree -> (parsetree, error) result
-  val acopy_email : Configuration.Formats.t -> string -> (string, error) result
-  val acopy_mbox : Configuration.Formats.t -> in_channel -> (unit, error) result
+  val amap : ?idem:bool -> Configuration.Formats.t -> parsetree -> parsetree
+  val acopy : ?idem:bool -> Configuration.Formats.t -> parsetree -> parsetree
+  val acopy_email : ?idem:bool -> Configuration.Formats.t -> string -> (string, error) result
+  val acopy_mbox : ?idem:bool -> Configuration.Formats.t -> in_channel -> (unit, error) result
 end
 
-module Conversion_ocamlnet_F (C: ATTACHMENT_CONVERTER) = struct
-
-  module HeaderValue = struct
+module Conversion_ocamlnet = struct
+  module Make (C: ATTACHMENT_CONVERTER) = struct
     module Error = struct
       type t = [
-        | `ParameterParse
+        | `EmailParse (* TODO: More data *)
+        | Header.Field.Value.Error.t
       ]
 
-      let message _ = "Error reading parameters" (* TODO: more data *)
+      let message err =
+        match err with
+        | `EmailParse -> "Error parsing the given email"
+        | #Header.Field.Value.Error.t as e ->
+            Header.Field.Value.Error.message e
     end
 
-    module Parameter = struct
-      type t = {
-        attr: string;
-        value: string;
-        quotes: bool;
-      }
+    type parsetree  = Netmime.complex_mime_message
+    type error      = Error.t
 
-      let map_attr f p = { p with attr = f p.attr }
-      let map_val f p = { p with value = f p.value }
-      let map_qt f p = { p with quotes = f p.quotes }
+    (** parse email string into a parse tree *)
+    let parse s =
+      let input = new Netchannels.input_string s in
+      let ch = new Netstream.input_stream input  in
+      let f ch =
+        Netmime_channels.read_mime_message
+          ~multipart_style:`Deep
+          ch                                     in
+      (* TODO: more fine-grained error handling *)
+      Result.trapc
+        `EmailParse
+        (Netchannels.with_in_obj_channel ch)
+        f
 
-      let is_quoted str = String.prefix "\"" str && String.suffix "\"" str
-      let unquoted str = String.trim "\"" str
-      let quoted str = "\"" ^ str ^ "\""
+    (* see
+       http://projects.camlcity.org/projects/dl/ocamlnet-4.1.9/doc/html-main/Netmime_tut.html
+       -- I /think/ that with_in_obj_channel should close both the Netchannels and
+       the Netstream input bits, but it's worth keeping an eye on. *)
 
-      let parse str =
-        let cut_or_none str = match String.cut ~sep:"=" str with
-          | left, Some right -> Some (left, right)
-          | _, None -> None
-        in
-        let ( let* ) = Option.(>>=) in
-        let* (attr, value) = cut_or_none str in
-          Some (
-            if is_quoted value then
-              { attr = attr;
-                value = unquoted value;
-                quotes = true;
-              }
-            else
-              { attr = attr;
-                value = value;
-                quotes = false;
-              })
-
-      let to_string { attr; value; quotes } =
-        attr ^ "=" ^ (if quotes then quoted value else value)
-
-      let from_attr_val ?(quotes=false) attr value =
-        { attr = attr;
-          value = value;
-          quotes = quotes;
-        }
-    end
-
-    type t = {
-      head: string;
-      params: Parameter.t list;
-    }
-
-    let parse str =
-      let vs = String.cuts ~sep:";" str in
-      let vs = List.map String.(trim whitespace) vs in (* not sure if trimming is necessary or should be done *)
-      let rec process ls =
-        match ls with
-        | [] -> Some []
-        | None :: _ -> None
-        | Some p :: ps -> Option.map (fun xs -> p :: xs) (process ps)
+    (** serialize a parsetree into a string *)
+    let to_string tree =
+      let (header, _) = tree in
+      (* defaulting to a megabyte seems like a nice round number *)
+      let n =
+        Exn.default
+          (1024*1024)
+          Netmime_header.get_content_length header
       in
-        match vs with
-        | [] -> Error `ParameterParse
-        | head :: params ->
-            match process (List.map Parameter.parse params) with
-            | None -> Error `ParameterParse
-            | Some params ->
-                Ok {
-                  head = head;
-                  params = params;
-                }
-
-    let unsafe_parse = Result.get_ok << parse
-
-    let to_string { head ; params } =
-      let f curr p = curr ^ ";\n\t" ^ Parameter.to_string p in
-        match params with
-        | [] -> head ^ ";"
-        | _  -> List.foldl f head params
-
-    let lookup_param attr hv =
-      let rec lookup attr ls =
-        match ls with
-        | [] -> None
-        | p :: ps ->
-            if p.Parameter.attr = attr then
-              Some p.value
-            else
-              lookup attr ps
+      let buf = Stdlib.Buffer.create n in
+      let channel_writer ch =
+        Netmime_channels.write_mime_message
+          ?crlf:(Some false)
+          ch
+          tree
       in
-        lookup attr hv.params
+      Netchannels.with_out_obj_channel
+        (new Netchannels.output_buffer buf)
+        channel_writer ;
+      Stdlib.Buffer.contents buf
 
-    let update_head new_head hv =
-      { hv with head = new_head }
+    let timestamp () =
+      Unix.time ()
+        |> string_of_float
+        |> fun x -> String.(sub x 0 (length x - 1))
 
-    let update_param attr f hv =
-      let cons_op x ls = Option.either (List.snoc ls) ls x in
-      let rec update ls =
-        match ls with
-        | [] -> cons_op (f None) []
-        | p :: ps ->
-            if p.Parameter.attr = attr then
-              cons_op (f (Some p)) ps
-            else
-              p :: update ps
+    let renamed_file id new_ext filename =
+      let base = Filename.remove_extension filename in
+      String.concat ""
+        [ base;
+          "_CONVERTED";
+          id;
+          new_ext;
+        ]
+
+    let create_meta_header_val
+      ~source_type:src
+      ~target_type:tar
+      ~timestamp:ts
+      ~conv_id:cid
+      ~hashed:hd : Header.Field.Value.t =
+      let params =
+        [ "source-type", src;
+          "target-type", tar;
+          "time-stamp", ts;
+          "conversion-id", cid;
+          "original-file-hash", hd;
+        ]
       in
-        { hv with params = update hv.params }
+        Header.Field.Value.hf_value
+          ~params:(map (uncurry Header.Field.Value.Parameter.param) params)
+          "converted"
 
-    let map_val attr f =
-      update_param attr (Option.map (Parameter.map_val f))
-
-    let replace_val attr new_value =
-      map_val attr (k new_value)
-
-    let remove_val attr =
-      update_param attr (k None)
-
-    let add_param ?(quotes=false) attr value =
-      update_param attr
-        (k (Some (Parameter.from_attr_val ~quotes:quotes attr value)))
-
-    let new_hv head =
-      { head = head;
-        params = [];
-      }
-  end
-
-  module Error = struct
-    type t = [
-      | `EmailParse (* TODO: More data *)
-      | HeaderValue.Error.t
-    ]
-
-    let message err =
-      match err with
-      | `EmailParse -> "Error parsing the given email"
-      | #HeaderValue.Error.t as e ->
-          HeaderValue.Error.message e
-  end
-
-  type parsetree  = Netmime.complex_mime_message
-  type error      = Error.t
-
-  (** parse email string into a parse tree *)
-  let parse s =
-    let input = new Netchannels.input_string s in
-    let ch = new Netstream.input_stream input  in
-    let f ch =
-      Netmime_channels.read_mime_message
-        ~multipart_style:`Deep
-        ch                                     in
-    (* TODO: more fine-grained error handling *)
-    Result.trapc
-      `EmailParse
-      (Netchannels.with_in_obj_channel ch)
-      f
-
-  (* see
-     http://projects.camlcity.org/projects/dl/ocamlnet-4.1.9/doc/html-main/Netmime_tut.html
-     -- I /think/ that with_in_obj_channel should close both the Netchannels and
-     the Netstream input bits, but it's worth keeping an eye on. *)
-
-  (** serialize a parsetree into a string *)
-  let to_string tree =
-    let (header, _) = tree in
-    (* defaulting to a megabyte seems like a nice round number *)
-    let n =
-      Exn.default
-        (1024*1024)
-        Netmime_header.get_content_length header
-    in
-    let buf = Stdlib.Buffer.create n in
-    let channel_writer ch =
-      Netmime_channels.write_mime_message
-        ?crlf:(Some false)
-        ch
-        tree
-    in
-    Netchannels.with_out_obj_channel
-      (new Netchannels.output_buffer buf)
-      channel_writer ;
-    Stdlib.Buffer.contents buf
-
-  let timestamp () =
-    Unix.time ()
-      |> string_of_float
-      |> fun x -> String.(sub x 0 (length x - 1))
-
-  (** predicate for email parts that are attachments *)
-  let is_attachment tree =
-    let ( let* ) = Result.(>>=) in
-    let header, _ = tree in
-      match header # field "content-disposition" with
-      | exception Not_found -> Ok false
-      | exception e -> raise e (* TODO: Better logging and error handling *)
-      | hd ->
-          let* hv = HeaderValue.parse hd in
-          let s = String.lowercase_ascii hv.head in
-            Ok (s = "attachment" || s = "inline")
-
-  let renamed_file id new_ext filename =
-    let base = Filename.remove_extension filename in
-    String.concat ""
-      [ base ;
-        "_CONVERTED" ;
-        id;
-        new_ext ;
-      ]
-
-  let meta_header_name = "X-Attachment-Converter"
-
-  let create_meta_header_val src tar ts cid : HeaderValue.t =
-    let params =
-      [ "source-type", src;
-        "target-type", tar;
-        "time-stamp", ts;
-        "conversion-id", cid;
-        "original-file-hash", "TODO";
-      ]
-    in
-      { head = "converted";
-        params = map (uncurry HeaderValue.Parameter.from_attr_val) params;
-      }
-
-  let updated_header hd src trans_entry =
-    let open Configuration.Formats in
-    let open HeaderValue in
-    let ( let* ) = Result.(>>=) in
-    let ts = timestamp () in
-    let new_ext = trans_entry.target_ext in
-    let* new_ct =
+    let update_header hd src trans_entry hashed_data =
+      let open Header.Field.Value in
+      let open Configuration.Formats in
+      let ( let* ) = Result.(>>=) in
+      let ts = timestamp () in
+      let rename = renamed_file ts trans_entry.target_ext in
+      let update_ct =
+        update_value trans_entry.target_type >>
+        map_val "name" rename
+      in
+      let update_cd =
+        update_value "attachment" >>
+        map_val "filename" rename >>
+        map_val "filename*" rename
+      in
+      let update_cte = update_value Constants.meta_header_cont_dist in
+      let update_fields = let open Header in
+        update_or_noop update_ct "Content-Type" >>
+        update_or_default update_cd (hf_value "attachment") "Content-Disposition" >>
+        update_or_noop update_cte "Content-Transfer-Encoding">>
+        add
+          (create_meta_header_val
+            ~source_type:src
+            ~target_type:trans_entry.target_type
+            ~timestamp:ts
+            ~conv_id:trans_entry.convert_id
+            ~hashed:(string_of_int hashed_data))
+          Constants.meta_header_name
+      in
+      let* fields = Header.from_assoc_list (hd # fields) in
       let process =
-        update_head trans_entry.target_type >>
-        map_val "name" (renamed_file ts new_ext) >>
-        to_string
+        update_fields >>
+        Header.to_assoc_list >>
+        Netmime.basic_mime_header >>
+        Result.ok
       in
-      let* ct_hv = HeaderValue.parse (hd # field "content-type") in
-        Ok (process ct_hv)
-    in
-    let* new_dis =
-      let process =
-        update_head "attachment" >>
-        map_val "filename" (renamed_file ts new_ext) >>
-        map_val "filename*" (renamed_file ts new_ext) >>
-        to_string
+        process fields
+
+    let hash_attach body = Hashtbl.hash (body # value) (* TODO: replace with better hash function *)
+
+    let transform hd bd src trans_entry =
+      let open Netmime in
+      let open Configuration.Formats in
+      let ( let* ) = Result.(>>=) in
+      let data = bd # value in
+      let hashed_data = hash_attach bd in
+      let* conv_hd = update_header hd src trans_entry hashed_data in
+      let conv_data = C.convert trans_entry.shell_command data in
+        Ok (match trans_entry.variety with
+          | NoChange -> hd, `Body bd
+          | DataOnly -> hd, `Body (memory_mime_body conv_data)
+          | DataAndHeader -> conv_hd, `Body (memory_mime_body conv_data))
+
+      (* Notes: Content-Disposition headers provide information about how
+          to present a message or a body part. When a body part is to be
+          treated as an attached file, the Content-Disposition header will
+          include a file name parameter. *)
+
+    let already_converted tree =
+      let rec build tree =
+        match tree with
+        | header, `Body _ ->
+            let conv =
+              let ( let* ) = Option.(>>=) in
+              let* hashed = Header.lookup_param header Constants.meta_header_name "original-file-hash" in
+              let* id = Header.lookup_param header Constants.meta_header_name "conversion-id" in
+                Some (int_of_string hashed, id)
+            in
+              Option.to_list conv
+        | _, `Parts parts ->
+            List.flatmap build parts
       in
-      match hd # field "content-disposition" with
-      | exception Not_found -> Ok "attachment"
-      | exception e -> raise e (* TODO: better logging *)
-      | dis ->
-          match HeaderValue.parse dis with
-          | Ok dis_hv -> Ok (process dis_hv)
-          | Error _ -> Ok dis
-    in
-    let fields =
-      Assoc.(
-        replace ("Content-Type", new_ct) >>
-        replace ("Content-Transfer-Encoding", "base64") >>
-        replace ("Content-Disposition", new_dis) >>
-        add meta_header_name
-          (HeaderValue.to_string
-            (create_meta_header_val
-              src
-              trans_entry.target_type
-              ts
-              trans_entry.convert_id)))
-          (hd # fields)
-    in
-      Ok (Netmime.basic_mime_header fields)
+        build tree
 
-  let transform hd bd src trans_entry =
-    let open Netmime in
-    let open Configuration.Formats in
-    let ( let* ) = Result.(>>=) in
-    let* conv_hd = updated_header hd src trans_entry in
-    let data = bd # value in
-    let conv_data = C.convert trans_entry.shell_command data in
-      Ok (match trans_entry.variety with
-        | NoChange -> hd, `Body bd
-        | DataOnly -> hd, `Body (memory_mime_body conv_data)
-        | DataAndHeader -> conv_hd, `Body (memory_mime_body conv_data))
+    let filter_converted hashed converted to_convert =
+      let rec process l r =
+        match l with
+        | [] -> r
+        | (h, id) :: hs ->
+            if h = hashed then
+              process hs (List.filter (fun c -> c.Configuration.Formats.convert_id <> id) r)
+            else
+              process hs r
+      in
+        process converted to_convert
 
-    (* Notes: Content-Disposition headers provide information about how
-        to present a message or a body part. When a body part is to be
-        treated as an attached file, the Content-Disposition header will
-        include a file name parameter. *)
+    let create_multipart_header () = Netmime.basic_mime_header []
 
-  let amap_or_copy dict tree copy =
-    let ( let* ) = Result.bind in
-    let rec copy_or_skip lst =
-      match lst with
-      | (bhd, `Body b) :: rs ->
-          let* check = is_attachment (bhd, `Body b) in
-          let* converted =
-            if   check
-            then match bhd # field "content-type" with
-                 | exception Not_found -> Ok [(bhd, `Body b)]
-                 | exception e -> raise e (* TODO: Better logging and error handling *)
-                 | ct ->
-                     let* hv = HeaderValue.parse ct in
-                     let src = hv.head in
-                     let trans_lst = Option.default []
-                                       (Configuration.Formats.Dict.find_opt src dict)
-                     in
-                       Ok ((Result.reduce (List.map (transform bhd b src) trans_lst)) @
-                         if copy || empty trans_lst then [(bhd, `Body b)] else []) (* TODO: better logging *)
-            else Ok [(bhd, `Body b)]
-          in
-          let* next_lst  = copy_or_skip rs in
-            Ok (converted @ next_lst)
-      | (phd, `Parts p) :: rs ->
-          let* conv_lst = copy_or_skip p in
-          let* next_lst = copy_or_skip rs in
-          Ok ((phd, `Parts conv_lst) :: next_lst)
-      | [] -> Ok []
-    in
-    match tree with
-    | _, `Body _ -> Ok tree (* TODO: Handle case with no body *)
-    | header, `Parts p_lst ->
-        let* cmp_lst = copy_or_skip p_lst in
-        Ok (header, `Parts cmp_lst)
+    let body_flatmap (f: parsetree -> parsetree list) tree =
+      let list_to_tree (l: parsetree list) =
+        if len l = 1 then
+          List.hd l
+        else
+          create_multipart_header (), `Parts l
+      in
+      let rec process tree =
+        match tree with
+        | header, `Body body -> list_to_tree (f (header, `Body body))
+        | header, `Parts parts ->
+            let g t =
+              match t with
+              | h, `Body b -> f (h, `Body b)
+              | h, `Parts p -> [process (h, `Parts p)]
+            in
+              (header, `Parts (List.flatmap g parts))
+      in
+        process tree
 
-  (**applies conversions to the attachment elements of the parsetree, replacing the original
+    let is_attachment tree =
+      let header, _ = tree in
+        match Header.lookup_value header "content-disposition" with
+        | None -> false
+        | Some cd ->
+            let s = String.lowercase_ascii cd in
+              s = "attachment" || s = "inline"
+
+    let is_converted tree =
+      let header, _ = tree in
+        Option.something
+          (Header.lookup_value header Constants.meta_header_name)
+
+    let amap_or_copy ?(copy=true) ?(idem=true) dict tree =
+      let done_converting = if idem then already_converted tree else [] in
+      let converted_attachments tree =
+        match tree with
+        | header, `Body body ->
+            if is_attachment (header, `Body body) && (not idem || not (is_converted (header, `Body body))) then
+              match Header.lookup_value header "content-type" with
+              | None -> []
+              | Some ct ->
+                 let hashed = hash_attach body in
+                 let conversions = Option.default [] (Configuration.Formats.Dict.find_opt ct dict) in
+                 let trans_lst = filter_converted hashed done_converting conversions in
+                   Result.reduce (List.map (transform header body ct) trans_lst) @
+                   if copy || empty trans_lst then [header, `Body body] else []
+            else
+              [header, `Body body]
+        | _, `Parts _ -> [] (* note: case never reached *)
+      in
+        body_flatmap converted_attachments tree
+
+    (**applies conversions to the attachment elements of the parsetree, replacing the original
+          attachment with the converted versions in the returned parsetree*)
+    let amap ?(idem=true) dict (tree : parsetree) =
+      amap_or_copy ~idem:idem ~copy:false dict tree
+
+    (**applies conversions to the attachment elements of the parsetree, leaving the original
         attachment with the converted versions in the returned parsetree*)
-  let amap dict (tree : parsetree) =
-    amap_or_copy dict tree false
+    let acopy ?(idem=true) dict (tree : parsetree) =
+      amap_or_copy ~idem:idem dict tree
 
-  (**applies conversions to the attachment elements of the parsetree, leaving the original 
-      attachment with the converted versions in the returned parsetree*)
-  let acopy dict (tree : parsetree) =
-    amap_or_copy dict tree true
+    let acopy_email ?(idem=true) config email =
+      let ( let* ) = Result.bind in
+      let* tree = parse email in
+      let converted_tree = acopy ~idem:idem config tree in
+        Ok (to_string converted_tree)
 
-  let acopy_email config email =
-    let ( let* ) = Result.bind in
-    let* tree = parse email in
-    let* converted_tree = acopy config tree in
-      Ok (to_string converted_tree)
-
-  let acopy_mbox config in_chan =
-    let converter (fromline, em) =
-      match acopy_email config em with
-      | Ok converted -> fromline ^ "\n" ^ converted
-      | Error _ -> write stderr "Conversion failure\n"; fromline ^ "\n" ^ em (* TODO: better logging *)
-    in
-      Ok (Mbox.convert_mbox in_chan converter)
+    let acopy_mbox ?(idem=true) config in_chan =
+      let converter (fromline, em) =
+        match acopy_email ~idem:idem config em with
+        | Ok converted -> fromline ^ "\n" ^ converted
+        | Error _ -> write stderr "Conversion failure\n"; fromline ^ "\n" ^ em (* TODO: better logging *)
+      in
+        Ok (Mbox.convert_mbox in_chan converter)
+  end
 end
 
-module Conversion_ocamlnet = Conversion_ocamlnet_F (Attach_conv)
-module _ : CONVERT = Conversion_ocamlnet
+module Converter = Conversion_ocamlnet.Make (Attach_conv)
+module _ : CONVERT = Converter
