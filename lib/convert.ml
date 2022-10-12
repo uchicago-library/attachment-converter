@@ -285,5 +285,58 @@ module Conversion_ocamlnet = struct
   end
 end
 
-module Converter = Conversion_ocamlnet.Make (Attach_conv)
+module Conversion_mrmime = struct
+  module Make (C: ATTACHMENT_CONVERTER) = struct
+    open Mrmime
+    module Error = struct
+      type t = [
+        | `EmailParse (* TODO: More data *)
+      ]
+
+      let message _ = "Error parsing email"
+    end
+
+    type error = Error.t
+    type parsetree = Header.t * string Mail.t option
+
+    let parse =
+      Angstrom.parse_string ~consume:All Mail.mail >>
+      Result.map (fun (h, b) -> (h, Some b)) >>
+      Result.witherr (k `EmailParse)
+
+    let to_string = Serialize.(make >> to_string)
+
+    let multipart_flatmap (f : Header.t -> string -> parsetree list) (tree : parsetree) =
+      let make header (body: string Mail.t) = (header, Some body) in
+      let rec process header (body: string Mail.t) =
+        match body with
+        | Leaf data -> make header (Multipart (f header data))
+        | Message (h, b) ->
+            let (new_h, new_b) = process h b in
+              make header (Message (new_h, Option.get new_b)) (* A bit odd, but should be okay *)
+        | Multipart parts ->
+            let g (t : parsetree) =
+              match t with
+              | h, None -> [h, None]
+              | h, Some (Leaf d) -> f h d
+              | h, Some t' -> [process h t']
+            in
+              make header (Multipart (List.flatmap g parts))
+      in
+      let header, body = tree in
+        match body with
+        | None -> tree
+        | Some body -> process header body
+
+    let test_func =
+      let f h str : parsetree list =
+        [(h, Some (Leaf str)); (h, Some (Leaf str))]
+      in
+        multipart_flatmap f
+  end
+end
+
+module Mrmime_converter = Conversion_mrmime.Make (Attach_conv)
+module Ocamlnet_converter = Conversion_ocamlnet.Make (Attach_conv)
+module Converter = Ocamlnet_converter
 module _ : CONVERT = Converter
