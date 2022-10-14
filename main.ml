@@ -94,6 +94,15 @@ let main () = exit (Cmd.eval cmd)
 
 let () = main ()
 
+(* let () =
+  let open Lib.Convert.Mrmime_converter in
+  let email = readfile "test.eml" in
+  let parsed = Result.get_ok (parse email) in
+  (*  print_string (tree_to_string parsed) *)
+  let new_email = to_string (test_func parsed) in
+  print_string new_email*)
+
+
 (*
  * Copyright (c) 2021 Matt Teichman
  *

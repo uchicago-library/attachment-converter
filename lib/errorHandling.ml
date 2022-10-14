@@ -16,11 +16,7 @@ module _ : ERROR with
     | `ParameterParse
   ] = Header.Field.Value.Error
 
-module _ : ERROR with
-  type t = [
-    | `EmailParse
-    | Header.Field.Value.Error.t
-  ] = Convert.Converter.Error
+module _ : ERROR = Convert.Converter.Error
 
 module Error : ERROR with
   type t = [

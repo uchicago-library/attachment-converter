@@ -86,20 +86,6 @@ module Conversion_ocamlnet = struct
         channel_writer ;
       Stdlib.Buffer.contents buf
 
-    let timestamp () =
-      Unix.time ()
-        |> string_of_float
-        |> fun x -> String.(sub x 0 (length x - 1))
-
-    let renamed_file id new_ext filename =
-      let base = Filename.remove_extension filename in
-      String.concat ""
-        [ base;
-          "_CONVERTED";
-          id;
-          new_ext;
-        ]
-
     let create_meta_header_val
       ~source_type:src
       ~target_type:tar
@@ -333,10 +319,63 @@ module Conversion_mrmime = struct
         [(h, Some (Leaf str)); (h, Some (Leaf str))]
       in
         multipart_flatmap f
+
+    let is_attachment header = (* TODO: NEEDS A LOT OF WORK *)
+      let cd_fn= Field_name.v "content-disposition" in
+      let cds = Header.assoc cd_fn header in
+      let cd = List.head cds in
+        match cd with
+        | Some (Field (cd_fn, Unstructured, data)) -> print(Unstructured.to_string data); true
+        | _ -> false
+
+    let transform hd data ct trans_entry : (parsetree, error) result =
+      let open Configuration.Formats in
+      let conv_data = C.convert trans_entry.shell_command data in
+        Ok (match trans_entry.variety with
+          | NoChange -> hd, Some (Leaf data)
+          | DataOnly -> hd, Some (Leaf conv_data)
+          | DataAndHeader -> hd, Some (Leaf conv_data))
+
+    let amap_or_copy ?(copy=true) ?(idem=true) dict (tree: parsetree) : parsetree =
+      let convert_attachments header data =
+        if is_attachment header then
+          let ct =
+            let ct = Header.content_type header in
+            let ty = Content_type.Type.to_string (Content_type.ty ct) in
+            let subty = Content_type.Subtype.to_string (Content_type.subty ct) in
+              print(ty ^ "/" ^ subty); ty ^ "/" ^ subty
+          in
+          let conversions = Option.default [] (Configuration.Formats.Dict.find_opt ct dict) in
+            Result.reduce (List.map (transform header data ct) conversions) @
+            if copy || empty conversions then [header, (Some (Mail.Leaf data))] else []
+        else
+          [header, Some (Leaf data)]
+      in
+        multipart_flatmap convert_attachments tree
+
+    let amap ?(idem=true) dict (tree : parsetree) =
+      amap_or_copy ~idem:idem ~copy:false dict tree
+
+    let acopy ?(idem=true) dict (tree : parsetree) =
+      amap_or_copy ~idem:idem dict tree
+
+    let acopy_email ?(idem=true) config email =
+      let ( let* ) = Result.bind in
+      let* tree = parse email in
+      let converted_tree = acopy ~idem:idem config tree in
+        Ok (to_string converted_tree)
+
+    let acopy_mbox ?(idem=true) config in_chan =
+      let converter (fromline, em) =
+        match acopy_email ~idem:idem config em with
+        | Ok converted -> fromline ^ "\n" ^ converted
+        | Error _ -> write stderr "Conversion failure\n"; fromline ^ "\n" ^ em (* TODO: better logging *)
+      in
+        Ok (Mbox.convert_mbox in_chan converter)
   end
 end
 
 module Mrmime_converter = Conversion_mrmime.Make (Attach_conv)
 module Ocamlnet_converter = Conversion_ocamlnet.Make (Attach_conv)
-module Converter = Ocamlnet_converter
+module Converter = Mrmime_converter
 module _ : CONVERT = Converter
