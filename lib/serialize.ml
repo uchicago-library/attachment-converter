@@ -226,4 +226,4 @@ let to_string part =
         go ()
     | None -> Buffer.contents buffer
   in
-  go ()
+    go ()

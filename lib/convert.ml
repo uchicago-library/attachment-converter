@@ -325,7 +325,7 @@ module Conversion_mrmime = struct
       let cds = Header.assoc cd_fn header in
       let cd = List.head cds in
         match cd with
-        | Some (Field (cd_fn, Unstructured, data)) -> print(Unstructured.to_string data); true
+        | Some (Field (cd_fn, Unstructured, data)) -> true
         | _ -> false
 
     let transform hd data ct trans_entry : (parsetree, error) result =
