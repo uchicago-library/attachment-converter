@@ -22,6 +22,11 @@ sig
   type parsetree
   val parse : string -> (parsetree, error) result
   val to_string : parsetree -> string
+  (* type header *)
+  (* val create_header_value : string -> (string, string) list -> header *)
+  (* attachment_to_tree : Attachment.t -> parsetree *)
+  (* is_attachment : parsetree -> Attachment.t *)
+  (* multipart_flatmap : (Attachment.t -> parsetree list) -> parsetree *)
   val amap : ?idem:bool -> Configuration.Formats.t -> parsetree -> parsetree
   val acopy : ?idem:bool -> Configuration.Formats.t -> parsetree -> parsetree
   val acopy_email : ?idem:bool -> Configuration.Formats.t -> string -> (string, error) result
@@ -273,7 +278,6 @@ end
 
 module Conversion_mrmime = struct
   module Make (C: ATTACHMENT_CONVERTER) = struct
-    open Mrmime
     module Error = struct
       type t = [
         | `EmailParse (* TODO: More data *)
@@ -283,15 +287,93 @@ module Conversion_mrmime = struct
     end
 
     type error = Error.t
-    type parsetree = Header.t * string Mail.t option
+    type parsetree = Mrmime.Header.t * string Mrmime.Mail.t option
 
     let parse =
-      Angstrom.parse_string ~consume:All Mail.mail >>
+      Angstrom.parse_string ~consume:All Mrmime.Mail.mail >>
       Result.map (fun (h, b) -> (h, Some b)) >>
       Result.witherr (k `EmailParse)
 
     let to_string = Serialize.(make >> to_string)
 
+    let create_meta_header_val
+      ~source_type:src
+      ~target_type:tar
+      ~timestamp:ts
+      ~conv_id:cid
+      ~hashed:hd : Header.Field.Value.t =
+      let params =
+        [ "source-type", src;
+          "target-type", tar;
+          "time-stamp", ts;
+          "conversion-id", cid;
+          "original-file-hash", hd;
+        ]
+      in
+        Header.Field.Value.hf_value
+          ~params:(map (uncurry Header.Field.Value.Parameter.param) params)
+          "converted"
+
+    let update_header hd src trans_entry hashed_data =
+      let open Header.Field.Value in
+      let open Configuration.Formats in
+      let ( let* ) = Result.(>>=) in
+      let ts = timestamp () in
+      let rename = renamed_file ts trans_entry.target_ext in
+      (* update content disposition *)
+      let* hd =
+        let update_cd =
+          update_value "attachment" >>
+          map_val "filename" rename >>
+          map_val "filename*" rename
+        in
+        let cd_fn = Mrmime.Field_name.v "content-disposition" in
+        let cds = Mrmime.Header.assoc cd_fn hd in
+        let cd = List.head cds in
+        match cd with
+        | Some (Field (cd_fn, Unstructured, data)) ->
+            let* hv = Header.Field.Value.parse (Mrmime.Unstructured.to_string data) in
+            let hv = update_cd hv in
+            let* hv = Mrmime.Unstructured.of_string (Header.Field.Value.to_string hv) in
+            let hv = (hv :> Mrmime.Unstructured.t) in
+              Ok (Mrmime.Header.replace cd_fn (Unstructured, hv) hd)
+        | _ -> Error `EmailParse
+      in
+      (* create meta data header *)
+      let* hd =
+        let meta_header_val =
+          create_meta_header_val
+            ~source_type:src
+            ~target_type:trans_entry.target_type
+            ~timestamp:ts
+            ~conv_id:trans_entry.convert_id
+            ~hashed:(string_of_int hashed_data)
+        in
+        let meta_header_name = Mrmime.Field_name.v Constants.meta_header_name in
+        let* data = Mrmime.Unstructured.of_string (Header.Field.Value.to_string meta_header_val) in
+        let data = (data :> Mrmime.Unstructured.t) in
+          Ok (Mrmime.Header.add meta_header_name (Unstructured, data) hd)
+      in
+      (* update content type *)
+      let hd = hd in
+      (* update content encoding *)
+      let hd = hd in
+        Ok hd
+
+    let hash_attach data = Hashtbl.hash data (* TODO: replace with better hash function *)
+
+    let transform hd data src trans_entry : (parsetree, error) result =
+      let open Configuration.Formats in
+      let ( let* ) = Result.(>>=) in
+      let hashed_data = hash_attach data in
+      let* conv_hd = update_header hd src trans_entry hashed_data in
+      let conv_data = C.convert trans_entry.shell_command data in
+        Ok (match trans_entry.variety with
+          | NoChange -> hd, Some (Mrmime.Mail.Leaf data)
+          | DataOnly -> hd, Some (Mrmime.Mail.Leaf conv_data)
+          | DataAndHeader -> hd, Some (Mrmime.Mail.Leaf conv_data))
+ 
+(*
     let multipart_flatmap (f : Header.t -> string -> parsetree list) (tree : parsetree) =
       let make header (body: string Mail.t) = (header, Some body) in
       let rec process header (body: string Mail.t) =
@@ -372,10 +454,11 @@ module Conversion_mrmime = struct
         | Error _ -> write stderr "Conversion failure\n"; fromline ^ "\n" ^ em (* TODO: better logging *)
       in
         Ok (Mbox.convert_mbox in_chan converter)
+*)
   end
 end
 
 module Mrmime_converter = Conversion_mrmime.Make (Attach_conv)
 module Ocamlnet_converter = Conversion_ocamlnet.Make (Attach_conv)
-module Converter = Mrmime_converter
+module Converter = Ocamlnet_converter
 module _ : CONVERT = Converter
