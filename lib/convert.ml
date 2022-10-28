@@ -54,14 +54,14 @@ module Conversion_ocamlnet = struct
     (** parse email string into a parse tree *)
     let parse s =
       let input = new Netchannels.input_string s in
-      let ch = new Netstream.input_stream input  in
+      let ch = new Netstream.input_stream input in
       let f ch =
         Netmime_channels.read_mime_message
           ~multipart_style:`Deep
-          ch                                     in
-      (* TODO: more fine-grained error handling *)
+          ch
+      in
       Result.trapc
-        `EmailParse
+        `EmailParse (* TODO: Better Error Handling *)
         (Netchannels.with_in_obj_channel ch)
         f
 
@@ -108,6 +108,9 @@ module Conversion_ocamlnet = struct
         Header.Field.Value.hf_value
           ~params:(map (uncurry Header.Field.Value.Parameter.param) params)
           "converted"
+
+    (* add_header_field : string -> (string, string) list -> parsetree -> parsetree *)
+    (* update_header_field : (header_field -> header_field) -> parsetree -> parsetree *)
 
     let update_header hd src trans_entry hashed_data =
       let open Header.Field.Value in
@@ -362,6 +365,7 @@ module Conversion_mrmime = struct
 
     let hash_attach data = Hashtbl.hash data (* TODO: replace with better hash function *)
 
+(*
     let transform hd data src trans_entry : (parsetree, error) result =
       let open Configuration.Formats in
       let ( let* ) = Result.(>>=) in
@@ -372,6 +376,7 @@ module Conversion_mrmime = struct
           | NoChange -> hd, Some (Mrmime.Mail.Leaf data)
           | DataOnly -> hd, Some (Mrmime.Mail.Leaf conv_data)
           | DataAndHeader -> hd, Some (Mrmime.Mail.Leaf conv_data))
+*)
  
 (*
     let multipart_flatmap (f : Header.t -> string -> parsetree list) (tree : parsetree) =
