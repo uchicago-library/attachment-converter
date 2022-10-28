@@ -154,6 +154,8 @@ module Field = struct
 
 end
 
+type t = Field.t list
+
 let from_assoc_list ls : (Field.t list, Field.Value.Error.t) result =
   let ( let* ) = Result.(>>=) in
   let f (n, v) curr =
