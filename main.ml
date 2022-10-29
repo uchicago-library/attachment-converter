@@ -44,7 +44,7 @@ let convert ?(single_email=false) ic =
   let ( let* ) = Result.(>>=) in
     if Sys.file_exists default_config_name
     then
-      let processed =
+      let (processed : (unit, Error.t) result) =
         let* config = parse_config_file default_config_name in
           if single_email
           then
@@ -67,7 +67,7 @@ let convert_wrapper sem rpt rpt_p inp =
     if rpt_p then report ~params:true ic
     else if rpt then report ic
     else convert ~single_email:sem ic in
-  match inp with 
+  match inp with
     | `File fn -> within (report_or_convert) fn
     | `Stdin -> report_or_convert stdin
 

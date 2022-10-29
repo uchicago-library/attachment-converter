@@ -1,38 +1,32 @@
 (* signature for errors as handled throughout this program *)
+
 module type ERROR =
 sig
   type t
   val message : t -> string
 end
 
+module _ : ERROR = Configuration.ParseConfig.Error
+module _ : ERROR = Header.Field.Value.Error
 module _ : ERROR with
   type t = [
-    | `ConfigData of int * Configuration.ParseConfig.config_key
-    | `ReferParse of int * string
-  ] = Configuration.ParseConfig.Error
-
-module _ : ERROR with
-  type t = [
-    | `ParameterParse
-  ] = Header.Field.Value.Error
-
-module _ : ERROR = Convert.Converter.Error
+    `EmailParse
+  ] = Convert.Ocamlnet_parsetree.Error
 
 module Error : ERROR with
   type t = [
-    | Convert.Converter.Error.t
+    | Convert.Ocamlnet_parsetree.Error.t
     | Configuration.ParseConfig.Error.t
-  ]
-  = struct
+  ] = struct
   type t = [
-    | Convert.Converter.Error.t
+    | Convert.Ocamlnet_parsetree.Error.t
     | Configuration.ParseConfig.Error.t
   ]
 
   let message err =
     match err with
-    | #Convert.Converter.Error.t as e ->
-        Convert.Converter.Error.message e
+    | #Convert.Ocamlnet_parsetree.Error.t as e ->
+        Convert.Ocamlnet_parsetree.Error.message e
     | #Configuration.ParseConfig.Error.t as e ->
         Configuration.ParseConfig.Error.message e
 end

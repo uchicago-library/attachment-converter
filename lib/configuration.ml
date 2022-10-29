@@ -46,10 +46,10 @@ module ParseConfig = struct
     | ConvertID    -> "id"
 
   module Error = struct
-    type t =
-      [ | `ConfigData of int * config_key
-        | `ReferParse of int * string
-      ]
+    type t = [
+      | `ConfigData of int * config_key
+      | `ReferParse of int * string
+    ]
 
     let message err =
       match err with
