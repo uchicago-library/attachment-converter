@@ -8,10 +8,7 @@ end
 
 module _ : ERROR = Configuration.ParseConfig.Error
 module _ : ERROR = Header.Field.Value.Error
-module _ : ERROR with
-  type t = [
-    `EmailParse
-  ] = Convert.Ocamlnet_parsetree.Error
+module _ : ERROR = Convert.Ocamlnet_parsetree.Error
 
 module Error : ERROR with
   type t = [

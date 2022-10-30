@@ -44,8 +44,132 @@ module Parsetree_utils (T : PARSETREE) = struct
     | _ -> false
 end
 
+module Ocamlnet_parsetree = struct
+  module Error = struct
+    type t = [ `EmailParse ]
+
+    let message _ = "Dummy"
+  end
+
+  type t = Netmime.complex_mime_message
+  type error = Error.t
+  type header = Netmime.mime_header
+  type attachment = header Attachment.t
+
+  let of_string s =
+    let input = new Netchannels.input_string s in
+    let ch = new Netstream.input_stream input in
+    let f ch =
+      Netmime_channels.read_mime_message
+        ~multipart_style:`Deep
+        ch
+    in
+    Result.trapc
+      `EmailParse (* TODO: Better Error Handling *)
+      (Netchannels.with_in_obj_channel ch)
+      f
+
+  let to_string tree =
+    let (header, _) = tree in
+    (* defaulting to a megabyte seems like a nice round number *)
+    let n =
+      Exn.default
+        (1024*1024)
+        Netmime_header.get_content_length header
+    in
+    let buf = Stdlib.Buffer.create n in
+    let channel_writer ch =
+      Netmime_channels.write_mime_message
+        ?crlf:(Some false)
+        ch
+        tree
+    in
+    Netchannels.with_out_obj_channel
+      (new Netchannels.output_buffer buf)
+      channel_writer ;
+    Stdlib.Buffer.contents buf
+
+  let header = fst
+  let make_header =
+    Header.to_assoc_list >>
+    Netmime.basic_mime_header
+
+  let lookup_value header field_name =
+    match header # field field_name with
+    | exception Not_found -> None
+    | exception e -> raise e
+    | hv_str -> Result.to_option (Header.Field.Value.parse hv_str)
+
+  let meta_val hd = lookup_value hd "X-Attachment-Converter" (* TODO: make not case sensitive *)
+  let content_disposition hd = lookup_value hd "Content-Disposition"
+  let content_type hd = lookup_value hd "Content-Type"
+
+  let is_attachment tree =
+    let dis_fv = content_disposition (header tree) in
+    let process = Header.Field.Value.value >> String.lowercase_ascii in
+    let dis = Option.map process dis_fv in
+    match dis with
+    | Some "attachment" -> true
+    | Some "inline" -> true
+    | _ -> false
+
+  let to_attachment tree =
+    if is_attachment tree then
+      (match tree with
+        | header, `Body body -> Some (Attachment.make header (body # value))
+        | _ -> None)
+    else
+      None
+
+  let of_attachment a =
+    ( Attachment.header a,
+      `Body (Netmime.memory_mime_body (Attachment.data a))
+    )
+
+  let attachments tree =
+    let rec build tree =
+      match tree with
+      | header, `Body data -> Option.to_list (to_attachment (header, `Body data))
+      | _, `Parts parts ->
+          List.flatmap build parts
+    in
+      build tree
+
+  let create_multipart_header () = Netmime.basic_mime_header []
+
+  let replace_attachments f tree =
+    let list_to_tree l =
+      let l = List.map of_attachment l in
+      if len l = 1 then
+        List.hd l
+      else
+        create_multipart_header (), `Parts l
+    in
+    let rec process tree =
+      match tree with
+      | header, `Body body ->
+          (match to_attachment (header, `Body body) with
+          | None -> header, `Body body
+          | Some at -> list_to_tree (f at))
+      | header, `Parts parts ->
+          let g t =
+            match t with
+            | h, `Body b ->
+                (match to_attachment (h, `Body b) with
+                | None -> [h, `Body b]
+                | Some at -> List.map of_attachment (f at))
+            | h, `Parts p -> [process (h, `Parts p)]
+          in
+            (header, `Parts (List.flatmap g parts))
+    in
+      process tree
+end
+module _ : PARSETREE = Ocamlnet_parsetree
+
 module Conversion = struct
-  module Make (T : PARSETREE)= struct
+  module Make (T : PARSETREE) = struct
+  (* module Make = struct
+    module T = Ocamlnet_parsetree *)
 
     type _params = {
       filename : string;
@@ -178,130 +302,6 @@ module Conversion = struct
         Ok (Mbox.convert_mbox in_chan converter)
   end
 end
-
-module Ocamlnet_parsetree = struct
-  module Error = struct
-    type t= [
-      | `EmailParse
-    ]
-
-    let message _ = "Dummy"
-  end
-
-  type t = Netmime.complex_mime_message
-  type error = Error.t
-  type header = Netmime.mime_header
-  type attachment = header Attachment.t
-
-  let of_string s =
-    let input = new Netchannels.input_string s in
-    let ch = new Netstream.input_stream input in
-    let f ch =
-      Netmime_channels.read_mime_message
-        ~multipart_style:`Deep
-        ch
-    in
-    Result.trapc
-      `EmailParse (* TODO: Better Error Handling *)
-      (Netchannels.with_in_obj_channel ch)
-      f
-
-  let to_string tree =
-    let (header, _) = tree in
-    (* defaulting to a megabyte seems like a nice round number *)
-    let n =
-      Exn.default
-        (1024*1024)
-        Netmime_header.get_content_length header
-    in
-    let buf = Stdlib.Buffer.create n in
-    let channel_writer ch =
-      Netmime_channels.write_mime_message
-        ?crlf:(Some false)
-        ch
-        tree
-    in
-    Netchannels.with_out_obj_channel
-      (new Netchannels.output_buffer buf)
-      channel_writer ;
-    Stdlib.Buffer.contents buf
-
-  let header = fst
-  let make_header =
-    Header.to_assoc_list >>
-    Netmime.basic_mime_header
-
-  let lookup_value header field_name =
-    match header # field field_name with
-    | exception Not_found -> None
-    | exception e -> raise e
-    | hv_str -> Result.to_option (Header.Field.Value.parse hv_str)
-
-  let meta_val hd = lookup_value hd "X-Attachment-Converter" (* TODO: make not case sensitive *)
-  let content_disposition hd = lookup_value hd "Content-Disposition"
-  let content_type hd = lookup_value hd "Content-Type"
-
-  let is_attachment tree =
-    let dis_fv = content_disposition (header tree) in
-    let process = Header.Field.Value.value >> String.lowercase_ascii in
-    let dis = Option.map process dis_fv in
-    match dis with
-    | Some "attachment" -> true
-    | Some "inline" -> true
-    | _ -> false
-
-  let to_attachment tree =
-    if is_attachment tree then
-      (match tree with
-        | header, `Body body -> Some (Attachment.make header (body # value))
-        | _ -> None)
-    else
-      None
-
-  let of_attachment a =
-    ( Attachment.header a,
-      `Body (Netmime.memory_mime_body (Attachment.data a))
-    )
-
-  let attachments tree =
-    let rec build tree =
-      match tree with
-      | header, `Body data -> Option.to_list (to_attachment (header, `Body data))
-      | _, `Parts parts ->
-          List.flatmap build parts
-    in
-      build tree
-
-  let create_multipart_header () = Netmime.basic_mime_header []
-
-  let replace_attachments f tree =
-    let list_to_tree l =
-      let l = List.map of_attachment l in
-      if len l = 1 then
-        List.hd l
-      else
-        create_multipart_header (), `Parts l
-    in
-    let rec process tree =
-      match tree with
-      | header, `Body body ->
-          (match to_attachment (header, `Body body) with
-          | None -> header, `Body body
-          | Some at -> list_to_tree (f at))
-      | header, `Parts parts ->
-          let g t =
-            match t with
-            | h, `Body b ->
-                (match to_attachment (h, `Body b) with
-                | None -> [h, `Body b]
-                | Some at -> List.map of_attachment (f at))
-            | h, `Parts p -> [process (h, `Parts p)]
-          in
-            (header, `Parts (List.flatmap g parts))
-    in
-      process tree
-end
-module _ : PARSETREE = Ocamlnet_parsetree
 
 module Ocamlnet_converter = Conversion.Make (Ocamlnet_parsetree)
 module Converter = Ocamlnet_converter
