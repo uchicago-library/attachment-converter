@@ -25,7 +25,7 @@ sig
   val amap : ?idem:bool -> Configuration.Formats.t -> parsetree -> parsetree
   val acopy : ?idem:bool -> Configuration.Formats.t -> parsetree -> parsetree
   val acopy_email : ?idem:bool -> Configuration.Formats.t -> string -> (string, error) result
-  val acopy_mbox : ?idem:bool -> Configuration.Formats.t -> in_channel -> (unit, error) result
+  (* val acopy_mbox : ?idem:bool -> Configuration.Formats.t -> in_channel -> (unit, error) result *)
 end
 
 module Conversion_ocamlnet = struct
@@ -275,13 +275,6 @@ module Conversion_ocamlnet = struct
       let converted_tree = acopy ~idem:idem config tree in
         Ok (to_string converted_tree)
 
-    let acopy_mbox ?(idem=true) config in_chan =
-      let converter (fromline, em) =
-        match acopy_email ~idem:idem config em with
-        | Ok converted -> fromline ^ "\n" ^ converted
-        | Error _ -> write stderr "Conversion failure\n"; fromline ^ "\n" ^ em (* TODO: better logging *)
-      in
-        Ok (Mbox.convert_mbox in_chan converter)
   end
 end
 

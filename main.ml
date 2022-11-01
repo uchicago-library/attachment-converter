@@ -9,6 +9,12 @@
 open Prelude
 open Cmdliner
 
+module Data = struct
+  module Printer = struct
+    let print msg = write stdout msg
+  end
+end
+
 type cmd_input = [`Stdin | `File of string]
 type cmd_input_parser = string -> (cmd_input, [`Msg of string]) Stdlib.result
 type cmd_input_printer = cmd_input Arg.printer
@@ -41,6 +47,7 @@ let convert ?(single_email=false) ic =
   let open Lib.Convert.Converter in
   let open Lib.Configuration.ParseConfig in
   let open Lib.ErrorHandling in
+  let open Lib.Mbox.Copier in
   let ( let* ) = Result.(>>=) in
     if Sys.file_exists default_config_name
     then
@@ -48,8 +55,9 @@ let convert ?(single_email=false) ic =
         let* config = parse_config_file default_config_name in
           if single_email
           then
+            let open Data.Printer in
             let* converted = acopy_email config (read ic) in
-              Ok (write stdout converted)
+              Ok (print converted)
           else
             acopy_mbox config ic
       in
@@ -57,10 +65,10 @@ let convert ?(single_email=false) ic =
         | Error err -> write stderr (Error.message err) (* TODO: better error handling *)
         | Ok _ -> ()
     else
-      write stderr
-        (Printf.sprintf
-          "Error: missing config file '%s'\n"
-          default_config_name)
+      let open Printer in
+      print (Printf.sprintf
+               "Error: missing config file '%s'\n"
+               default_config_name)
 
 let convert_wrapper sem rpt rpt_p inp =
   let report_or_convert ic = 
