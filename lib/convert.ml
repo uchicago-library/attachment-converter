@@ -19,6 +19,7 @@ sig
   type t
   val of_string : string -> (t, Error.t) result
   val to_string : t -> string
+  val of_list : t list -> t
 
   type header
   val header : t -> header
@@ -28,22 +29,136 @@ sig
   val content_type : header -> Header.Field.Value.t option
 
   type attachment = header Attachment.t
-  val attachments : t -> attachment list
+  val is_attachment : t -> bool
   val to_attachment : t -> attachment option
   val of_attachment : attachment -> t
+  val attachments : t -> attachment list
   val replace_attachments : (attachment -> attachment list) -> t -> t
 end
 
 module Parsetree_utils (T : PARSETREE) = struct
-  let is_attachment tree =
-    let dis_fv = T.content_disposition (T.header tree) in
-    let dis = Option.map Header.Field.Value.value dis_fv in
-    let dis = Option.map String.lowercase_ascii dis in
-    match dis with
-    | Some "attachment" -> true
-    | Some "inline" -> true
-    | _ -> false
+  include T
+  let attachment_name att = let open Option in
+    content_disposition (Attachment.header att) >>=
+    Header.Field.Value.lookup_param "filename"
 end
+
+module Mrmime_parsetree = struct
+  module Error = struct
+    type t = [ `EmailParse ]
+    let message _ = "Error parsing email"
+  end
+
+  type t = Mrmime.Header.t * string Mrmime.Mail.t option
+  type header = Mrmime.Header.t
+  type attachment = header Attachment.t
+
+  let of_string =
+    Angstrom.parse_string ~consume:All Mrmime.Mail.mail >>
+    Result.map (fun (h, b) -> (h, Some b)) >>
+    Result.witherr (k `EmailParse)
+
+  let to_string = Serialize.(make >> to_string)
+
+  let of_list (l : t list) =
+    match len l with
+    | 0 -> assert false (* TODO: raise good exception *)
+    | 1 -> List.hd l
+    | _ -> Mrmime.Header.empty, Some (Multipart l) (* TODO: Header? *)
+
+  let header = fst
+  let make_header hd =
+    let field_to_field f =
+      let name = Mrmime.Field_name.v (Header.Field.name f) in
+      let _data =
+        ( Header.Field.value >>
+          Header.Field.Value.to_string >>
+          Mrmime.Unstructured.of_string
+        ) f
+      in
+      let data =
+        match _data with
+        | Ok data -> (data :> Mrmime.Unstructured.t)
+        | Error _ -> assert false
+      in
+        Mrmime.Field.Field (name, Unstructured, data)
+    in
+      Mrmime.Header.of_list (List.map field_to_field (Header.to_list hd))
+
+  let lookup_unstructured name hd =
+    let ( let* ) = Option.(>>=) in
+    let fname = Mrmime.Field_name.v name in
+    let* field = List.head (Mrmime.Header.assoc fname hd) in
+      match field with
+      | Field (_, Unstructured, data) ->
+          ( Mrmime.Unstructured.to_string >>
+            Header.Field.Value.of_string >>
+            Result.to_option
+          ) data
+      | _ -> None
+
+  let meta_val = lookup_unstructured Constants.meta_header_name
+  let content_disposition = lookup_unstructured "Content-Disposition"
+
+  let content_type =
+    Mrmime.Header.content_type >>
+    Fmt.to_to_string Mrmime.Content_type.pp >>
+    Header.Field.Value.of_string >>
+    Result.to_option
+
+  let is_attachment =
+    header >>
+    content_disposition >>
+    Option.map
+      ( Header.Field.Value.value >>
+        String.lowercase_ascii >>
+        (fun x -> x == "attachment" || x == "inline")
+      ) >>
+    Option.default false
+
+  let to_attachment tree =
+    let open Mrmime.Mail in
+      if is_attachment tree
+      then match tree with
+        | header, Some (Leaf data) -> Some (Attachment.make header data)
+        | _ -> None
+      else None
+
+  let of_attachment att =
+    let open Mrmime.Mail in
+      Attachment.header att,
+      Some (Leaf (Attachment.data att))
+
+  let rec attachments tree =
+    let open Mrmime.Mail in
+      match tree with
+      | header, Some (Leaf data) ->
+          Option.to_list
+            (to_attachment (header, Some (Leaf data)))
+      | _, Some (Multipart parts) -> List.flatmap attachments parts
+      | _, Some (Message (h, b)) -> attachments (h, Some b)
+      | _ -> []
+
+  let rec replace_attachments f tree =
+    let open Mrmime.Mail in
+      match tree with
+      | _, Some (Leaf _) ->
+          (match to_attachment tree with
+           | None -> tree
+           | Some att -> of_list (List.map of_attachment (f att)))
+      | header, Some (Message (h, b)) ->
+          let (nh, nb) = replace_attachments f (h, Some b) in
+            header, Some (Message (nh, Option.get nb)) (* TODO *)
+      | header, Some (Multipart parts) ->
+          let g t =
+            match to_attachment t with
+            | Some att -> List.map of_attachment (f att)
+            | None -> [replace_attachments f t]
+          in
+            header, Some (Multipart (List.flatmap g parts))
+      | _ -> tree
+end
+module _ : PARSETREE = Mrmime_parsetree
 
 module Ocamlnet_parsetree = struct
   module Error = struct
@@ -63,10 +178,10 @@ module Ocamlnet_parsetree = struct
         ~multipart_style:`Deep
         ch
     in
-    Result.trapc
-      `EmailParse (* TODO: Better Error Handling *)
-      (Netchannels.with_in_obj_channel ch)
-      f
+      Result.trapc
+        `EmailParse (* TODO: Better Error Handling *)
+        (Netchannels.with_in_obj_channel ch)
+        f
 
   let to_string tree =
     let (header, _) = tree in
@@ -83,34 +198,42 @@ module Ocamlnet_parsetree = struct
         ch
         tree
     in
-    Netchannels.with_out_obj_channel
-      (new Netchannels.output_buffer buf)
-      channel_writer ;
-    Stdlib.Buffer.contents buf
+      Netchannels.with_out_obj_channel
+        (new Netchannels.output_buffer buf)
+        channel_writer ;
+      Stdlib.Buffer.contents buf
+
+  let of_list l =
+    match len l with
+    | 0 -> assert false (* TODO *)
+    | 1 -> List.hd l
+    | _ -> Netmime.basic_mime_header [], `Parts l (* TODO *)
 
   let header = fst
   let make_header =
     Header.to_assoc_list >>
     Netmime.basic_mime_header
 
-  let lookup_value header field_name =
+  let lookup_value field_name header =
     match header # field field_name with
     | exception Not_found -> None
     | exception e -> raise e
-    | hv_str -> Result.to_option (Header.Field.Value.parse hv_str)
+    | hv_str -> Result.to_option (Header.Field.Value.of_string hv_str)
 
-  let meta_val hd = lookup_value hd "X-Attachment-Converter" (* TODO: make not case sensitive *)
-  let content_disposition hd = lookup_value hd "Content-Disposition"
-  let content_type hd = lookup_value hd "Content-Type"
+  let meta_val = lookup_value Constants.meta_header_name
+  let content_disposition = lookup_value "Content-Disposition"
+  let content_type = lookup_value "Content-Type"
+  (* TODO: make not case sensitive *)
 
-  let is_attachment tree =
-    let dis_fv = content_disposition (header tree) in
-    let process = Header.Field.Value.value >> String.lowercase_ascii in
-    let dis = Option.map process dis_fv in
-    match dis with
-    | Some "attachment" -> true
-    | Some "inline" -> true
-    | _ -> false
+  let is_attachment =
+    header >>
+    content_disposition >>
+    Option.map
+      ( Header.Field.Value.value >>
+        String.lowercase_ascii >>
+        (fun x -> x == "attachment" || x == "inline")
+      ) >>
+    Option.default false
 
   let to_attachment tree =
     if is_attachment tree then
@@ -125,52 +248,32 @@ module Ocamlnet_parsetree = struct
       `Body (Netmime.memory_mime_body (Attachment.data a))
     )
 
-  let attachments tree =
-    let rec build tree =
-      match tree with
-      | header, `Body data -> Option.to_list (to_attachment (header, `Body data))
-      | _, `Parts parts ->
-          List.flatmap build parts
-    in
-      build tree
+  let rec attachments tree =
+    match tree with
+    | header, `Body body ->
+        Option.to_list
+          (to_attachment (header, `Body body))
+    | _, `Parts parts ->
+      List.flatmap attachments parts
 
-  let create_multipart_header () = Netmime.basic_mime_header []
-
-  let replace_attachments f tree =
-    let list_to_tree l =
-      let l = List.map of_attachment l in
-      if len l = 1 then
-        List.hd l
-      else
-        create_multipart_header (), `Parts l
-    in
-    let rec process tree =
-      match tree with
-      | header, `Body body ->
-          (match to_attachment (header, `Body body) with
-          | None -> header, `Body body
-          | Some at -> list_to_tree (f at))
-      | header, `Parts parts ->
-          let g t =
-            match t with
-            | h, `Body b ->
-                (match to_attachment (h, `Body b) with
-                | None -> [h, `Body b]
-                | Some at -> List.map of_attachment (f at))
-            | h, `Parts p -> [process (h, `Parts p)]
-          in
-            (header, `Parts (List.flatmap g parts))
-    in
-      process tree
+  let rec replace_attachments f tree =
+    match tree with
+    | _, `Body _ ->
+        (match to_attachment tree with
+         | None -> tree
+         | Some att -> of_list (List.map of_attachment (f att)))
+    | header, `Parts parts ->
+        let g t =
+          match to_attachment t with
+          | Some att -> List.map of_attachment (f att)
+          | None -> [replace_attachments f t]
+        in
+          (header, `Parts (List.flatmap g parts))
 end
 module _ : PARSETREE = Ocamlnet_parsetree
 
 module Conversion = struct
   module Make (T : PARSETREE) = struct
-    (* module Error = struct
-      type t = T.Error.t
-      let message = T.Error.message
-    end *)
     module Error = T.Error
 
     type _params = {
@@ -185,6 +288,7 @@ module Conversion = struct
 
     let create_new_header md =
       let meta_header_val =
+        let value = "Converted" in
         let params =
           [ "source-type", md.source_type;
             "target-type", md.target_type;
@@ -193,21 +297,22 @@ module Conversion = struct
             "original-file-hash", md.hashed;
           ]
         in
-          Header.Field.Value.hf_value
-            ~params:(map (uncurry Header.Field.Value.Parameter.param) params)
-            "Converted"
+          Header.Field.Value.make
+            ~params:(map (uncurry Header.Field.Value.Parameter.make) params)
+            value
       in
       let cd_header_val =
+        let value = "Attachment" in
         let params =
           [ "filename", md.filename;
             "filename*", md.filename;
           ]
         in
-          Header.Field.Value.hf_value
-            ~params:(map (uncurry Header.Field.Value.Parameter.param) params)
-           "Attachment"
+          Header.Field.Value.make
+            ~params:(map (uncurry Header.Field.Value.Parameter.make) params)
+           value
       in
-         Result.get_ok (Header.from_assoc_list
+         Result.get_ok (Header.of_assoc_list
            ([ "Content-Type", md.target_type;
               "Content-Disposition", Header.Field.Value.to_string cd_header_val;
               "Content-Encoding", "Base64";
@@ -239,9 +344,10 @@ module Conversion = struct
       in
         Option.reduce (List.map process attachments)
 
-    let is_converted att =
-      let header = T.header (T.of_attachment att) in
-        Option.something (T.meta_val header)
+    let is_converted =
+      Attachment.header >>
+      T.meta_val >>
+      Option.something
 
     let filter_converted hashed converted to_convert =
       let open Configuration.Formats in
@@ -256,6 +362,7 @@ module Conversion = struct
         process converted to_convert
 
     let convert_attachments ?(idem=true) dict tree =
+      let open Configuration.Formats in
       let done_converting = if idem then already_converted tree else [] in
       let process att =
         if not idem || not (is_converted att)
@@ -264,23 +371,21 @@ module Conversion = struct
         | Some ct_hv ->
             let ct = Header.Field.Value.value ct_hv in
             let hashed = Hashtbl.hash (Attachment.data att) in
-            let conversions =
-              Option.default []
-                (Configuration.Formats.Dict.find_opt ct dict)
+            let conversions = conversions dict ct
             in
             let trans_lst = filter_converted hashed done_converting conversions in
             let create_params trans_data =
-              let open Configuration.Formats in
+              let open Parsetree_utils(T) in
               { source_type = ct;
                 target_type = trans_data.target_type;
                 conversion_id = trans_data.convert_id;
                 script = trans_data.shell_command;
                 hashed = string_of_int hashed;
+                filename = Option.default "CONVERTED_ATTACHMENT" (attachment_name att);
                 timestamp = "";
-                filename = "";
               }
             in
-              att :: List.map (create_params >> convert_attachment att) trans_lst
+              att :: List.map (convert_attachment att << create_params) trans_lst
         else
           [att]
       in

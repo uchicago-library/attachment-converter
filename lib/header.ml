@@ -1,4 +1,5 @@
 open Prelude
+open Utils
 
 module Field = struct
 
@@ -26,17 +27,13 @@ module Field = struct
       let value p = p.value
       let quotes p = p.quotes
 
-      let param ?(quotes=false) attr value =
+      let make ?(quotes=false) attr value =
         { attr = attr;
           value = value;
           quotes = quotes;
         }
 
-      let is_quoted str = String.prefix "\"" str && String.suffix "\"" str
-      let unquoted str = String.trim "\"" str
-      let quoted str = "\"" ^ str ^ "\""
-
-      let parse str =
+      let of_string str =
         let cut_or_none str = match String.cut ~sep:"=" str with
           | left, Some right -> Some (left, right)
           | _, None -> None
@@ -45,9 +42,9 @@ module Field = struct
         let* (attr, value) = cut_or_none str in
           Some (
             if is_quoted value then
-              param ~quotes:true attr (unquoted value)
+              make ~quotes:true attr (unquoted value)
             else
-              param attr value
+              make attr value
           )
 
       let to_string { attr; value; quotes } =
@@ -62,12 +59,12 @@ module Field = struct
     let value hv = hv.value
     let params hv = hv.params
 
-    let hf_value ?(params=[]) value =
+    let make ?(params=[]) value =
       { value = value;
         params = params;
       }
 
-    let parse str =
+    let of_string str =
       let vs = String.cuts ~sep:";" str in
       let vs = List.map String.(trim whitespace) vs in (* not sure if trimming is necessary or should be done *)
       let rec process ls =
@@ -79,12 +76,11 @@ module Field = struct
         match vs with
         | [] -> Error `ParameterParse
         | value :: params ->
-            match process (List.map Parameter.parse params) with
+            match process (List.map Parameter.of_string params) with
             | None -> Error `ParameterParse
             | Some params ->
-                Ok (hf_value ~params:params value)
+                Ok (make ~params:params value)
 
-    let unsafe_parse = Result.get_ok << parse
 
     let to_string { value ; params } =
       let f curr p = curr ^ ";\n\t" ^ Parameter.to_string p in
@@ -131,7 +127,7 @@ module Field = struct
 
     let add_param ?(quotes=false) attr value =
       update_param attr
-        (k (Some (Parameter.param ~quotes:quotes attr value)))
+        (k (Some (Parameter.make ~quotes:quotes attr value)))
   end
 
   type t = {
@@ -142,12 +138,12 @@ module Field = struct
   let name fld = fld.name
   let value fld = fld.value
 
-  let h_field name value = { name = name; value = value }
+  let make name value = { name = name; value = value }
 
-  let h_field_from_str name value_str : (t, Value.Error.t) result =
+  let of_string name value_str : (t, Value.Error.t) result =
     let ( let* ) = Result.(>>=) in
-    let* value = Value.parse value_str in
-      Ok (h_field name value)
+    let* value = Value.of_string value_str in
+      Ok (make name value)
 
   let to_assoc { name; value } =
     (name, Value.to_string value)
@@ -156,10 +152,13 @@ end
 
 type t = Field.t list
 
-let from_assoc_list ls : (Field.t list, Field.Value.Error.t) result =
+let to_list l = l
+let of_list l = l
+
+let of_assoc_list ls : (Field.t list, Field.Value.Error.t) result =
   let ( let* ) = Result.(>>=) in
   let f (n, v) curr =
-    let* l = Field.h_field_from_str n v in
+    let* l = Field.of_string n v in
     let* r = curr in
       Ok (l :: r)
   in
@@ -168,7 +167,7 @@ let from_assoc_list ls : (Field.t list, Field.Value.Error.t) result =
 let to_assoc_list ls : (string * string) list = List.map Field.to_assoc ls
 
 let update g name fields =
-  let cons_op key x ls = Option.either (fun y -> (Field.h_field key y :: ls)) ls x in
+  let cons_op key x ls = Option.either (fun y -> (Field.make key y :: ls)) ls x in
   let rec process ls =
     match ls with
     | [] -> cons_op name (g None) []
@@ -183,21 +182,3 @@ let update g name fields =
 let update_or_noop f = update (Option.map f)
 let update_or_default f def = update (Option.either (f >> Option.some) (Some def))
 let add new_v = update (k (Some new_v)) (* note: replaces the old conversion *)
-
-let lookup_param header field_name param_name =
-  let ( let* ) = Option.(>>=) in
-    match header # field field_name with
-    | exception Not_found -> None
-    | exception e -> raise e
-    | hv_str ->
-        let* hv = Result.to_option (Field.Value.parse hv_str) in
-          Field.Value.lookup_param param_name hv
-
-let lookup_value header field_name =
-  let ( let* ) = Option.(>>=) in
-    match header # field field_name with
-    | exception Not_found -> None
-    | exception e -> raise e
-    | hv_str ->
-        let* hv = Result.to_option (Field.Value.parse hv_str) in
-          Some (Field.Value.value hv)

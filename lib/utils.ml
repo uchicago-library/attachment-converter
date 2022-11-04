@@ -1,3 +1,5 @@
+open Prelude
+
 module type ERROR =
 sig
   type t
@@ -8,6 +10,10 @@ module Constants = struct
   let meta_header_name = "X-Attachment-Converter"
   let meta_header_cont_dist = "base64"
 end
+
+let is_quoted str = String.prefix "\"" str && String.suffix "\"" str
+let unquoted str = String.trim "\"" str
+let quoted str = "\"" ^ str ^ "\""
 
 let timestamp () =
   Unix.time ()

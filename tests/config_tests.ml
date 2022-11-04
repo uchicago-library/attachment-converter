@@ -65,15 +65,13 @@ let extra_correct =
     "application/pdf"
     "soffice-to-pdfa.sh"
 
-let check_trans_data e description tt sc v =
+let check_trans_data e description tt sc =
   let td         = transform_data_of_entry e        in
   let tt_check _ = assert_equal td.target_type   tt in
   let ss_check _ = assert_equal td.shell_command sc in
-  let  v_check _ = assert_equal td.variety       v  in
   description >:::
     [ "target type ok" >:: tt_check ;
       "script ok"      >:: ss_check ;
-      "variety ok"     >::  v_check ;
     ]
 
 let wf_trans_data_correct =
@@ -81,14 +79,12 @@ let wf_trans_data_correct =
     "entry with source = target converts to transform_data"
     "application/pdf"
     "soffice-to-pdfa.sh"
-    DataAndHeader
 
 let extra_trans_data_correct =
   check_trans_data (Result.get_ok (entry_of_assoc extra))
     "entry with source = target converts to transform_data"
     "application/pdf"
     "soffice-to-pdfa.sh"
-    DataAndHeader
 
 let t_neq_s =
   [ ("source_type"  , "a") ;
@@ -102,7 +98,6 @@ let t_neq_s_trans_data_correct =
     "entry with source /= target converts to transform data"
     "b"
     "c"
-    DataAndHeader
 
 let wf_cs =
 "%source_type a
@@ -140,16 +135,15 @@ let missing_cs =
 %target_type g
 %shell_command h"
 
-let wf_cs_to_data_ok         = check_ok    parse_config_str "parse_config_str" wf_cs
-let extra_cs_to_data_ok      = check_ok    parse_config_str "parse_config_str" extra_cs
-let missing_cs_to_data_error = check_error parse_config_str "parse_config_str" missing_cs
+let wf_cs_to_data_ok         = check_ok    parse "parse" wf_cs
+let extra_cs_to_data_ok      = check_ok    parse "parse" extra_cs
+let missing_cs_to_data_error = check_error parse "parse" missing_cs
 
 let e1 =
   { target_type   = "b"           ;
     target_ext    = "q"           ;
     shell_command = "c d e"       ;
     convert_id    = "id"          ;
-    variety       = DataAndHeader ;
   }
 
 let e2 =
@@ -157,13 +151,12 @@ let e2 =
     target_ext    = "q"           ;
     shell_command = "h"           ;
     convert_id    = "id"          ;
-    variety       = DataAndHeader ;
   }
 
 let check_wf_cs_or_extra_cs cs =
   let description = "checking access for wf_cs/extra_cs"       in
   let open Lib.Configuration.Formats                           in
-  let d = Result.get_ok (parse_config_str cs)                  in
+  let d = Result.get_ok (parse cs)                  in
   let check key value _ = assert_equal (Dict.find key d) value in
   description >:::
     [ "check wf_cs first entry"  >:: check "a" [e1] ;
@@ -177,7 +170,7 @@ let check_error result error =
 
 let missing_cs_error_msg =
   check_error
-    (parse_config_str missing_cs)
+    (parse missing_cs)
     (`ConfigData (1, ShellCommand))
 
 let bad_refer_cs =
@@ -195,7 +188,7 @@ not a real line
 
 let bad_refer_cs_msg =
   check_error
-    (parse_config_str bad_refer_cs)
+    (parse bad_refer_cs)
       (`ReferParse (6, "not a real line"))
 
 let double_entry_cs =
@@ -214,7 +207,7 @@ let double_entry_cs =
 let check_double_entry_cs =
   let description = "checking access for double_entry_cs"  in
   let open Lib.Configuration.Formats                       in
-  let d = Result.get_ok (parse_config_str double_entry_cs) in
+  let d = Result.get_ok (parse double_entry_cs) in
   let check _ = assert_equal (Dict.find "a" d) [e2; e1]    in
   description >:: check
 

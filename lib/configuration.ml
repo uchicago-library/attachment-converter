@@ -1,22 +1,21 @@
 open Prelude
 
 module Formats = struct
-  type variety =
-    | DataOnly
-    | DataAndHeader
-    | NoChange
 
   type transform_data =
     { target_type   : string;
       target_ext    : string;
       shell_command : string;
       convert_id    : string;
-      variety       : variety;
     }
 
   module Dict = Map.Make (String)
 
   type t = (transform_data list) Dict.t
+
+  let conversions d ct =
+    Option.default []
+      (Dict.find_opt ct d)
 
   let mime_type_to_extension mt =
     match mt with
@@ -103,10 +102,9 @@ module ParseConfig = struct
       target_ext    = entry.target_ext    ;
       shell_command = entry.shell_command ;
       convert_id    = entry.convert_id    ;
-      variety       = DataAndHeader       ;
     }
 
-  let parse_config_str config_str =
+  let parse config_str =
     let (>>=) = Result.(>>=) in
     let insert_append k v =
       Dict.update k (fun curr -> Some (v :: Option.value curr ~default:[]))
@@ -124,5 +122,5 @@ module ParseConfig = struct
       (Ok Dict.empty)
       (Refer.of_string config_str)
 
-  let parse_config_file = Prelude.readfile >> parse_config_str
+  let parse_config_file = Prelude.readfile >> parse
 end
