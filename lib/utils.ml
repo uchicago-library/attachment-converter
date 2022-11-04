@@ -1,3 +1,9 @@
+module type ERROR =
+sig
+  type t
+  val message : t -> string
+end
+
 module Constants = struct
   let meta_header_name = "X-Attachment-Converter"
   let meta_header_cont_dist = "base64"

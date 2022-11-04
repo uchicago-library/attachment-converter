@@ -48,7 +48,7 @@ let convert ?(single_email=false) ic =
         let* config = parse_config_file default_config_name in
           if single_email
           then
-            let converted = Result.get_ok (acopy_email config (read ic)) in
+            let* converted = acopy_email config (read ic) in
               Ok (write stdout converted)
           else
             acopy_mbox config ic

@@ -14,9 +14,10 @@ end
 
 module type PARSETREE =
 sig
+  module Error : ERROR
+
   type t
-  type error
-  val of_string : string -> (t, error) result
+  val of_string : string -> (t, Error.t) result
   val to_string : t -> string
 
   type header
@@ -47,12 +48,10 @@ end
 module Ocamlnet_parsetree = struct
   module Error = struct
     type t = [ `EmailParse ]
-
-    let message _ = "Dummy"
+    let message _ = "Error parsing email"
   end
 
   type t = Netmime.complex_mime_message
-  type error = Error.t
   type header = Netmime.mime_header
   type attachment = header Attachment.t
 
@@ -168,8 +167,11 @@ module _ : PARSETREE = Ocamlnet_parsetree
 
 module Conversion = struct
   module Make (T : PARSETREE) = struct
-  (* module Make = struct
-    module T = Ocamlnet_parsetree *)
+    (* module Error = struct
+      type t = T.Error.t
+      let message = T.Error.message
+    end *)
+    module Error = T.Error
 
     type _params = {
       filename : string;
@@ -289,7 +291,7 @@ module Conversion = struct
 
     let acopy_email ?(idem=true) config email =
       let ( let* ) = Result.(>>=) in
-      let* tree = T.of_string email in
+      let* tree = Result.witherr (k `EmailParse) (T.of_string email) in
       let converted_tree = acopy ~idem:idem config tree in
         Ok (T.to_string converted_tree)
 
