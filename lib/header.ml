@@ -19,19 +19,20 @@ module Field = struct
         quotes: bool;
       }
 
-      let map_attr f p = { p with attr = f p.attr }
-      let map_val f p = { p with value = f p.value }
-      let map_qt f p = { p with quotes = f p.quotes }
-
       let attr p = p.attr
-      let value p = p.value
-      let quotes p = p.quotes
+      let value ?(quotes=false) p =
+        if quotes && p.quotes
+        then quoted p.value
+        else p.value
 
       let make ?(quotes=false) attr value =
         { attr = attr;
           value = value;
           quotes = quotes;
         }
+
+      let map_attr f p = { p with attr = f p.attr }
+      let map_val f p = { p with value = f p.value }
 
       let of_string str =
         let cut_or_none str = match String.cut ~sep:"=" str with
@@ -147,7 +148,6 @@ module Field = struct
 
   let to_assoc { name; value } =
     (name, Value.to_string value)
-
 end
 
 type t = Field.t list
