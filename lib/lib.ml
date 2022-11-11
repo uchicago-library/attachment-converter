@@ -9,7 +9,7 @@ module Report        = Report
 module Mbox          = Mbox
 module Convert       = Convert
 module ErrorHandling = ErrorHandling
-module Progress_bar = Progress_bar
+module Progress_bar  = Progress_bar
 module Header        = Header
 
 (*

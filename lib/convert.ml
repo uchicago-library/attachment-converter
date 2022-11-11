@@ -25,7 +25,6 @@ sig
   val amap : ?idem:bool -> Configuration.Formats.t -> parsetree -> parsetree
   val acopy : ?idem:bool -> Configuration.Formats.t -> parsetree -> parsetree
   val acopy_email : ?idem:bool -> Configuration.Formats.t -> string -> (string, error) result
-  (* val acopy_mbox : ?idem:bool -> Configuration.Formats.t -> in_channel -> (unit, error) result *)
 end
 
 module Conversion_ocamlnet = struct
@@ -59,11 +58,6 @@ module Conversion_ocamlnet = struct
         `EmailParse
         (Netchannels.with_in_obj_channel ch)
         f
-
-    (* see
-       http://projects.camlcity.org/projects/dl/ocamlnet-4.1.9/doc/html-main/Netmime_tut.html
-       -- I /think/ that with_in_obj_channel should close both the Netchannels and
-       the Netstream input bits, but it's worth keeping an eye on. *)
 
     (** serialize a parsetree into a string *)
     let to_string tree =
@@ -100,6 +94,31 @@ module Conversion_ocamlnet = struct
           new_ext;
         ]
 
+    let progress_bar_renamed id new_ext filename =
+      let echo_progress = Progress_bar.Printer.print in
+      let echo_hushed_utf8 msg filename =
+        if String.take 3 filename = "utf"
+        then ()
+        else echo_progress msg
+      in
+      let basename = Filename.remove_extension filename in
+      let pdf_a new_ext =
+        if new_ext = ".pdf"
+        then " (PDF-A)"
+        else ""
+      in
+      let msg = String.concat ""
+                  [ "converting " ;
+                    filename ;
+                    " to " ;
+                    basename ^ new_ext ;
+                    pdf_a new_ext ;
+                    "...\n"
+                  ]
+      in
+      echo_hushed_utf8 msg filename ;
+      renamed_file id new_ext filename
+
     let create_meta_header_val
       ~source_type:src
       ~target_type:tar
@@ -123,7 +142,7 @@ module Conversion_ocamlnet = struct
       let open Configuration.Formats in
       let ( let* ) = Result.(>>=) in
       let ts = timestamp () in
-      let rename = renamed_file ts trans_entry.target_ext in
+      let rename = progress_bar_renamed ts trans_entry.target_ext in
       let update_ct =
         update_value trans_entry.target_type >>
         map_val "name" rename

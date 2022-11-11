@@ -181,7 +181,7 @@ module Conversion (I: INPUT) (O: OUTPUT) = struct
       O.value output
 end
 
-module Output = struct
+module ToOutput = struct
   module Make (M : Convert.CONVERT) = struct
     let convert_mbox in_chan converter =
       let open Conversion (MBoxIterator (ChannelInput)) (ChannelOutput) in
@@ -199,4 +199,4 @@ module Output = struct
   end
 end
 
-module Copier = Output.Make (Convert.Converter)
+module Copier = ToOutput.Make (Convert.Converter)

@@ -55,9 +55,12 @@ let convert ?(single_email=false) ic =
         let* config = parse_config_file default_config_name in
           if single_email
           then
-            let open Data.Printer in
+            let module DP = Data.Printer in
             let* converted = acopy_email config (read ic) in
-              Ok (print converted)
+            let print_both = begin
+                DP.print converted ;
+              end
+            in Ok print_both
           else
             acopy_mbox config ic
       in
