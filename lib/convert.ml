@@ -71,24 +71,6 @@ module Mrmime_parsetree = struct
     Header.to_string >>
     Angstrom.parse_string ~consume:Prefix Mrmime.Header.Decoder.header
     Result.get_ok (* TODO *)
-    (* Mrmime.Field.Field.
-    let field_to_field f =
-      let name = Mrmime.Field_name.v (Header.Field.name f) in
-      let _data =
-        ( Header.Field.value >>
-          Header.Field.Value.to_string >>
-          Mrmime.Unstructured.of_string
-        ) f
-      in
-      let data =
-        match _data with
-        | Ok data -> (data :> Mrmime.Unstructured.t)
-        | Error (`Msg err) -> write stderr err; assert false
-      in
-        Mrmime.Field.Field (name, Unstructured, data)
-    in
-      Mrmime.Header.of_list (List.map field_to_field (Header.to_list hd))
-    *)
 
   let lookup_unstructured name hd =
     let ( let* ) = Option.(>>=) in
