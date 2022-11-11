@@ -37,9 +37,8 @@ sig
 end
 
 module Parsetree_utils (T : PARSETREE) = struct
-  include T
   let attachment_name att = let open Option in
-    content_disposition (Attachment.header att) >>=
+    T.content_disposition (Attachment.header att) >>=
     Header.Field.Value.lookup_param "filename"
 end
 
@@ -62,17 +61,17 @@ module Mrmime_parsetree = struct
 
   let of_list (l : t list) =
     match len l with
-    | 0 -> assert false (* TODO: raise good exception *)
+    | 0 -> Mrmime.Header.empty, None
     | 1 -> List.hd l
-    | _ -> Mrmime.Header.empty, Some (Multipart l) (* TODO: Header? *)
+    | _ -> Mrmime.Header.empty, Some (Multipart l) (* TODO: Make the header meaningful *)
 
   let header = fst
-  let make_header hd =
+  let make_header=
     Header.to_string >>
-    Angstrom.parse_string ~consume:Prefix Mrmime.Header.Decoder.header
+    Angstrom.parse_string ~consume:All Mrmime.Header.Decoder.header >>
     Result.get_ok (* TODO *)
 
-  let lookup_unstructured name hd =
+  let lookup_unstructured name hd = (* TODO: Make it not case-senitive *)
     let ( let* ) = Option.(>>=) in
     let fname = Mrmime.Field_name.v name in
     let* field = List.head (Mrmime.Header.assoc fname hd) in
@@ -94,10 +93,10 @@ module Mrmime_parsetree = struct
     let subty = Subtype.to_string (subty ct) in
     let mime_ty = ty ^ "/" ^ subty in
     let params =
-      let form (x, y) =
+      let form (name, value) =
         Header.Field.Value.Parameter.make_
-          x
-          (match y with `String s -> s | `Token s -> s)
+          name
+          (match value with `String s -> s | `Token s -> s) (* TODO: Is this really necessary? *)
         in
           List.map form (parameters ct)
     in
@@ -109,8 +108,7 @@ module Mrmime_parsetree = struct
     Option.map
       ( Header.Field.Value.value >>
         String.lowercase_ascii >>
-        (fun x -> x = "attachment" || x = "inline")
-      ) >>
+        (fun x -> x = "attachment" || x = "inline")) >>
     Option.default false
 
   let to_attachment tree =
@@ -202,7 +200,7 @@ module Ocamlnet_parsetree = struct
 
   let of_list l =
     match len l with
-    | 0 -> assert false (* TODO *)
+    | 0 -> Netmime.basic_mime_header [], `Body (Netmime.memory_mime_body "")
     | 1 -> List.hd l
     | _ -> Netmime.basic_mime_header [], `Parts l (* TODO *)
 
@@ -269,7 +267,7 @@ module Ocamlnet_parsetree = struct
 end
 module _ : PARSETREE = Ocamlnet_parsetree
 
-module Conversion = struct
+module Converter = struct
   module Make (T : PARSETREE) = struct
     include T
 
@@ -411,8 +409,7 @@ module Conversion = struct
       in
         Ok (Mbox.convert_mbox in_chan converter)
   end
-end
 
-module Ocamlnet_converter = Conversion.Make (Ocamlnet_parsetree)
-module Mrmime_converter = Conversion.Make (Mrmime_parsetree)
-module Converter = Mrmime_converter
+  (* include Make(Ocamlnet_parsetree) *)
+  include Make(Mrmime_parsetree)
+end

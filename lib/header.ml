@@ -90,7 +90,7 @@ module Field = struct
 
 
     let to_string { value ; params } =
-      let f curr p = curr ^ ";\n\t" ^ Parameter.to_string p in
+      let f curr p = curr ^ ";\r\n\t" ^ Parameter.to_string p in
         match params with
         | [] -> value
         | _  -> List.foldl f value params
@@ -166,8 +166,8 @@ let of_assoc_list ls : (Field.t list, Field.Value.Error.t) result =
 
 let to_assoc_list ls : (string * string) list = List.map Field.to_assoc ls
 
-let to_string =
-  List.foldr (fun next curr -> curr ^ "\n" ^ Field.to_string next) ""
+let to_string fld =
+  (String.join ~sep:"\r\n" (List.map Field.to_string fld)) ^ "\r\n"
 
 let update g name fields =
   let cons_op key x ls = Option.either (fun y -> (Field.make key y :: ls)) ls x in
