@@ -31,8 +31,14 @@ module Field = struct
           quotes = quotes;
         }
 
+      let make_ attr value =
+        { attr = attr ;
+          value = unquoted value ;
+          quotes = is_quoted value ;
+        }
+
       let map_attr f p = { p with attr = f p.attr }
-      let map_val f p = { p with value = f p.value }
+      let map_value f p = { p with value = f p.value }
 
       let of_string str =
         let cut_or_none str = match String.cut ~sep:"=" str with
@@ -95,7 +101,7 @@ module Field = struct
         | [] -> None
         | p :: ps ->
             if Parameter.attr p = attr then
-              Some (Parameter.value p)
+              Some (Parameter.value ~quotes:true p)
             else
               lookup attr ps
       in
@@ -117,15 +123,6 @@ module Field = struct
       in
         { hv with params = update hv.params }
 
-    let map_val attr f =
-      update_param attr (Option.map (Parameter.map_val f))
-
-    let replace_val attr new_value =
-      map_val attr (k new_value)
-
-    let remove_val attr =
-      update_param attr (k None)
-
     let add_param ?(quotes=false) attr value =
       update_param attr
         (k (Some (Parameter.make ~quotes:quotes attr value)))
@@ -145,6 +142,9 @@ module Field = struct
     let ( let* ) = Result.(>>=) in
     let* value = Value.of_string value_str in
       Ok (make name value)
+
+  let to_string fld =
+    (name fld) ^ ": " ^ Value.to_string (value fld)
 
   let to_assoc { name; value } =
     (name, Value.to_string value)
@@ -166,6 +166,9 @@ let of_assoc_list ls : (Field.t list, Field.Value.Error.t) result =
 
 let to_assoc_list ls : (string * string) list = List.map Field.to_assoc ls
 
+let to_string =
+  List.foldr (fun next curr -> curr ^ "\n" ^ Field.to_string next) ""
+
 let update g name fields =
   let cons_op key x ls = Option.either (fun y -> (Field.make key y :: ls)) ls x in
   let rec process ls =
@@ -178,7 +181,3 @@ let update g name fields =
           fld :: process fs
   in
     process fields
-
-let update_or_noop f = update (Option.map f)
-let update_or_default f def = update (Option.either (f >> Option.some) (Some def))
-let add new_v = update (k (Some new_v)) (* note: replaces the old conversion *)

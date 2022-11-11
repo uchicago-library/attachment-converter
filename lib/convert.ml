@@ -68,6 +68,10 @@ module Mrmime_parsetree = struct
 
   let header = fst
   let make_header hd =
+    Header.to_string >>
+    Angstrom.parse_string ~consume:Prefix Mrmime.Header.Decoder.header
+    Result.get_ok (* TODO *)
+    (* Mrmime.Field.Field.
     let field_to_field f =
       let name = Mrmime.Field_name.v (Header.Field.name f) in
       let _data =
@@ -79,11 +83,12 @@ module Mrmime_parsetree = struct
       let data =
         match _data with
         | Ok data -> (data :> Mrmime.Unstructured.t)
-        | Error _ -> assert false
+        | Error (`Msg err) -> write stderr err; assert false
       in
         Mrmime.Field.Field (name, Unstructured, data)
     in
       Mrmime.Header.of_list (List.map field_to_field (Header.to_list hd))
+    *)
 
   let lookup_unstructured name hd =
     let ( let* ) = Option.(>>=) in
@@ -100,11 +105,21 @@ module Mrmime_parsetree = struct
   let meta_val = lookup_unstructured Constants.meta_header_name
   let content_disposition = lookup_unstructured "Content-Disposition"
 
-  let content_type =
-    Mrmime.Header.content_type >>
-    Fmt.to_to_string Mrmime.Content_type.pp >>
-    Header.Field.Value.of_string >>
-    Result.to_option
+  let content_type hd =
+    let open Mrmime.Content_type in
+    let ct = Mrmime.Header.content_type hd in
+    let ty = Type.to_string (ty ct) in
+    let subty = Subtype.to_string (subty ct) in
+    let mime_ty = ty ^ "/" ^ subty in
+    let params =
+      let form (x, y) =
+        Header.Field.Value.Parameter.make_
+          x
+          (match y with `String s -> s | `Token s -> s)
+        in
+          List.map form (parameters ct)
+    in
+    Some (Header.Field.Value.make ~params mime_ty)
 
   let is_attachment =
     header >>
@@ -112,7 +127,7 @@ module Mrmime_parsetree = struct
     Option.map
       ( Header.Field.Value.value >>
         String.lowercase_ascii >>
-        (fun x -> x == "attachment" || x == "inline")
+        (fun x -> x = "attachment" || x = "inline")
       ) >>
     Option.default false
 
@@ -231,7 +246,7 @@ module Ocamlnet_parsetree = struct
     Option.map
       ( Header.Field.Value.value >>
         String.lowercase_ascii >>
-        (fun x -> x == "attachment" || x == "inline")
+        (fun x -> x = "attachment" || x = "inline")
       ) >>
     Option.default false
 
@@ -274,21 +289,22 @@ module _ : PARSETREE = Ocamlnet_parsetree
 
 module Conversion = struct
   module Make (T : PARSETREE) = struct
-    module Error = T.Error
+    include T
 
     type _params = {
-      filename : string;
-      source_type : string;
-      target_type : string;
-      timestamp : string;
-      conversion_id : string;
-      hashed : string;
-      script : string;
+      filename : string ;
+      extension : string ;
+      source_type : string ;
+      target_type : string ;
+      timestamp : string ;
+      conversion_id : string ;
+      hashed : string ;
+      script : string ;
     }
 
     let create_new_header md =
       let meta_header_val =
-        let value = "Converted" in
+        let value = "converted" in
         let params =
           [ "source-type", md.source_type;
             "target-type", md.target_type;
@@ -302,10 +318,9 @@ module Conversion = struct
             value
       in
       let cd_header_val =
-        let value = "Attachment" in
+        let value = "attachment" in
         let params =
           [ "filename", md.filename;
-            "filename*", md.filename;
           ]
         in
           Header.Field.Value.make
@@ -313,11 +328,11 @@ module Conversion = struct
            value
       in
          Result.get_ok (Header.of_assoc_list
-           ([ "Content-Type", md.target_type;
+           ([ "Content-Transfer-Encoding", "base64";
+              "Content-Type", md.target_type;
               "Content-Disposition", Header.Field.Value.to_string cd_header_val;
-              "Content-Encoding", "Base64";
               "X-Attachment-Converter", Header.Field.Value.to_string meta_header_val;
-           ]))
+            ]))
 
     let convert_attachment att md =
       let convert_data str =
@@ -328,7 +343,13 @@ module Conversion = struct
           | exception e -> raise e
           | converted -> converted
       in
-      let md = { md with timestamp = timestamp ()} in
+      let ts = timestamp () in
+      let md =
+        { md with
+          timestamp = ts ;
+          filename = rename_file ts md.extension md.filename ;
+        }
+      in
       let new_header = T.make_header (create_new_header md) in
       let converted_data = convert_data (Attachment.data att) in
         Attachment.make new_header converted_data
@@ -371,19 +392,19 @@ module Conversion = struct
         | Some ct_hv ->
             let ct = Header.Field.Value.value ct_hv in
             let hashed = Hashtbl.hash (Attachment.data att) in
-            let conversions = conversions dict ct
-            in
+            let conversions = conversions dict ct in
             let trans_lst = filter_converted hashed done_converting conversions in
             let create_params trans_data =
               let open Parsetree_utils(T) in
-              { source_type = ct;
-                target_type = trans_data.target_type;
-                conversion_id = trans_data.convert_id;
-                script = trans_data.shell_command;
-                hashed = string_of_int hashed;
-                filename = Option.default "CONVERTED_ATTACHMENT" (attachment_name att);
-                timestamp = "";
-              }
+                { source_type = ct;
+                  target_type = trans_data.target_type;
+                  conversion_id = trans_data.convert_id;
+                  script = trans_data.shell_command;
+                  hashed = string_of_int hashed;
+                  extension = trans_data.target_ext;
+                  filename = Option.default "CONVERTED_ATTACHMENT" (attachment_name att);
+                  timestamp = "";
+                }
             in
               att :: List.map (convert_attachment att << create_params) trans_lst
         else
@@ -411,4 +432,5 @@ module Conversion = struct
 end
 
 module Ocamlnet_converter = Conversion.Make (Ocamlnet_parsetree)
-module Converter = Ocamlnet_converter
+module Mrmime_converter = Conversion.Make (Mrmime_parsetree)
+module Converter = Mrmime_converter

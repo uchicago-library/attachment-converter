@@ -1,15 +1,7 @@
 open OUnit2
+open Utils
 open Lib.Configuration.ParseConfig
 open Lib.Configuration.Formats
-
-let check_ok f fname i =
-  let description =
-    Printf.sprintf
-      "%s is Ok on well-formed input"
-      fname
-  in
-  let test _ = i |> f |> Result.is_ok |> assert_bool "actually not Ok" in
-  description >:: test
 
 let wf =
   [ ("source_type"  , "application/pdf"   ) ;
@@ -26,19 +18,9 @@ let nwf =
     ("shell_command", "soffice-to-pdfa.sh") ;
   ]
 
-let wf_to_entry_ok    = check_ok entry_of_assoc "entry_of_assoc" wf
-let extra_to_entry_ok = check_ok entry_of_assoc "entry_of_assoc" extra
-
-let check_error f fname i =
-  let description =
-    Printf.sprintf
-      "%s is Error on ill-formed input"
-      fname
-  in
-  let test _ = i |> f |> Result.is_error |> assert_bool "actually not Error" in
-  description >:: test
-
-let nwf_to_entry_error = check_error entry_of_assoc "entry_of_assoc" nwf
+let wf_to_entry_ok = check_is_ok (entry_of_assoc wf) "(entry_of_assoc wf)"
+let extra_to_entry_ok = check_is_ok (entry_of_assoc extra) "(entry_of_assoc extra)"
+let nwf_to_entry_error = check_is_error (entry_of_assoc nwf) "entry_of_assoc"
 
 let check_entry l description st tt ss =
   let l_parsed   = Result.get_ok (entry_of_assoc l)       in
@@ -135,42 +117,38 @@ let missing_cs =
 %target_type g
 %shell_command h"
 
-let wf_cs_to_data_ok         = check_ok    parse "parse" wf_cs
-let extra_cs_to_data_ok      = check_ok    parse "parse" extra_cs
-let missing_cs_to_data_error = check_error parse "parse" missing_cs
+let wf_cs_to_data_ok         = check_is_ok (parse wf_cs) "(parse wf_cs)"
+let extra_cs_to_data_ok      = check_is_ok (parse extra_cs) "(parse extra_cs)"
+let missing_cs_to_data_error = check_is_error (parse missing_cs) "(parse missing_cs)"
 
 let e1 =
-  { target_type   = "b"           ;
-    target_ext    = "q"           ;
-    shell_command = "c d e"       ;
-    convert_id    = "id"          ;
+  { target_type   = "b" ;
+    target_ext    = "q" ;
+    shell_command = "c d e" ;
+    convert_id    = "id" ;
   }
 
 let e2 =
-  { target_type   = "g"           ;
-    target_ext    = "q"           ;
-    shell_command = "h"           ;
-    convert_id    = "id"          ;
+  { target_type   = "g" ;
+    target_ext    = "q" ;
+    shell_command = "h" ;
+    convert_id    = "id" ;
   }
 
 let check_wf_cs_or_extra_cs cs =
-  let description = "checking access for wf_cs/extra_cs"       in
-  let open Lib.Configuration.Formats                           in
-  let d = Result.get_ok (parse cs)                  in
+  let description = "checking access for wf_cs/extra_cs" in
+  let open Lib.Configuration.Formats in
+  let d = Result.get_ok (parse cs) in
   let check key value _ = assert_equal (Dict.find key d) value in
   description >:::
     [ "check wf_cs first entry"  >:: check "a" [e1] ;
       "check wf_cs second entry" >:: check "f" [e2] ;
     ]
 
-let check_error result error =
-  let description = "error not as expected"                  in
-  let check _ = assert_equal (Result.get_error result) error in
-  description >:: check
-
 let missing_cs_error_msg =
-  check_error
-    (parse missing_cs)
+  check_eq_basic
+    "Error not as expected, wanted ConfigData"
+    (Result.get_error (parse missing_cs))
     (`ConfigData (1, ShellCommand))
 
 let bad_refer_cs =
@@ -187,9 +165,10 @@ not a real line
 %id id"
 
 let bad_refer_cs_msg =
-  check_error
-    (parse bad_refer_cs)
-      (`ReferParse (6, "not a real line"))
+  check_eq_basic
+    "Error not as expected, wanted ReferParse"
+    (Result.get_error (parse bad_refer_cs))
+    (`ReferParse (6, "not a real line"))
 
 let double_entry_cs =
 "%source_type a
@@ -205,31 +184,30 @@ let double_entry_cs =
 %id id"
 
 let check_double_entry_cs =
-  let description = "checking access for double_entry_cs"  in
-  let open Lib.Configuration.Formats                       in
+  let open Lib.Configuration.Formats in
   let d = Result.get_ok (parse double_entry_cs) in
-  let check _ = assert_equal (Dict.find "a" d) [e2; e1]    in
-  description >:: check
-
-
+  check_eq_basic
+    "check access for double_entry_cs"
+    (Dict.find "a" d)
+    [e2; e1]
 
 let tests = "test suite for config file parsing" >:::
-  [ wf_to_entry_ok                   ;
-    extra_to_entry_ok                ;
-    nwf_to_entry_error               ;
-    wf_correct                       ;
-    extra_correct                    ;
-    wf_trans_data_correct            ;
-    extra_trans_data_correct         ;
-    t_neq_s_trans_data_correct       ;
-    wf_cs_to_data_ok                 ;
-    extra_cs_to_data_ok              ;
-    missing_cs_to_data_error         ;
-    check_wf_cs_or_extra_cs wf_cs    ;
+  [ wf_to_entry_ok ;
+    extra_to_entry_ok ;
+    nwf_to_entry_error ;
+    wf_correct ;
+    extra_correct ;
+    wf_trans_data_correct ;
+    extra_trans_data_correct ;
+    t_neq_s_trans_data_correct ;
+    wf_cs_to_data_ok ;
+    extra_cs_to_data_ok ;
+    missing_cs_to_data_error ;
+    check_wf_cs_or_extra_cs wf_cs ;
     check_wf_cs_or_extra_cs extra_cs ;
-    missing_cs_error_msg             ;
-    bad_refer_cs_msg                 ;
-    check_double_entry_cs            ;
+    missing_cs_error_msg ;
+    bad_refer_cs_msg ;
+    check_double_entry_cs ;
   ]
 
 let _ = run_test_tt_main tests

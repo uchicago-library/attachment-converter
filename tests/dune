@@ -1,3 +1,3 @@
 (tests
-  (names config_tests mbox_tests param_tests)
+  (names config_tests mbox_tests param_tests field_value_tests)
   (libraries lib ounit2))
