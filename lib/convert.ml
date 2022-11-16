@@ -162,9 +162,19 @@ module Conversion_ocamlnet = struct
       let open Netmime in
       let open Configuration.Formats in
       let ( let* ) = Result.(>>=) in
+      let progress_bar org_fn conv_fn oc = 
+        let err_file_str = "File name not found\n" in
+        let str1 = Option.either (Printf.sprintf "converting %s to ") err_file_str org_fn in
+        let str2 = Option.either (Printf.sprintf "%s\n") err_file_str conv_fn in
+        Printf.fprintf oc "%s" (str1 ^ str2)
+      in
       let data = bd # value in
       let hashed_data = hash_attach bd in
       let* conv_hd = update_header hd src trans_entry hashed_data in
+        let org_filename = Header.lookup_param hd "Content-Disposition" "filename" in
+        let conv_filename = Header.lookup_param conv_hd "Content-Disposition" "filename" in
+        if not (Unix.isatty Unix.stdout)
+        then without (progress_bar org_filename conv_filename) "/dev/tty" ;
       let conv_data = C.convert trans_entry.shell_command data in
         Ok (match trans_entry.variety with
           | NoChange -> hd, `Body bd
