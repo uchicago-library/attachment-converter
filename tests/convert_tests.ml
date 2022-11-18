@@ -1,5 +1,4 @@
 open OUnit2
-open Lib.Header
 open Lib.Convert.Converter
 
 let empty_config_test_1 tree =

@@ -24,6 +24,7 @@ sig
   type header
   val header : t -> header
   val make_header : Header.t -> header
+
   val meta_val : header -> Header.Field.Value.t option
   val content_disposition : header -> Header.Field.Value.t option
   val content_type : header -> Header.Field.Value.t option
@@ -267,7 +268,7 @@ module Ocamlnet_parsetree = struct
 end
 module _ : PARSETREE = Ocamlnet_parsetree
 
-module Converter = struct
+module Conversion = struct
   module Make (T : PARSETREE) = struct
     include T
 
@@ -409,7 +410,6 @@ module Converter = struct
       in
         Ok (Mbox.convert_mbox in_chan converter)
   end
-
-  (* include Make(Ocamlnet_parsetree) *)
-  include Make(Mrmime_parsetree)
 end
+
+module Converter = Conversion.Make (Mrmime_parsetree)
