@@ -7,6 +7,7 @@ module Field = struct
     module Error = struct
       type t = [
         | `ParameterParse
+        | `ValueParse
       ]
 
       let message _ = "Error reading parameters" (* TODO: more data *)
@@ -88,7 +89,6 @@ module Field = struct
             | Some params ->
                 Ok (make ~params:params value)
 
-
     let to_string { value ; params } =
       let f curr p = curr ^ ";\r\n\t" ^ Parameter.to_string p in
         match params with
@@ -123,6 +123,8 @@ module Field = struct
       in
         { hv with params = update hv.params }
 
+    (* Note: updates in the case that the attribute already appears as a
+       paramater. *)
     let add_param ?(quotes=false) attr value =
       update_param attr
         (k (Some (Parameter.make ~quotes:quotes attr value)))
@@ -138,9 +140,16 @@ module Field = struct
 
   let make name value = { name = name; value = value }
 
-  let of_string name value_str : (t, Value.Error.t) result =
+  let of_string str =
     let ( let* ) = Result.(>>=) in
-    let* value = Value.of_string value_str in
+    let (name, optValueStr) = String.cut ~sep:":" str in
+    let name = String.(trim whitespace) name in
+    let* valueStr = Option.(
+      to_result
+        (map String.(trim whitespace) optValueStr)
+        ~none:`ValueParse)
+    in
+    let* value = Value.of_string valueStr in
       Ok (make name value)
 
   let to_string fld =
@@ -158,7 +167,7 @@ let of_list l = l
 let of_assoc_list ls : (Field.t list, Field.Value.Error.t) result =
   let ( let* ) = Result.(>>=) in
   let f (n, v) curr =
-    let* l = Field.of_string n v in
+    let* l = Field.of_string (n ^ ": " ^ v) in
     let* r = curr in
       Ok (l :: r)
   in
