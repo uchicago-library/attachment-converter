@@ -178,7 +178,7 @@ let to_assoc_list ls : (string * string) list = List.map Field.to_assoc ls
 let to_string fld =
   (String.join ~sep:"\r\n" (List.map Field.to_string fld)) ^ "\r\n"
 
-let update g name fields =
+let update g name hd =
   let cons_op key x ls = Option.either (fun y -> (Field.make key y :: ls)) ls x in
   let rec process ls =
     match ls with
@@ -189,4 +189,4 @@ let update g name fields =
         else
           fld :: process fs
   in
-    process fields
+    process hd
