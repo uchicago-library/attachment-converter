@@ -412,4 +412,4 @@ module Conversion = struct
   end
 end
 
-module Converter = Conversion.Make (Mrmime_parsetree)
+module Converter = Conversion.Make (Ocamlnet_parsetree)

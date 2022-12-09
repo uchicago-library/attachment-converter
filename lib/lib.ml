@@ -10,6 +10,8 @@ module Mbox          = Mbox
 module Convert       = Convert
 module ErrorHandling = ErrorHandling
 module Header        = Header
+module Serialize     = Serialize
+module Skeleton      = Skeleton
 
 (*
  * Copyright (c) 2021 Matt Teichman
