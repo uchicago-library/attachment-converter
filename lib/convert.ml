@@ -41,6 +41,11 @@ module Parsetree_utils (T : PARSETREE) = struct
   let attachment_name att = let open Option in
     T.content_disposition (Attachment.header att) >>=
     Header.Field.Value.lookup_param "filename"
+
+  let is_converted =
+    Attachment.header >>
+    T.meta_val >>
+    Option.something
 end
 
 module Mrmime_parsetree = struct
@@ -320,7 +325,7 @@ module Conversion = struct
         let args = split md.script in
           match Unix.Proc.rw args str with
           | exception (Failure msg) ->
-              write stderr ("Conversion Failure: " ^ msg); str (* TODO: Better logging *)
+              write stderr ("Conversion Failure: Could not run " ^ md.conversion_id ^" script, produced message \"" ^ msg ^ "\"\n"); str (* TODO: Better logging *)
           | exception e -> raise e
           | converted -> converted
       in
@@ -398,18 +403,20 @@ module Conversion = struct
 
     let acopy_email ?(idem=true) config email =
       let ( let* ) = Result.(>>=) in
-      let* tree = Result.witherr (k `EmailParse) (T.of_string email) in
+      let* tree = Result.witherr (k `EmailParse) (email |> replace_newlines |> T.of_string)  in
       let converted_tree = acopy ~idem:idem config tree in
         Ok (T.to_string converted_tree)
 
     let acopy_mbox ?(idem=true) config in_chan =
       let converter (fromline, em) =
         match acopy_email ~idem:idem config em with
-        | Ok converted -> fromline ^ "\n" ^ converted
-        | Error _ -> write stderr "Conversion failure\n"; fromline ^ "\n" ^ em (* TODO: better logging *)
+        | Ok converted -> fromline ^ eol CRLF ^ converted
+        | Error _ -> write stderr "Email Conversion failure\n"; fromline ^ eol CRLF ^ em (* TODO: better logging *)
       in
         Ok (Mbox.convert_mbox in_chan converter)
   end
 end
 
-module Converter = Conversion.Make (Ocamlnet_parsetree)
+module Ocamlnet_Converter = Conversion.Make (Ocamlnet_parsetree)
+module Mrmime_Converter = Conversion.Make (Mrmime_parsetree)
+module Converter = Mrmime_Converter

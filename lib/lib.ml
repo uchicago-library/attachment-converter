@@ -13,6 +13,16 @@ module Header        = Header
 module Serialize     = Serialize
 module Skeleton      = Skeleton
 
+let print_skeleton filename =
+  let ( let* ) = Prelude.Result.(>>=) in
+  let out =
+    let email = Prelude.readfile filename in
+    let* tree = Convert.Mrmime_parsetree.of_string email in
+    let skel = Skeleton.Mrmime_skeleton.to_skeleton tree in
+      Ok (Skeleton.to_string skel)
+  in
+    Prelude.print (Prelude.Result.default "SKELETON ERROR" out)
+
 (*
  * Copyright (c) 2021 Matt Teichman
  * 

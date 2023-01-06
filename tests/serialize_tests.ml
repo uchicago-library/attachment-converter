@@ -2,17 +2,17 @@ open OUnit2
 open Utils
 open Lib
 
-let basic_skel1 = Skeleton.(Some (Multipart [Some Body ; Some Attachment]))
+let basic_skel1 = Skeleton.(Some (Multipart [Some Body ; Some dummy_attachment]))
 let basic_skel2 = Skeleton.(
   Some (Multipart
     [ Some Body ;
       Some Body ;
-      Some Attachment ;
+      Some dummy_attachment ;
       Some (Message (Message (Multipart
         [ Some Body ;
-          Some Attachment ;
+          Some dummy_attachment ;
         ]))) ;
-      Some Attachment ;
+      Some dummy_attachment ;
     ])
 )
 

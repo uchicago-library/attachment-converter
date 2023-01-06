@@ -2,9 +2,11 @@ open Prelude
 
 type t =
   | Body
-  | Attachment
+  | Attachment of bool * string
   | Message of t
   | Multipart of t option list
+
+let dummy_attachment = Attachment (false, "thisisnotthefileyouarelookingfor.png")
 
 let sender =
   let open Mrmime.Mailbox in
@@ -74,7 +76,7 @@ let body_header =
     |> add Field_name.content_type Field.(Content, body_mime_type)
     |> add Field_name.content_encoding Field.(Encoding, `Bit7)
 
-let attachment_header =
+let attachment_header name =
   let open Mrmime in
   let open Mrmime.Header in
     empty
@@ -93,7 +95,7 @@ let attachment_header =
                   sp 0;
                   v "=";
                   sp 0;
-                  v "thisisnotthefileyouarelookingfor.png"
+                  v name
                 ]) )
 
 let multipart_header =
@@ -130,8 +132,8 @@ let to_mrmime_tree opt_s =
     match s with
     | Some Body ->
         f body_header, Some (Leaf body)
-    | Some Attachment ->
-        f attachment_header, Some (Leaf attachment_data)
+    | Some Attachment (_, name) ->
+        f (attachment_header name), Some (Leaf attachment_data)
     | Some (Message msg) ->
         let (h, b) = go id (Some msg) in
           f message_header, Some (Message (h, Option.get b))
@@ -155,7 +157,7 @@ let to_string =
     let rest_go = go rest_pre (top && false) in
       match skel with
       | Some Body -> head_pre ^ "Body"
-      | Some Attachment -> head_pre ^ "Attachment"
+      | Some Attachment (converted, name) -> head_pre ^ (if converted then "CONVERTED " else "") ^ "Attachment: " ^ name
       | Some (Message sk) -> head_pre ^ "Message\n" ^ rest_go false (Some sk)
       | Some (Multipart parts) ->
           head_pre ^ "Multipart\n" ^
@@ -165,8 +167,9 @@ let to_string =
   in
     go "" true false
 
-module Mrmime_Skeleton = struct
+module Mrmime_skeleton = struct
   open Convert.Mrmime_parsetree
+  open Convert.Parsetree_utils(Convert.Mrmime_parsetree)
 
   let rec to_skeleton tree =
     let open Mrmime.Mail in
@@ -174,7 +177,8 @@ module Mrmime_Skeleton = struct
       match opt_t with
       | Some (Leaf _) ->
           if is_attachment tree
-          then Some Attachment
+          then let att = Option.get (to_attachment tree) in
+               Some (Attachment (is_converted att, Option.get (attachment_name att)))
           else Some Body
       | Some (Message (h, b)) -> Some (Message (Option.get (to_skeleton (h, Some b))))
       | Some (Multipart parts) -> Some (Multipart (List.map to_skeleton parts))

@@ -29,4 +29,6 @@ let rename_file id new_ext filename =
       new_ext;
     ]
 
+let replace_newlines = String.replace (eol LF) (eol CRLF) << String.replace (eol CRLF) (eol LF)
+
 
