@@ -13,6 +13,7 @@ module Header        = Header
 module Serialize     = Serialize
 module Skeleton      = Skeleton
 
+(* FOR TESTING: TO BE REMOVED *)
 let print_skeleton filename =
   let ( let* ) = Prelude.Result.(>>=) in
   let out =
