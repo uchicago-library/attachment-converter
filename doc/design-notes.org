@@ -1,0 +1,100 @@
+* Overall Architecture
+
+* Modules
+
+** Configuration
+*** Job of the config file
++ to be the interface between Attachment Converter and the external
+  utilities
++ it lists all the conversions AC is going to perform
++ for each conversion, it provides:
+  + a source file type 
+  + a target file type 
+  + a target file extension (optional)
+    + this is because there are multiple extension possibilities for
+      the same format:
+      + e.g. =.jpeg= vs. =.jpg=
+      + =.tif= vs. =.tiff=
+  + the shell command for the external utility to be invoked
+  + a unique numeric id corresponding to each use of a conversion tool
+    for such and such particular file format conversion
+    + (this information goes in the header of the converted
+      attachment, for reference purposes when someone is looking at
+      the header later)
++ the =Formats.transform_data= datatype includes information about
+  what exact kind of conversion to perform, but also metadata to be
+  included in the header of the converted attachment, for reference
+  purposes later
+*** Default config file
++ the default config file represents the conversions that AC will
+  perform out of the box, if the user doesn't customize the config
+  file
++ and indeed, we do not expect most of our users to customize the
+  config file, because doing so requires some sysadmin/UNIX-level
+  expertise
++ we will likely hardcode the default config file in OCaml at some
+  point
++ but to make it easier to change, for now we have a shell script
+  generate an actual config file that we use as a default
+  + this is located at:
+    =attachment-converter/make-config.sh=
+*** How we regiment the behavior of external utilities
++ At a high level:
+  + we wrap each utility in a shell script that accepts standard in
+    and ouputs to standard out
+  + regardless of what the actual assumptions are of any given utility
+    re: the form of the input and the form of the output
++ At a lower level:
+  + each utility is assigned a shell script within the app that
+    regiments it in the way AC expects
+  + the shell scripts are located at:
+    =attachment-converter/conversion-scripts=
+  + many of them create temp files that we redirect from to get the
+    data to be standard in / out, using the following traditional
+    shell script pattern:
+    #+begin_src bash
+      trap 'rm -rf "$TMP_DIR"' EXIT
+
+      TMP_DIR=$(mktemp -d)
+
+      ...$TMP_DIR...
+    #+end_src
+  + the expectation is that if the user wants to use their own
+    external utility to convert attachments, a sysadmin on their staff
+    will write a short script like this, using the scripts we provide
+    as a model
+  + each of our scripts accepts some subset of the following command
+    line flags:
+    + the input extension
+    + the output extension
+  + this is so that our code can provide that information to our
+    wrapper script, in the event that the external utility it invokes
+    needs that information
+*** Notes on the Code
+**** Modules
+***** Formats
++ =Formats.t= is the parsed config file
++ This is a dictionary whose keys are the source types, given as MIME
+  type strings, and whose values are of type =transform_data=, which
+  is a record telling AC what kind of conversion to do with an
+  attachment of that source type.
+***** ParseConfig
++ the config file parser code
++ =config_key= is an abstraction used internally by the config file
+  parsing code
++ parse result is of type =(Formats.t, Error.t) result=
++ =Error.t= is a PV datatype meant to cover config file parse errors
+  + =`ReferParse= is for a GNU Refer parse error
+  + =`ConfigData= is for if a required field is missing from one of
+    the records in the refer database
+  + we don't throw an error if there are extra refer fields
+
+** Convert
+** ErrorHandling
+** Header
+** Mbox
+** Report
+** Serialize
+** Skeleton
+** Utils
+
