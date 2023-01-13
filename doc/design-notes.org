@@ -88,8 +88,62 @@
   + =`ConfigData= is for if a required field is missing from one of
     the records in the refer database
   + we don't throw an error if there are extra refer fields
-
 ** Convert
++ Attachment.t is an attempt to abstract over different email parsing
+  libraries' notion of attachment
+  + one field for the header (polymorphic both because different email
+    backends use different header datatypes and also because
+    Attachment Converter has its own header datatype)
+  + one field for the binary data (straight binary data; not
+    base64-encoded)
++ the PARSETREE module signature is an interface containing every
+  operation we want to perform on a parsed email
+  + the idea is: whenever we want to start using a new email parsing
+    backend, all we have to do is define every value in this interface
+    in terms of stuff from that backend
+  + so far, we have written modules inhabiting the PARSETREE signature
+    for Mr. Mime and OCamlnet
+    + type t
+      + this is what we ultimately parse an email, in order to pull
+        the attachments out and convert them
+      + of_string parses the original email input
+      + to_string serializes the parsetree with the converted
+        attachments back out into a new email string
+      + of_list we use in the case where the input email has a single
+        attachment, but our output email is going to be multipart
+        because it converts that original attachment into many
+        attachments
+      + it also comes up with messages
+        + if an attachment does not appear in a multipart email and it
+          is converted into multiple formats, the converted
+          attachments have to be made into a multipart email
+    + type header
+      + header is whatever email parsing backend's header type is
+      + Header.t (from header.ml) is AC's notion of what a header is
+      + the function header (: t -> header) takes an email input and
+        gives you the email's top-level header back
+      + meta_val, content_disposition, and content_type are getters
+        for particular header fields (where that is AC's notion of a
+        header field)
+    + type attachment
+      + nothing fancy to say about this; it's an attachment
+      + we need to be able to tell whether a parse tree is an
+        attachment
+      + i.e. whether it is a Leaf whose "content-disposition" field is
+        either "inline" or "attachment"
+      + of_attachment is for reifying an attachment into a parsetree
+        that can be planted inside other parsetree
+      + replace_attachments lets you abstract out the boilerplate
+        about this attachment having to have a little extra parsetree
+        cruft on it
+        + just takes an attachment and returns all the conversions on
+          it
+    + Parsetree_utils auto-generates a bunch of further helper
+      functions that are definable from the module of signature
+      PARSETREE, i.e. are indifferent to which email parsing backend
+      we're using
+      + we will probably be adding more stuff to this module functor
+        as time progresses
 ** ErrorHandling
 ** Header
 ** Mbox
