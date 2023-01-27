@@ -5,5 +5,6 @@
     param_tests
     field_value_tests
     field_tests
-    header_tests)
+    header_tests
+    serialize_tests)
   (libraries lib ounit2))

@@ -106,7 +106,7 @@ module StringInput
 
   exception End_of_input
 
-  let create s = { lines = String.split ~sep:"\n" s }
+  let create s = { lines = String.split ~sep:"\r\n" s }
 
   let next t =
     try
@@ -153,7 +153,7 @@ module MBoxIterator
              end
         else begin
                Buffer.add_string t.buf line;
-               Buffer.add_char t.buf '\n';
+               Buffer.add_string t.buf (eol CRLF);
                read ()
              end
     in
