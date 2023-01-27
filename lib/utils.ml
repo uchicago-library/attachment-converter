@@ -28,5 +28,3 @@ let rename_file id new_ext filename =
       id;
       new_ext;
     ]
-
-

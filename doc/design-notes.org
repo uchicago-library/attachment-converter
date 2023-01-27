@@ -87,7 +87,7 @@
   + =`ReferParse= is for a GNU Refer parse error
   + =`ConfigData= is for if a required field is missing from one of
     the records in the refer database
-  + we don't throw an error if there are extra refer fields
+  + we don't throw an error ,if there are extra refer fields
 
 ** Convert
 ** ErrorHandling
