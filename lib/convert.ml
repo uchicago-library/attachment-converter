@@ -450,7 +450,7 @@ module Conversion = struct
     let acopy_email ?(idem=true) config email =
       let ( let* ) = Result.(>>=) in
       let () = Progress_bar.Printer.print "Parsing email..." in
-      let* tree = Result.witherr (k `EmailParse) (email |> replace_newlines |> T.of_string) in
+      let* tree = Result.witherr (k `EmailParse) (T.of_string email) in
       let () =
         let skel_str = Skeleton.to_string (to_skeleton tree) in
         let msg =
