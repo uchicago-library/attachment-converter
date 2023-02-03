@@ -181,6 +181,23 @@ module Conversion (I: INPUT) (O: OUTPUT) = struct
       O.value output
 end
 
-let convert_mbox in_chan converter =
-  let open Conversion (MBoxIterator (ChannelInput)) (ChannelOutput) in
-  convert in_chan stdout converter
+module ToOutput = struct
+  module Make (T : Convert.PARSETREE) = struct
+    let convert_mbox in_chan converter =
+      let open Conversion (MBoxIterator (ChannelInput)) (ChannelOutput) in
+        convert in_chan stdout converter
+
+    let acopy_mbox ?(idem=true) config in_chan =
+      let module C = Convert.Conversion.Make (T) in
+      let converter (fromline, em) =
+        match C.acopy_email ~idem:idem config em with
+        | Ok converted -> fromline ^ "\n" ^ converted
+        | Error _ ->
+            let open ErrorHandling.Printer in
+            print "Conversion failure\n"; fromline ^ "\n" ^ em (* TODO: better logging *)
+      in
+        Ok (convert_mbox in_chan converter)
+  end
+end
+
+module Copier = ToOutput.Make (Convert.Converter)

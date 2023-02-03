@@ -333,7 +333,7 @@ module Conversion = struct
       let md =
         { md with
           timestamp = ts ;
-          filename = rename_file ts md.extension md.filename ;
+          filename = progress_bar_rename_file ts md.extension md.filename ;
         }
       in
       let new_header = T.make_header (create_new_header md) in
@@ -407,13 +407,14 @@ module Conversion = struct
       let converted_tree = acopy ~idem:idem config tree in
         Ok (T.to_string converted_tree)
 
-    let acopy_mbox ?(idem=true) config in_chan =
+    (* let acopy_mbox ?(idem=true) config in_chan =
       let converter (fromline, em) =
         match acopy_email ~idem:idem config em with
         | Ok converted -> fromline ^ eol CRLF ^ converted
         | Error _ -> write stderr "Email Conversion failure\n"; fromline ^ eol CRLF ^ em (* TODO: better logging *)
       in
         Ok (Mbox.convert_mbox in_chan converter)
+    *)
   end
 end
 
