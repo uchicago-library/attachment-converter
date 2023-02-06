@@ -1,6 +1,11 @@
 #!/bin/bash
 echo %source_type application/pdf
 echo %target_type application/pdf
+echo %shell_command $(pwd)/conversion-scripts/pdf2archive-wrapper.sh
+echo %id pdf2archive-pdf-to-pdfa
+echo
+echo %source_type application/pdf
+echo %target_type application/pdf
 echo %shell_command $(pwd)/conversion-scripts/soffice-wrapper.sh -i pdf -o pdf
 echo %id soffice-pdf-to-pdfa
 echo
@@ -41,7 +46,7 @@ echo %id vips-gif-to-tif
 echo
 echo %source_type image/bmp
 echo %target_type image/tiff
-echo %shell_command $(pwd)/conversion-scripts/vips-wapper.sh -i bmp -o tif
+echo %shell_command $(pwd)/conversion-scripts/vips-wrapper.sh -i bmp -o tif
 echo %id vips-bmp-to-tif
 echo
 echo %source_type image/jpeg

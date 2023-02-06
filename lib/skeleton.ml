@@ -161,7 +161,7 @@ let to_string =
       | Some (Message sk) -> head_pre ^ "Message\n" ^ rest_go false (Some sk)
       | Some (Multipart parts) ->
           head_pre ^ "Multipart\n" ^
-          String.join ~sep:"\n" (List.map (rest_go true) parts) ^ "\n" ^ rest_pre
+          String.join ~sep:"\n" (List.map (rest_go true) parts)
       | None -> head_pre ^ "Header Only"
   in
     go "" true false

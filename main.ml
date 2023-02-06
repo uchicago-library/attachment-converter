@@ -56,7 +56,7 @@ let convert ?(single_email=false) ic =
           if single_email
           then
             let module DP = Data.Printer in
-            let* converted = acopy_email config (read ic) in
+            let* converted = acopy_email config (Lib.Mbox.read_email ic) in
             let print_both = begin
                 DP.print converted ;
               end
@@ -104,15 +104,6 @@ let cmd = let doc = "Converts email attachments." in
 let main () = exit (Cmd.eval cmd)
 
 let () = main ()
-
-(* let () =
-  let open Lib.Convert.Mrmime_converter in
-  let email = readfile "test.eml" in
-  let parsed = Result.get_ok (parse email) in
-  (*  print_string (tree_to_string parsed) *)
-  let new_email = to_string (test_func parsed) in
-  print_string new_email*)
-
 
 (*
  * Copyright (c) 2021 Matt Teichman

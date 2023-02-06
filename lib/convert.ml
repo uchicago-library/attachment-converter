@@ -455,8 +455,11 @@ module Conversion = struct
         let skel_str = Skeleton.to_string (to_skeleton tree) in
         let msg =
           String.concat ""
-          [ "Processing email with skeleton...\n\n" ;
+          [ "Processing email with structure...\n" ;
+            "=================================\n" ;
             skel_str ;
+            "\n" ;
+            "=================================" ;
           ]
         in
         Progress_bar.Printer.print msg
@@ -466,8 +469,12 @@ module Conversion = struct
         let skel_str = Skeleton.to_string (to_skeleton converted_tree) in
         let msg =
           String.concat ""
-            [ "\nProcessing complete.\nEmail now has skeleton...\n\n" ;
-              skel_str ;
+            [ "Email now has structure...\n" ;
+              "=================================\n" ;
+               skel_str ;
+              "\n" ;
+              "=================================\n" ;
+              "Processing complete."
             ]
         in
         Progress_bar.Printer.print msg
