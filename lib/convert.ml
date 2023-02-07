@@ -13,7 +13,9 @@ module Attachment = struct
 end
 
 let gen_multi_header =
-  Result.get_ok (Header.of_assoc_list [(Constants.meta_header_name, "generated multipart")])
+  Result.get_ok (Header.of_assoc_list
+    [("Content-Type", "multipart/mixed; boundary=attachmentconvertergeneratedboundary") ;
+     (Constants.meta_header_name, "generated multipart")])
 
 module type PARSETREE =
 sig
