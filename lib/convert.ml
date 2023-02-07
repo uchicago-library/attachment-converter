@@ -12,6 +12,9 @@ module Attachment = struct
   let data a = a.data
 end
 
+let gen_multi_header =
+  Result.get_ok (Header.of_assoc_list [(Constants.meta_header_name, "generated multipart")])
+
 module type PARSETREE =
 sig
   module Error : ERROR
@@ -67,17 +70,17 @@ module Mrmime_parsetree = struct
 
   let to_string = Serialize.(make >> to_string)
 
-  let of_list (l : t list) =
-    match len l with
-    | 0 -> Mrmime.Header.empty, None
-    | 1 -> List.hd l
-    | _ -> Mrmime.Header.empty, Some (Multipart l) (* TODO: Make the header meaningful *)
-
   let header = fst
   let make_header=
     Header.to_string >>
     Angstrom.parse_string ~consume:All Mrmime.Header.Decoder.header >>
     Result.get_ok (* TODO *)
+
+  let of_list (l : t list) =
+    match len l with
+    | 0 -> Mrmime.Header.empty, None
+    | 1 -> List.hd l
+    | _ -> make_header gen_multi_header, Some (Multipart l)
 
   let lookup_unstructured name hd = (* TODO: Make it not case-senitive *)
     let ( let* ) = Option.(>>=) in
@@ -229,16 +232,16 @@ module Ocamlnet_parsetree = struct
         channel_writer ;
       Stdlib.Buffer.contents buf
 
-  let of_list l =
-    match len l with
-    | 0 -> Netmime.basic_mime_header [], `Body (Netmime.memory_mime_body "")
-    | 1 -> List.hd l
-    | _ -> Netmime.basic_mime_header [], `Parts l (* TODO *)
-
   let header = fst
   let make_header =
     Header.to_assoc_list >>
     Netmime.basic_mime_header
+
+  let of_list l =
+    match len l with
+    | 0 -> Netmime.basic_mime_header [], `Body (Netmime.memory_mime_body "")
+    | 1 -> List.hd l
+    | _ -> make_header gen_multi_header, `Parts l
 
   let lookup_value field_name header =
     match header # field field_name with
