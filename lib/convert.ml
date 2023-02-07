@@ -14,7 +14,7 @@ end
 
 let gen_multi_header =
   Result.get_ok (Header.of_assoc_list
-    [("Content-Type", "multipart/mixed; boundary=attachmentconvertergeneratedboundary") ;
+    [("Content-Type", "multipart/mixed; boundary=attachment converter generated boundary") ;
      (Constants.meta_header_name, "generated multipart")])
 
 module type PARSETREE =
