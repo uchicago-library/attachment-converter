@@ -491,4 +491,4 @@ end
 
 module Ocamlnet_Converter = Conversion.Make (Ocamlnet_parsetree)
 module Mrmime_Converter = Conversion.Make (Mrmime_parsetree)
-module Converter = Mrmime_Converter
+module Converter = Ocamlnet_Converter

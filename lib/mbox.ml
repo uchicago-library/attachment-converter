@@ -215,5 +215,3 @@ let read_email ic =
   in
   try read () with End_of_file ->
     Buffer.contents buf
-
-
