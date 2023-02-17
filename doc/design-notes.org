@@ -144,6 +144,29 @@
       we're using
       + we will probably be adding more stuff to this module functor
         as time progresses
+    + Mrmime_parsetree is of signature PARSETREE
+      + It's the plug that plugs the Mr. Mime backend into Attachment
+        Converter.
+      + The idea is: take the interface exposed by Mr. Mime and make
+        it into the PARSETREE interface, which is what our
+        attachment-converting code actually uses.
+      + When Mr. Mime updates and breaks its interface, this is the
+        module we'll have to update to get the update to Mr. Mime to
+        work with AC.
+      + Error datatype
+        + Right now all we have is an email parse error.
+        + Not clear what other kinds of errors there would be, given
+          that Mr. Mime is an email *parsing* library.
+        + As an aside, it's still unclear to us why
+          Content-Disposition is an unstructured field, given that
+          Content-Type is not.
+          + Doesn't the RFC nail the possibilities down?
+          + Maybe not.
+          + inline or attachment, amirite?
+          + plus some header field parameters
+      + TODO for next time: explain Mr. Mime's decoders
+    + Ocamlnet_parsetree is of signature PARSETREE
+      + Same dealio, but for Ocamlnet_parsetree
 ** ErrorHandling
 ** Header
 ** Mbox
