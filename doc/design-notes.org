@@ -144,6 +144,43 @@
       we're using
       + we will probably be adding more stuff to this module functor
         as time progresses
+    + Mrmime_parsetree is a module of signature PARSETREE
+      + The idea is that whenever we add a new email parsing backend,
+        all we have to do to start using it with Attachment converter
+        is implement a module of signature PARSETREE using it.
+      + So right now there's a Mrmime_parsetree and an
+        OCamlnet_parsetree, and when we add Shmancy as our backend, we
+        will write a Schmancy_parsetree module of signature PARSETREE.
+      + We will probably eventually want logic like:
+	+ try Mr. Mime
+	+ if it fails, use OCamlnet
+	+ (nice Alternative type class logic here w/ asum over a list)
+	+ that could be a use for first class modules, because then
+          we'd be working with a list of modules, and go down it when
+          we parse an email.
+	+ e.g. map Conversion.Make @@ [ Mrmime_parsetree,
+	                                OCamlnet_parsetree ]
+    + While we're at it, let's talk about Mr. Mime.
+      + Mrmime.Mail.mail is an Angstrom parser.
+	+ To run it, pass it into Angstrom.parse_string ~consume:All
+	+ This outputs a result.
+      + Mr. Mime does not have functions to serialize an email
+        parsetree.  Instead what we do is pull the data out of the
+        input email and construct a new one.
+      + See below for serialize.ml, which plugs the holes in
+        Mr. Mime's serialization functions (which are in
+        =Mrmime.Mail.Mt=).
+      + One consequence of this approach is that we do not keep all
+        the old headers in the copy.
+      + The logic there is that the headers are in the original, if we
+        need them.
+      + Not having to just change some headers and leave the rest
+        alone simplifies the code for Mrmime_parsetree substantially.
+      + a Mr. Mime =Decoder= is an Angstrom parser.
+    + Serialize
+      + plugging the holes in Mr. Mime's serialization code
+      + note: many functions are inlined straight from Mr. Mime, which
+        we had to do because they are hidden by Mr. Mime's mli files.
     + Mrmime_parsetree is of signature PARSETREE
       + It's the plug that plugs the Mr. Mime backend into Attachment
         Converter.
@@ -167,6 +204,7 @@
       + TODO for next time: explain Mr. Mime's decoders
     + Ocamlnet_parsetree is of signature PARSETREE
       + Same dealio, but for Ocamlnet_parsetree
+
 ** ErrorHandling
 ** Header
 ** Mbox
