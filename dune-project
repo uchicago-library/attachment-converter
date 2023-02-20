@@ -17,6 +17,7 @@
   ocamlfind
   mrmime
   ocamlnet
+  camlp-streams
   (qtest :dev)
   (utop :dev)
   (ocamlformat :dev)
