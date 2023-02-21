@@ -9,16 +9,22 @@
 open Prelude
 open Cmdliner
 
+module Data = struct
+  module Printer = struct
+    let print msg = write stdout msg
+  end
+end
+
 type cmd_input = [`Stdin | `File of string]
 type cmd_input_parser = string -> (cmd_input, [`Msg of string]) Stdlib.result
 type cmd_input_printer = cmd_input Arg.printer
 
-let cmd_input_parser str = 
-  if Sys.file_exists str 
+let cmd_input_parser str =
+  if Sys.file_exists str
   then Ok (`File str)
   else Error (`Msg ("File: " ^ str ^ " does not exist."))
 
-let cmd_input_printer fmt input = let str = 
+let cmd_input_printer fmt input = let str =
   match input with
     | `Stdin -> "STDIN"
     | `File fn -> fn
@@ -41,6 +47,7 @@ let convert ?(single_email=false) ic =
   let open Lib.Convert.Converter in
   let open Lib.Configuration.ParseConfig in
   let open Lib.ErrorHandling in
+  let open Lib.Mbox.Copier in
   let ( let* ) = Result.(>>=) in
     if Sys.file_exists default_config_name
     then
@@ -48,8 +55,12 @@ let convert ?(single_email=false) ic =
         let* config = parse_config_file default_config_name in
           if single_email
           then
+            let module DP = Data.Printer in
             let* converted = acopy_email config (read ic) in
-              Ok (write stdout converted)
+            let print_both = begin
+                DP.print converted ;
+              end
+            in Ok print_both
           else
             acopy_mbox config ic
       in
@@ -57,13 +68,13 @@ let convert ?(single_email=false) ic =
         | Error err -> write stderr (Error.message err) (* TODO: better error handling *)
         | Ok _ -> ()
     else
-      write stderr
-        (Printf.sprintf
-          "Error: missing config file '%s'\n"
-          default_config_name)
+      let open Printer in
+      print (Printf.sprintf
+              "Error: missing config file '%s'\n"
+              default_config_name)
 
 let convert_wrapper sem rpt rpt_p inp =
-  let report_or_convert ic = 
+  let report_or_convert ic =
     if rpt_p then report ~params:true ic
     else if rpt then report ic
     else convert ~single_email:sem ic in
@@ -74,7 +85,7 @@ let convert_wrapper sem rpt rpt_p inp =
 let input_t = let doc = "Input file to be converted." in
 Arg.(value & pos 0 cmd_input_conv `Stdin & info [] ~doc)
 
-let report_params_t = let doc = "Prints a list of all MIME types in the input along with 
+let report_params_t = let doc = "Prints a list of all MIME types in the input along with
 all header and field parameters that go with it." in
 Arg.(value & flag & info ["report-params"] ~doc)
 
@@ -93,15 +104,6 @@ let cmd = let doc = "Converts email attachments." in
 let main () = exit (Cmd.eval cmd)
 
 let () = main ()
-
-(* let () =
-  let open Lib.Convert.Mrmime_converter in
-  let email = readfile "test.eml" in
-  let parsed = Result.get_ok (parse email) in
-  (*  print_string (tree_to_string parsed) *)
-  let new_email = to_string (test_func parsed) in
-  print_string new_email*)
-
 
 (*
  * Copyright (c) 2021 Matt Teichman

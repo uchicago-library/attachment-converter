@@ -12,6 +12,11 @@ module Attachment = struct
   let data a = a.data
 end
 
+let gen_multi_header =
+  Result.get_ok (Header.of_assoc_list
+    [("Content-Type", "multipart/mixed; boundary=attachment converter generated boundary") ;
+     (Constants.meta_header_name, "generated multipart")])
+
 module type PARSETREE =
 sig
   module Error : ERROR
@@ -35,6 +40,8 @@ sig
   val of_attachment : attachment -> t
   val attachments : t -> attachment list
   val replace_attachments : (attachment -> attachment list) -> t -> t
+
+  val to_skeleton : t -> Skeleton.t option
 end
 
 module Parsetree_utils (T : PARSETREE) = struct
@@ -65,17 +72,17 @@ module Mrmime_parsetree = struct
 
   let to_string = Serialize.(make >> to_string)
 
-  let of_list (l : t list) =
-    match len l with
-    | 0 -> Mrmime.Header.empty, None
-    | 1 -> List.hd l
-    | _ -> Mrmime.Header.empty, Some (Multipart l) (* TODO: Make the header meaningful *)
-
   let header = fst
   let make_header=
     Header.to_string >>
     Angstrom.parse_string ~consume:All Mrmime.Header.Decoder.header >>
     Result.get_ok (* TODO *)
+
+  let of_list (l : t list) =
+    match len l with
+    | 0 -> Mrmime.Header.empty, None
+    | 1 -> List.hd l
+    | _ -> make_header gen_multi_header, Some (Multipart l)
 
   let lookup_unstructured name hd = (* TODO: Make it not case-senitive *)
     let ( let* ) = Option.(>>=) in
@@ -158,6 +165,29 @@ module Mrmime_parsetree = struct
           in
             header, Some (Multipart (List.flatmap g parts))
       | _ -> tree
+
+  let is_converted =
+    Attachment.header >>
+    meta_val >>
+    Option.something
+
+  let attachment_name att = let open Option in
+    content_disposition (Attachment.header att) >>=
+    Header.Field.Value.lookup_param "filename"
+
+  let rec to_skeleton tree =
+    let open Mrmime.Mail in
+    let open Skeleton in
+    let (_, opt_t) = tree in
+      match opt_t with
+      | Some (Leaf _) ->
+          if is_attachment tree
+          then let att = Option.get (to_attachment tree) in
+               Some (Attachment (is_converted att, Option.get (attachment_name att)))
+          else Some Body
+      | Some (Message (h, b)) -> Some (Message (Option.get (to_skeleton (h, Some b))))
+      | Some (Multipart parts) -> Some (Multipart (List.map to_skeleton parts))
+      | None -> None
 end
 module _ : PARSETREE = Mrmime_parsetree
 
@@ -204,16 +234,16 @@ module Ocamlnet_parsetree = struct
         channel_writer ;
       Stdlib.Buffer.contents buf
 
-  let of_list l =
-    match len l with
-    | 0 -> Netmime.basic_mime_header [], `Body (Netmime.memory_mime_body "")
-    | 1 -> List.hd l
-    | _ -> Netmime.basic_mime_header [], `Parts l (* TODO *)
-
   let header = fst
   let make_header =
     Header.to_assoc_list >>
     Netmime.basic_mime_header
+
+  let of_list l =
+    match len l with
+    | 0 -> Netmime.basic_mime_header [], `Body (Netmime.memory_mime_body "")
+    | 1 -> List.hd l
+    | _ -> make_header gen_multi_header, `Parts l
 
   let lookup_value field_name header =
     match header # field field_name with
@@ -270,6 +300,27 @@ module Ocamlnet_parsetree = struct
           | None -> [replace_attachments f t]
         in
           (header, `Parts (List.flatmap g parts))
+
+  let is_converted =
+    Attachment.header >>
+    meta_val >>
+    Option.something
+
+  let attachment_name att = let open Option in
+    content_disposition (Attachment.header att) >>=
+    Header.Field.Value.lookup_param "filename"
+
+  let rec to_skeleton tree =
+    let open Skeleton in
+    let (_, tr) = tree in
+    match tr with
+    | `Body _ ->
+        if is_attachment tree
+        then
+          let att = Option.get (to_attachment tree) in
+          Some (Attachment (is_converted att, Option.get (attachment_name att)))
+        else Some Body
+    | `Parts parts -> Some (Multipart (List.map to_skeleton parts))
 end
 module _ : PARSETREE = Ocamlnet_parsetree
 
@@ -403,20 +454,41 @@ module Conversion = struct
 
     let acopy_email ?(idem=true) config email =
       let ( let* ) = Result.(>>=) in
-      let* tree = Result.witherr (k `EmailParse) (email |> replace_newlines |> T.of_string)  in
-      let converted_tree = acopy ~idem:idem config tree in
-        Ok (T.to_string converted_tree)
-
-    let acopy_mbox ?(idem=true) config in_chan =
-      let converter (fromline, em) =
-        match acopy_email ~idem:idem config em with
-        | Ok converted -> fromline ^ eol CRLF ^ converted
-        | Error _ -> write stderr "Email Conversion failure\n"; fromline ^ eol CRLF ^ em (* TODO: better logging *)
+      let () = Progress_bar.Printer.print "Parsing email..." in
+      let* tree = Result.witherr (k `EmailParse) (T.of_string email) in
+      let () =
+        let skel_str = Skeleton.to_string (to_skeleton tree) in
+        let msg =
+          String.concat ""
+          [ "Processing email with structure...\n" ;
+            "=================================\n" ;
+            skel_str ;
+            "\n" ;
+            "=================================" ;
+          ]
+        in
+        Progress_bar.Printer.print msg
       in
-        Ok (Mbox.convert_mbox in_chan converter)
+      let converted_tree = acopy ~idem:idem config tree in
+      let () =
+        let skel_str = Skeleton.to_string (to_skeleton converted_tree) in
+        let msg =
+          String.concat ""
+            [ "Email now has structure...\n" ;
+              "=================================\n" ;
+               skel_str ;
+              "\n" ;
+              "=================================\n" ;
+              "Processing complete."
+            ]
+        in
+        Progress_bar.Printer.print msg
+      in
+      Ok (T.to_string converted_tree)
+
   end
 end
 
 module Ocamlnet_Converter = Conversion.Make (Ocamlnet_parsetree)
 module Mrmime_Converter = Conversion.Make (Mrmime_parsetree)
-module Converter = Mrmime_Converter
+module Converter = Ocamlnet_Converter

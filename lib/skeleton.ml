@@ -154,34 +154,15 @@ let to_string =
                          else if extend
                               then "|   "
                               else "    " in
-    let rest_go = go rest_pre (top && false) in
+    let rest_go = go rest_pre false in
       match skel with
       | Some Body -> head_pre ^ "Body"
       | Some Attachment (converted, name) -> head_pre ^ (if converted then "CONVERTED " else "") ^ "Attachment: " ^ name
       | Some (Message sk) -> head_pre ^ "Message\n" ^ rest_go false (Some sk)
       | Some (Multipart parts) ->
           head_pre ^ "Multipart\n" ^
-          String.join ~sep:"\n" (List.map (rest_go true) parts) ^
-          "\n" ^ rest_pre
+          String.join ~sep:"\n" (List.map (rest_go true) parts)
       | None -> head_pre ^ "Header Only"
   in
     go "" true false
-
-module Mrmime_skeleton = struct
-  open Convert.Mrmime_parsetree
-  open Convert.Parsetree_utils(Convert.Mrmime_parsetree)
-
-  let rec to_skeleton tree =
-    let open Mrmime.Mail in
-    let (_, opt_t) = tree in
-      match opt_t with
-      | Some (Leaf _) ->
-          if is_attachment tree
-          then let att = Option.get (to_attachment tree) in
-               Some (Attachment (is_converted att, Option.get (attachment_name att)))
-          else Some Body
-      | Some (Message (h, b)) -> Some (Message (Option.get (to_skeleton (h, Some b))))
-      | Some (Multipart parts) -> Some (Multipart (List.map to_skeleton parts))
-      | None -> None
-end
 

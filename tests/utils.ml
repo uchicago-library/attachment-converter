@@ -58,7 +58,7 @@ let skeleton_test skel name =
   let tests =
     match conv with
     | Ok out ->
-      let test2 = check_eq_basic "skeleton test" skel (Skeleton.Mrmime_skeleton.to_skeleton out) in
+      let test2 = check_eq_basic "skeleton test" skel (Convert.Mrmime_Converter.to_skeleton out) in
         [ test1 ; test2 ]
     | Error _ -> [ test1 ]
   in

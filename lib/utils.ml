@@ -22,13 +22,34 @@ let timestamp () =
 
 let rename_file id new_ext filename =
   let base = Filename.remove_extension filename in
-  String.concat ""
-    [ base;
-      "_CONVERTED";
-      id;
-      new_ext;
-    ]
+  let new_filename =
+    String.concat ""
+      [ base;
+        "_CONVERTED";
+        id;
+        new_ext;
+      ]
+  in
+  let () =
+    if String.take 3 filename = "utf"
+    then ()
+    else
+      let pdf_a new_ext =
+        if new_ext = ".pdf"
+        then " (PDF-A)"
+        else ""
+      in
+      let msg = String.concat ""
+        [ "converting " ;
+          filename ;
+          " to "   ;
+          new_filename ;
+          pdf_a new_ext ;
+          "..."
+        ]
+    in
+    Progress_bar.Printer.print msg
+  in
+  new_filename
 
 let replace_newlines = String.replace (eol LF) (eol CRLF) << String.replace (eol CRLF) (eol LF)
-
-

@@ -21,3 +21,8 @@ module Error : ERROR with
     | #Configuration.ParseConfig.Error.t as e ->
         Configuration.ParseConfig.Error.message e
 end
+
+module Printer = struct
+  open Prelude
+  let print msg = write stderr msg
+end
