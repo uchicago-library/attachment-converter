@@ -40,7 +40,7 @@ let rename_file id new_ext filename =
         else ""
       in
       let msg = String.concat ""
-        [ "converting " ;
+        [ "Converting " ;
           filename ;
           " to "   ;
           new_filename ;

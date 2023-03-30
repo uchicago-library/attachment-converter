@@ -376,9 +376,15 @@ module Conversion = struct
         let args = split md.script in
           match Unix.Proc.rw args str with
           | exception (Failure msg) ->
-              write stderr ("Conversion Failure: Could not run " ^ md.conversion_id ^" script, produced message \"" ^ msg ^ "\"\n"); str (* TODO: Better logging *)
+             write stderr
+               ( "Conversion Failure: Could not run "
+                 ^ md.conversion_id
+                 ^ " script, produced message \""
+                 ^ msg
+                 ^ "\"\n"
+               ); None  (* TODO: Better logging *)
           | exception e -> raise e
-          | converted -> converted
+          | converted -> Some converted
       in
       let ts = timestamp () in
       let md =
@@ -388,8 +394,9 @@ module Conversion = struct
         }
       in
       let new_header = T.make_header (create_new_header md) in
-      let converted_data = convert_data (Attachment.data att) in
-        Attachment.make new_header converted_data
+      let ( let* ) = Option.(>>=) in
+      let* converted_data = convert_data (Attachment.data att) in
+        Some (Attachment.make new_header converted_data)
 
     let already_converted tree =
       let attachments = T.attachments tree in
@@ -443,7 +450,7 @@ module Conversion = struct
                   timestamp = "";
                 }
             in
-              att :: List.map (convert_attachment att << create_params) trans_lst
+              att :: (List.map (convert_attachment att << create_params) trans_lst |> Option.reduce)
         else
           [att]
       in
