@@ -41,37 +41,28 @@ let report ?(params=false) ic =
       (fun k v -> print ("  " ^ k ^ " : " ^ (Int.to_string v)))
       types
 
-let default_config_name = ".config"
-
 let convert config_files ?(single_email=false) ic =
   let open Lib.Convert.Converter in
-  let open Lib.Configuration.ParseConfig in
+  let open Lib.Configuration in
   let open Lib.ErrorHandling in
   let open Lib.Mbox.Copier in
   let ( let* ) = Result.(>>=) in
-    if Sys.file_exists default_config_name
-    then
-      let processed =
-        let config = get_config config_files in
-          if single_email
-          then
-            let module DP = Data.Printer in
-            let* converted = acopy_email config (read ic) in
-            let print_both = begin
-                DP.print converted ;
-              end
-            in Ok print_both
-          else
-            acopy_mbox config ic
-      in
-        match processed with
-        | Error err -> write stderr (Error.message err) (* TODO: better error handling *)
-        | Ok _ -> ()
-    else
-      let open Printer in
-      print (Printf.sprintf
-              "Error: missing config file '%s'\n"
-              default_config_name)
+    let processed =
+      let* config = get_config config_files in
+        if single_email
+        then
+          let module DP = Data.Printer in
+          let* converted = acopy_email config (read ic) in
+          let print_both = begin
+              DP.print converted ;
+            end
+          in Ok print_both
+        else
+          acopy_mbox config ic
+    in
+      match processed with
+      | Error err -> write stderr (Error.message err) (* TODO: better error handling *)
+      | Ok _ -> ()
 
 let convert_wrapper config_files sem rpt rpt_p inp =
   let report_or_convert ic =
