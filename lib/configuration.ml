@@ -125,27 +125,15 @@ module ParseConfig = struct
   let parse_config_file = Prelude.readfile >> parse
 end
 
-  module Error = struct
-    type t = [
-      `NoConfig
-    ]
-
-    let message err =
-      match err with
-      | `NoConfig -> "No configuration file found."
-  end
-
-  let default_config () = Error `NoConfig
+  let default_config () = assert false (* TODO: Fix This *)
 
   let get_config config_files =
     let open ParseConfig in
-    let open Option in
     let config_files =
       config_files @
-      to_list (Sys.getenv_opt "AC_CONFIG") @
+      Option.to_list (Sys.getenv_opt "AC_CONFIG") @
       [ "~/.config/attachment-converter/acrc" ; "~/.acrc" ]
     in
-    let config_file = config_files |> List.dropwhile (not << Sys.file_exists << File.squiggle) |> List.head in
-    let config = config_file >>| readfile >>= (parse >> Result.to_option) >>| Result.ok in
-    default (default_config ()) config
-
+    let config_opt = config_files |> List.dropwhile (not << Sys.file_exists << File.squiggle) |> List.head in
+    let config_str = Option.(default (default_config ()) (map readfile config_opt)) in
+    parse config_str
