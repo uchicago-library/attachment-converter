@@ -43,7 +43,7 @@ let report ?(params=false) ic =
 
 let default_config_name = ".config"
 
-let convert ?(single_email=false) ic =
+let convert config_files ?(single_email=false) ic =
   let open Lib.Convert.Converter in
   let open Lib.Configuration.ParseConfig in
   let open Lib.ErrorHandling in
@@ -52,7 +52,7 @@ let convert ?(single_email=false) ic =
     if Sys.file_exists default_config_name
     then
       let processed =
-        let* config = parse_config_file default_config_name in
+        let config = get_config config_files in
           if single_email
           then
             let module DP = Data.Printer in
@@ -73,11 +73,11 @@ let convert ?(single_email=false) ic =
               "Error: missing config file '%s'\n"
               default_config_name)
 
-let convert_wrapper sem rpt rpt_p inp =
+let convert_wrapper config_files sem rpt rpt_p inp =
   let report_or_convert ic =
     if rpt_p then report ~params:true ic
     else if rpt then report ic
-    else convert ~single_email:sem ic in
+    else convert config_files ~single_email:sem ic in
   match inp with
     | `File fn -> within (report_or_convert) fn
     | `Stdin -> report_or_convert stdin
@@ -95,7 +95,11 @@ Arg.(value & flag & info ["r"; "report"] ~doc)
 let single_email_t = let doc = "Converts email attachments assuming the input is a single plain text email." in
 Arg.(value & flag & info ["single-email"] ~doc)
 
-let convert_t = Term.(const convert_wrapper $ single_email_t $ report_t $ report_params_t $ input_t)
+let config_t =
+  let doc = "Sets $(docv) to be checked for a configuration file." in
+  Arg.(value & opt_all file [] & info ["config"] ~docv:"PATH" ~doc)
+
+let convert_t = Term.(const convert_wrapper $ config_t $ single_email_t $ report_t $ report_params_t $ input_t)
 
 let cmd = let doc = "Converts email attachments." in
   let info = Cmd.info "attachment-converter" ~doc in

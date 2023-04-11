@@ -123,4 +123,15 @@ module ParseConfig = struct
       (Refer.of_string config_str)
 
   let parse_config_file = Prelude.readfile >> parse
+
+  let default_config () = assert false (* TODO: FIX THIS SOON! *)
+
+  let get_config config_files =
+    let config_files =
+      config_files @
+      Option.to_list (Sys.getenv_opt "AC_CONFIG") @
+      [ "~/.config/attachment-converter/acrc" ; "~/.acrc" ]
+    in
+    let config_file = List.(head << dropwhile (not << Sys.file_exists << File.squiggle)) config_files in
+    Option.(default (default_config ()) (config_file >>| readfile >>= (parse >> Result.to_option)))
 end
