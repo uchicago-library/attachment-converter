@@ -87,7 +87,7 @@ let single_email_t = let doc = "Converts email attachments assuming the input is
 Arg.(value & flag & info ["single-email"] ~doc)
 
 let config_t =
-  let doc = "Sets $(docv) to be checked for a configuration file." in
+  let doc = "Sets the absolute path $(docv) to be checked for a configuration file." in
   Arg.(value & opt_all file [] & info ["config"] ~docv:"PATH" ~doc)
 
 let convert_t = Term.(const convert_wrapper $ config_t $ single_email_t $ report_t $ report_params_t $ input_t)
