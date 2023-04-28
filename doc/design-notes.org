@@ -194,7 +194,12 @@
         we had to do because they are hidden by Mr. Mime's mli files.
     + Ocamlnet_parsetree is of signature PARSETREE
       + Same dealio, but for Ocamlnet_parsetree
-
+    + TODO: list of modules for an email parsing backend,
+      + e.g. [MrMime, Ocamlnet]
+      + make that an optional input to the parse function with
+        [MrMime, Ocamlnet] as a default
+      + Then we can extend it at the proverbial click of a proverbial
+        button, not a literal button
 ** ErrorHandling
 ** Header
 ** Mbox
