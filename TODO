@@ -6,8 +6,12 @@
 #+LaTeX_CLASS: tuftehandout
 # org-bootstrap
 #+INCLUDE: "~/.carcass/doc/ob-html-head.org"
-* IDEAS
-* REFACTORING
-* BUGS
-* FEATURES
-* OPTIMIZATION
+
+* use multiple email parsing backends
+* gather and fix a buncha bugs
+* flesh out user documentation
+* write mlis
+* flesh out developer documentation
+* auto-generated API type documentation
+* actual progress bar
+* message parsing for OCamlnet
