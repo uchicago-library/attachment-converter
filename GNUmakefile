@@ -9,6 +9,8 @@ SUBCLEANS =
 DISPLAY = short
 DUNE = dune $1 --display $(DISPLAY)
 FREEBSDHOST = ocaml
+HOME_DESTDIR = ~
+DESTDIR = /usr
 
 include $(LIB)/Makefile.gnumake
 include $(LIB)/Makefile.debug
@@ -40,7 +42,7 @@ read-doc: doc			## open the documentation with $(OPENHTML)
 	$(call OPENHTML, $(wildcard _build/default/_doc/_html/*/*/index.html))
 
 clean: $(SUBCLEANS)		## clean up build artifacts
-	$(call DUNE, clean)
+	$(call DUNE,clean)
 .PHONY: clean
 
 -include $(LIB)/Makefile.help
@@ -54,3 +56,19 @@ deps::
 	opam repository add dldc https://dldc.lib.uchicago.edu/opam
 	opam install . --deps-only --yes
 PHONY: deps
+
+opam-install::
+	$(call DUNE,build)
+	$(call DUNE,install)
+
+home-install: opam-install
+	echo Installing to $(HOME_DESTDIR)/bin/attc...
+	cp $(shell opam var bin)/attachment-converter $(HOME_DESTDIR)/bin/attc
+	ls -lh $(HOME_DESTDIR)/bin/attc
+PHONY: install
+
+install: opam-install
+	echo Installing to $(DESTDIR)/bin/attc...
+	cp $(shell opam var bin)/attachment-converter $(DESTDIR)/bin/attc
+	ls -lh $(DESTDIR)/bin/attc
+PHONY: install
