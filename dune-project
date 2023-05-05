@@ -18,6 +18,7 @@
   mrmime
   ocamlnet
   camlp-streams
+  ounit2
   (qtest :dev)
   (utop :dev)
   (ocamlformat :dev)
