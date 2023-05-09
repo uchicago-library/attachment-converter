@@ -67,7 +67,11 @@ let convert config_files ?(single_email=false) ic pbar =
       | Ok _ -> ()
 
 let convert_wrapper config_files sem rpt rpt_p inp =
-  let pbar = open_out "/dev/tty" in 
+  let pbar = match open_out "/dev/tty" with
+    (* no controlling tty *)
+    | exception _ -> open_out "/dev/null"
+    | other -> other
+  in 
   let report_or_convert ic =
     if rpt_p then report ~params:true ic
     else if rpt then report ic
