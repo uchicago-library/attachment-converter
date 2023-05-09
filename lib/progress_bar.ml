@@ -1,8 +1,5 @@
-open Prelude
-
 module Printer = struct
-  let print msg =
-    if Unix.isatty (Unix.descr_of_out_channel stderr)
-    then prerr_endline msg
-    else ()
+  let print msg pbar =
+    output_string pbar (msg ^ "\n") ;
+    flush pbar
 end

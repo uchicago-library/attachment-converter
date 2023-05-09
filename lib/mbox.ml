@@ -187,10 +187,10 @@ module ToOutput = struct
       let open Conversion (MBoxIterator (ChannelInput)) (ChannelOutput) in
         convert in_chan stdout converter
 
-    let acopy_mbox ?(idem=true) config in_chan =
+    let acopy_mbox ?(idem=true) config in_chan pbar =
       let module C = Convert.Conversion.Make (T) in
       let converter (fromline, em) =
-        match C.acopy_email ~idem:idem config em with
+        match C.acopy_email ~idem:idem config em pbar with
         | Ok converted -> fromline ^ "\n" ^ converted
         | Error _ ->
             let open ErrorHandling.Printer in
