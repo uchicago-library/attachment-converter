@@ -187,6 +187,41 @@ module ToOutput = struct
       let open Conversion (MBoxIterator (ChannelInput)) (ChannelOutput) in
         convert in_chan stdout converter
 
+    (* dumb and smart are toy functions warming up to parallelizing
+       acopy_mbox *)           
+
+    (* let dumb () =
+     *   let file = "/etc/passwd" in
+     *   let size = within readlines file |> len in
+     *   let reducer n acc =
+     *     let reducer' chan = readlines chan |> flip nth n in
+     *     within reducer' file :: acc
+     *   in
+     *   let concat = (@) in
+     *   parfold reducer (L (make size id)) [] concat
+     * 
+     * let smart () =
+     *   let file = "/etc/passwd" in
+     *   let addresses =
+     *     let lines = within readlines file in
+     *     let reducer (offset, acc) line =
+     *       let address = offset + String.length line + 1 in
+     *       (address , address :: acc)
+     *     in
+     *     foldl reducer (0, []) lines |> snd |> rev
+     *   in
+     *   let reducer address acc =
+     *     let reducer' chan = assert false
+     *       (\* let open Unix in
+     *        * lseek (descr_of_in_channel chan) address SEEK_CUR ;
+     *        * Mbox.read *\)
+     * 
+     *     (\* readlines chan |> flip nth n in
+     *      *     within reducer' file :: acc *\)
+     *     in
+     *     let concat = (@) in
+     *     parfold reducer (L addresses) [] concat *)
+
     let acopy_mbox ?(idem=true) config in_chan =
       let module C = Convert.Conversion.Make (T) in
       let converter (fromline, em) =

@@ -19,6 +19,7 @@
   ocamlnet
   camlp-streams
   ounit2
+  parmap
   (qtest :dev)
   (utop :dev)
   (ocamlformat :dev)
