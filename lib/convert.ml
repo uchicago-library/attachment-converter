@@ -66,7 +66,7 @@ module Mrmime_parsetree = struct
   type attachment = header Attachment.t
 
   let of_string =
-    Angstrom.parse_string ~consume:All Mrmime.Mail.mail >>
+    Angstrom.parse_string ~consume:All (Mrmime.Mail.mail None) >>
     Result.map (fun (h, b) -> (h, Some b)) >>
     Result.witherr (k `EmailParse)
 
@@ -75,7 +75,7 @@ module Mrmime_parsetree = struct
   let header = fst
   let make_header=
     Header.to_string >>
-    Angstrom.parse_string ~consume:All Mrmime.Header.Decoder.header >>
+    Angstrom.parse_string ~consume:All (Mrmime.Header.Decoder.header None) >>
     Result.get_ok (* TODO *)
 
   let of_list (l : t list) =
