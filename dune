@@ -5,6 +5,7 @@
 (executable
  (name main)
  (public_name attachment-converter)
+ (promote (until-clean))
  (libraries prelude lib mrmime threads netstring unix cmdliner))
 
 (env
