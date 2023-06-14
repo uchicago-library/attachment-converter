@@ -93,7 +93,7 @@ let config_t =
 let convert_t = Term.(const convert_wrapper $ config_t $ single_email_t $ report_t $ report_params_t $ input_t)
 
 let cmd = let doc = "Converts email attachments." in
-  let info = Cmd.info "attachment-converter" ~doc in
+  let info = Cmd.info "attc" ~doc in
   Cmd.v info convert_t
 
 let main () = exit (Cmd.eval cmd)
