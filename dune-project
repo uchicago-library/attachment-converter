@@ -20,8 +20,10 @@
   camlp-streams
   ounit2
   cmdliner
+  utop
+  ocamlformat-rpc
+  ocaml-lsp-server
   (qtest :dev)
-  (utop :dev)
   (ocamlformat :dev)
   (ocp-index :dev)
   (merlin :dev)))
