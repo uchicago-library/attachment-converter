@@ -1,4 +1,6 @@
-* Libreoffice sometimes converts to PDF-A, saying it converted to plaintext
+* BUG TRACKER
+
+** Libreoffice sometimes converts to PDF-A, saying it converted to plaintext
 
 + happened on Obi's Mac
 + example input email:
