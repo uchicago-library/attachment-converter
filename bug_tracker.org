@@ -1,0 +1,6 @@
+* Libreoffice sometimes converts to PDF-A, saying it converted to plaintext
+
++ happened on Obi's Mac
++ example input email:
+ =sequent:~/Email/'Saller Archive'/In-1-06/1569=
+
