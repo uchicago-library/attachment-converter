@@ -5,77 +5,76 @@
 
 * For Outside Users
 
-  This project only got into full swing starting in January of 2021,
-  and the code is very much in progress/in flux.  We do not recommend
-  trying it yet, but we will post updates here as soon as it is ready
-  for alpha testing.
-
+Attachment Converter is in pre-alpha.  If you'd like to try it out,
+please follow the instructions on [[https://dldc.lib.uchicago.edu/open/attachment-converter][our project website]].
 
 * For UChicago Library Developers
 
-  Welcome on board the =attachment-converter= project!  We're getting
-  close to being about to try it out ourselves on some of the archives
-  we have here at UChicago, which is rather exciting.
+Welcome on board the =attachment-converter= project!  We're getting
+close to being about to try it out ourselves on some of the archives
+we have here at UChicago, which is rather exciting.
 
 ** Guides for Developers
 
-   We have now broken our guides on our development workflow into two
-   main documents:
+We have now broken our guides on our development workflow into two
+main documents:
 
-   + [[doc/new-features.md][adding new features]]
-   + [[doc/sandboxing.md][using sandboxed switches]]
++ [[doc/new-features.md][adding new features]]
++ [[doc/sandboxing.md][using sandboxed switches]]
 
 ** Current State of the Project
 
-   Attachment Converter follows library-executable design.  That is,
-   it can be installed either as an OCaml library, or as an executable
-   that you run from the command line.  At the DLDC, we have
-   historically found that this design is useful for when we'd like to
-   have our command line tools overlap somewhat in the functionality
-   they offer.  If I want =tool2= to be able to do one of the things
-   that =tool= does, all I have to do is include the library for
-   =tool1= in =tool2= and I can start having =tool2= do it directly,
-   no sweat.
+Attachment Converter follows library-executable design.  That is,
+it can be installed either as an OCaml library, or as an executable
+that you run from the command line.  At the DLDC, we have
+historically found that this design is useful for when we'd like to
+have our command line tools overlap somewhat in the functionality
+they offer.  If I want =tool2= to be able to do one of the things
+that =tool= does, all I have to do is include the library for
+=tool1= in =tool2= and I can start having =tool2= do it directly,
+no sweat.
 
 ** Current Team
 
-   Our illustrious team of developers, funded by the [[https://emailarchivesgrant.library.illinois.edu/][Email Archives:
-   Building Capacity and Community]] Mellon project out of [[https://www.library.illinois.edu/][UIUC]],
-   currently includes:
+Our illustrious team of developers currently includes:
 
-   + [[https://github.com/nmmull][Nathan Mull]]
-   + [[https://github.com/cormacd9818][Cormac Duhamel]]
++ [[https://elucidations.vercel.app/][Matt Teichman]]
++ [[https://github.com/nmmull][Nathan Mull]]
++ [[https://theworldofobi.github.io/][Obi Obetta]]
 
-   Previous developers include Owen Price Skelly, who wrote much of
-   the initial exploratory code from this project in 2020 as part of a
-   research practicum, then returned during the 2021-2022 academic year
-   to build some of the core functionality out.  [[https://elucidations.vercel.app/][Matt Teichman]] and [[https://www2.lib.uchicago.edu/keith/][Keith
-   Waclena]] will be contributing to and maintaining the project on an
-   ongoing basis, after the end of the grant period.  Matt is currently
-   in charge of managing the project.
+Previous developers include Owen Price Skelly, who wrote much of the
+initial exploratory code from this project in 2020 as part of a
+research practicum, then returned during the 2021-2022 academic year
+to build some of the core functionality out, and [[https://github.com/cormacd9818][Cormac Duhamel]], who
+built the command line interface as well as the initial version of
+Email Scrubber, which we plan to use to generate fake emails for
+testing.
+
+[[https://elucidations.vercel.app/][Matt Teichman]] and [[https://www2.lib.uchicago.edu/keith/][Keith Waclena]] will be contributing to and
+maintaining the project on an ongoing basis, after the end of the
+grant period.  Matt is currently in charge of managing the project.
 
 * Background on the email format
     
 ** Reading
 
-   Here is a link to the RFC-s that define the email
-   specification. These are shamelessly pilfered from the impressive
-   [[https://github.com/mirage/mrmime][Mr. Mime]] GitHub README:
-   
-   + https://datatracker.ietf.org/doc/html/rfc822
-   + https://datatracker.ietf.org/doc/html/rfc2822
-   + https://datatracker.ietf.org/doc/html/rfc5321
-   + https://datatracker.ietf.org/doc/html/rfc5322
-   + https://datatracker.ietf.org/doc/html/rfc2045
-   + https://datatracker.ietf.org/doc/html/rfc2046
-   + https://datatracker.ietf.org/doc/html/rfc2047
-   + https://datatracker.ietf.org/doc/html/rfc2049
-   + https://datatracker.ietf.org/doc/html/rfc6532
+Here is a link to the RFC-s that define the email specification. These
+are shamelessly pilfered from the impressive [[https://github.com/mirage/mrmime][Mr. Mime]] GitHub README:
+
++ https://datatracker.ietf.org/doc/html/rfc822
++ https://datatracker.ietf.org/doc/html/rfc2822
++ https://datatracker.ietf.org/doc/html/rfc5321
++ https://datatracker.ietf.org/doc/html/rfc5322
++ https://datatracker.ietf.org/doc/html/rfc2045
++ https://datatracker.ietf.org/doc/html/rfc2046
++ https://datatracker.ietf.org/doc/html/rfc2047
++ https://datatracker.ietf.org/doc/html/rfc2049
++ https://datatracker.ietf.org/doc/html/rfc6532
 
 ** Viewing
 
-   Romain Calascibetta's overview talk from [[https://icfp16.sigplan.org/program/program-icfp-2016/][ICFP 2016]] is truly
-   excellent and recommended to all.  You never knew email addresses
-   could be so complicated.
+Romain Calascibetta's overview talk from [[https://icfp16.sigplan.org/program/program-icfp-2016/][ICFP 2016]] is truly excellent
+and recommended to all.  You never knew email addresses could be so
+complicated.
 
-   https://www.youtube.com/watch?v=kQkRsNEo25k
+https://www.youtube.com/watch?v=kQkRsNEo25k
