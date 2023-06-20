@@ -6,3 +6,9 @@
 + example input email:
  =sequent:~/Email/'Saller Archive'/In-1-06/1569=
 
+** ArchLinux bugs
+
++ verapdf needs to be installed on AUR
++ pdftotext in ArchLinux is actually python-pdftotext
++ vips for ArchLinux is actually lipvips
+
