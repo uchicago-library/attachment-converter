@@ -12,3 +12,7 @@
 + pdftotext in ArchLinux is actually python-pdftotext
 + vips for ArchLinux is actually lipvips
 
+** Shell script problem
+
++ soffice-wrapper.sh should do error handling on extensions (and other
+  things) (case statement)
