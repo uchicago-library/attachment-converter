@@ -145,7 +145,7 @@ let default_config () =
     ]
   ; "application/msword" ,
     [ "application/pdf" , script_dir ^ "soffice-wrapper.sh -i doc -o pdf" , "soffice-doc-to-pdfa"
-    ; "text/plain" , script_dir ^ "soffice-wrapper.sh -i doc -o pdf" , "soffice-doc-to-txt"
+    ; "text/plain" , script_dir ^ "soffice-wrapper.sh -i doc -o txt" , "soffice-doc-to-txt"
     ]
   ; "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ,
     [ "application/pdf" , script_dir ^ "soffice-wrapper.sh -i docx -o pdf" , "soffice-docx-to-pdfa"
