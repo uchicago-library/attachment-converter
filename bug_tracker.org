@@ -10,7 +10,7 @@
 
 + verapdf needs to be installed on AUR
 + pdftotext in ArchLinux is actually python-pdftotext
-+ vips for ArchLinux is actually lipvips
++ vips for ArchLinux is actually libvips
 
 ** Shell script problem
 
