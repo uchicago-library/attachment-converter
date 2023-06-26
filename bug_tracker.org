@@ -1,18 +1,18 @@
 * BUG TRACKER
 
-** Libreoffice sometimes converts to PDF-A, saying it converted to plaintext
+** DONE Libreoffice sometimes converts to PDF-A, saying it converted to plaintext
 
-+ happened on Obi's Mac
++ Happened on Obi's Mac
 + example input email:
  =sequent:~/Email/'Saller Archive'/In-1-06/1569=
 
-** ArchLinux bugs
+** TODO ArchLinux bugs
 
 + verapdf needs to be installed on AUR
 + pdftotext in ArchLinux is actually python-pdftotext
 + vips for ArchLinux is actually libvips
 
-** Shell script problem
+** TODO Shell script problem
 
 + soffice-wrapper.sh should do error handling on extensions (and other
   things) (case statement)
