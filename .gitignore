@@ -28,6 +28,9 @@ setup.log
 # Dune generated files
 *.install
 
+# GNUmake generated files
+*.maketrack
+
 # Local OPAM switch
 _opam/
 
