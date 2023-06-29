@@ -27,3 +27,5 @@
   (ocamlformat :dev)
   (ocp-index :dev)
   (merlin :dev)))
+
+(cram enable)
