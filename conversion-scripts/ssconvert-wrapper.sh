@@ -20,5 +20,5 @@ INPUT="$TMP_DIR/temp-in.$INPUT_EXT"
 OUTPUT="$TMP_DIR/temp-out.$OUTPUT_EXT"
 
 cat > $INPUT
-ssconvert [OPTIONS] $INPUT $OUTPUT
+ssconvert --export-type=Gnumeric_stf:stf_assistant -O "$(printf 'separator="\t"')" $INPUT $OUTPUT
 cat $OUTPUT
