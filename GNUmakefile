@@ -20,6 +20,7 @@ HOME_DESTDIR = ~
 DESTDIR = /usr
 OS_INSTALL =
 OS_DEPS = libreoffice pandoc ghostscript
+WINDOWS = pacman --version
 
 include $(LIB)/Makefile.gnumake
 include $(LIB)/Makefile.debug
@@ -47,13 +48,14 @@ doc::				## build documentation
 .PHONY: doc
 
 builddeps.maketrack:
-	ifeq [brew --version]
-		$(OS_INSTALL) = brew install
-	ifeq [pacman --version]
+	if command -v pacman > /dev/null; then
 		$(OS_INSTALL) = pacman -S
-	ifeq [apt --version]
-		$(OS_INSTALL) = apt install
-	endif
+	elif command -v brew > /dev/null; then
+		$(OS_INSTALL) = brew install
+	elif command -v apt > /dev/null; then
+		$(OS_INSTALL) = brew install
+	fi
+
 	echo --package manager command is $(OS_INSTALL)--
 	
 	$(OS_INSTALL) opam
@@ -81,12 +83,12 @@ opam-install::
 	$(call DUNE,install)
 .PHONY: opam-install
 
-home-install: opam-install 
-	ifeq [pacman --version]
+home-install: opam-install
+	if command -v pacman > /dev/null; then	
 		$(OS_INSTALL) $(OS_DEPS) libvips
 	else
 		$(OS_INSTALL) $(OS_DEPS) vips verapdf
-	endif
+	fi
 
 	echo Cloning attc git repo...
 	cd $(HOME_DESTDIR)
