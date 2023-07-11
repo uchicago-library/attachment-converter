@@ -9,8 +9,9 @@ if uname | grep -q "Darwin"; then
     fi
 elif uname | grep -q "Linux"; then
     if command -v pacman > /dev/null; then
-        pacman -S $1
+        sudo pacman -S $1
     elif command -v apt > /dev/null; then
-        apt install $1
+        sudo apt-get update
+        sudo apt install $1
     fi
 fi
