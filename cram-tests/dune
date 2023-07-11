@@ -1,0 +1,8 @@
+(cram
+  (deps 
+    ../conversion-scripts/soffice-wrapper.sh
+    ../conversion-scripts/vips-wrapper.sh
+    ../conversion-scripts/pandoc-wrapper.sh
+    ../conversion-scripts/pdftotext-wrapper.sh
+    ../conversion-scripts/pdf2archive-wrapper.sh
+    ))
