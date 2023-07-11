@@ -4,7 +4,7 @@
 
 (executable
  (name main)
- (public_name attachment-converter)
+ (public_name attc)
  (promote (until-clean))
  (libraries prelude lib mrmime threads netstring unix cmdliner))
 
