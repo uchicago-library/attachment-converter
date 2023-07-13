@@ -18,9 +18,6 @@ DUNE = dune $1 --display $(DISPLAY)
 FREEBSDHOST = ocaml
 HOME_DESTDIR = ~
 DESTDIR = /usr
-OS_INSTALL =
-OS_DEPS = libreoffice pandoc ghostscript
-WINDOWS = pacman --version
 
 include $(LIB)/Makefile.gnumake
 include $(LIB)/Makefile.debug
@@ -29,6 +26,7 @@ include $(LIB)/Makefile.debug
 
 all build::				## build the project binaries
 	$(call DUNE, build @@default)
+	
 .PHONY: build all
 
 production release:: 			## build production binaries
@@ -53,7 +51,7 @@ builddeps.maketrack:
 	elif command -v brew > /dev/null; then
 		$(OS_INSTALL) = brew install
 	elif command -v apt > /dev/null; then
-		$(OS_INSTALL) = brew install
+		$(OS_INSTALL) = apt install
 	fi
 
 	echo --package manager command is $(OS_INSTALL)--
@@ -65,6 +63,11 @@ rundeps.maketrack: builddeps.maketrack
 	opam repository add dldc https://dldc.lib.uchicago.edu/opam
 	opam install . --deps-only --yes
 	touch rundeps.maketrack
+
+deps::
+	opam repository add dldc https://dldc.lib.uchicago.edu/opam
+	opam install . --deps-only --yes
+PHONY: deps
 
 clean: $(SUBCLEANS)		## clean up build artifacts
 	$(call DUNE,clean)
@@ -90,7 +93,7 @@ home-install: opam-install
 		$(OS_INSTALL) $(OS_DEPS) vips verapdf
 	fi
 
-	echo Cloning attc git repo...
+	@echo Cloning attc git repo...
 	cd $(HOME_DESTDIR)
 	mkdir attachment-converter
 	cd attachment-converter
@@ -124,3 +127,48 @@ install: opam-install
 # opam pin -y add mattlude https://github.com/bufordrat/mattlude.git &&
 # opam pin -y add spinup https://github.com/bufordrat/spinup.git &&
 # opam list
+
+################################################################################
+
+opam:
+	./os-install.sh opam
+	opam init
+	eval $(opam env)
+
+.PHONY: opam
+
+mercurial: opam
+	./os-install.sh mercurial
+.PHONY: mercurial
+
+opam-deps.maketrack: 
+	cd $(HOME_DESTDIR)/attachment-converter
+	opam repository add dldc https://dldc.lib.uchicago.edu/opam
+	opam install . --deps-only --yes
+
+	touch opam-deps.maketrack
+
+os-deps.maketrack: opam-deps.maketrack deps
+	./os-install.sh libreoffice pandoc ghostscript gnumeric vips verapdf catdoc
+	touch os-deps.maketrack
+
+shell-copy: os-deps.maketrack
+	cd $(HOME_DESTDIR)/attachment-converter
+	mkdir -p ~/.config/attachment-converter/scripts
+	cp conversion-scripts/*.sh ~/.config/attachment-converter/scripts
+.PHONY: shell-copy
+
+attc-build: shell-copy
+	cd $(HOME_DESTDIR)/attachment-converter
+	make
+	
+	cd $(HOME_DESTDIR)/attachment-converter
+	mv _build/default/main.exe $(DESTDIR)/bin/attc
+.PHONY: build
+
+################################################################################
+
+# Try these out
+# make all
+# make build
+# make all build
