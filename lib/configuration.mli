@@ -5,7 +5,8 @@ module Formats :
       target_ext : string;
       shell_command : string;
       convert_id : string;
-    }
+      }
+    type t
     module Dict :
       sig
         module M :
@@ -30,7 +31,6 @@ module ParseConfig :
       | TargetExt
       | ShellCommand
       | ConvertID
-    val string_of_config_key : config_key -> string
     module Error :
       sig
         type t =
@@ -54,14 +54,7 @@ module ParseConfig :
       (Formats.transform_data list Formats.Dict.t,
        [> `ConfigData of int * config_key | `ReferParse of int * string ])
       result
-    val parse_config_file :
-      string ->
-      (Formats.transform_data list Formats.Dict.t,
-       [> `ConfigData of int * config_key | `ReferParse of int * string ])
-      result
   end
-
-(* val default_config : unit -> Formats.transform_data list Formats.Dict.t *)
 
 val get_config :
   string list ->

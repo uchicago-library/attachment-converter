@@ -131,8 +131,6 @@ module ParseConfig = struct
       (Refer.witherr error_handler collect_varieties)
       (Ok Dict.empty)
       (Refer.of_string config_str)
-
-  let parse_config_file = Prelude.readfile >> parse
 end
 
 let default_config () =
