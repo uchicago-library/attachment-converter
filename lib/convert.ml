@@ -371,7 +371,7 @@ module Conversion = struct
               "X-Attachment-Converter", Header.Field.Value.to_string meta_header_val;
             ]))
 
-    let convert_attachment att md =
+    let convert_attachment att pbar md =
       let convert_data str =
         let args = split md.script in
           match Unix.Proc.rw args str with
@@ -390,7 +390,7 @@ module Conversion = struct
       let md =
         { md with
           timestamp = ts ;
-          filename = rename_file ts md.extension md.filename ;
+          filename = rename_file ts md.extension md.filename pbar ;
         }
       in
       let new_header = T.make_header (create_new_header md) in
@@ -426,7 +426,7 @@ module Conversion = struct
       in
         process converted to_convert
 
-    let convert_attachments ?(idem=true) dict tree =
+    let convert_attachments ?(idem=true) dict tree pbar =
       let open Configuration.Formats in
       let done_converting = if idem then already_converted tree else [] in
       let process att =
@@ -450,18 +450,18 @@ module Conversion = struct
                   timestamp = "";
                 }
             in
-              att :: (List.map (convert_attachment att << create_params) trans_lst |> Option.reduce)
+              att :: (List.map (convert_attachment att pbar << create_params) trans_lst |> Option.reduce)
         else
           [att]
       in
         T.replace_attachments process tree
 
-    let acopy ?(idem=true) dict tree =
-      convert_attachments ~idem:idem dict tree
+    let acopy ?(idem=true) dict tree pbar =
+      convert_attachments ~idem:idem dict tree pbar
 
-    let acopy_email ?(idem=true) config email =
+    let acopy_email ?(idem=true) config email pbar =
       let ( let* ) = Result.(>>=) in
-      let () = Progress_bar.Printer.print "Parsing email..." in
+      let () = Progress_bar.Printer.print "Parsing email..." pbar in
       let* tree = Result.witherr (k `EmailParse) (T.of_string email) in
       let () =
         let skel_str = Skeleton.to_string (to_skeleton tree) in
@@ -474,9 +474,9 @@ module Conversion = struct
             "=================================" ;
           ]
         in
-        Progress_bar.Printer.print msg
+        Progress_bar.Printer.print msg pbar
       in
-      let converted_tree = acopy ~idem:idem config tree in
+      let converted_tree = acopy ~idem:idem config tree pbar in
       let () =
         let skel_str = Skeleton.to_string (to_skeleton converted_tree) in
         let msg =
@@ -489,7 +489,7 @@ module Conversion = struct
               "Processing complete."
             ]
         in
-        Progress_bar.Printer.print msg
+        Progress_bar.Printer.print msg pbar
       in
       Ok (T.to_string converted_tree)
 

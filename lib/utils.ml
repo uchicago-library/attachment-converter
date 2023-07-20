@@ -20,7 +20,7 @@ let timestamp () =
     |> string_of_float
     |> fun x -> String.(sub x 0 (length x - 1))
 
-let rename_file id new_ext filename =
+let rename_file id new_ext filename pbar =
   let base = Filename.remove_extension filename in
   let new_filename =
     String.concat ""
@@ -48,7 +48,7 @@ let rename_file id new_ext filename =
           "..."
         ]
     in
-    Progress_bar.Printer.print msg
+    Progress_bar.Printer.print msg pbar
   in
   new_filename
 

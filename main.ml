@@ -9,6 +9,8 @@
 open Prelude
 open Cmdliner
 
+let pbar_channel = open_out "/dev/tty"
+
 module Data = struct
   module Printer = struct
     let print msg = write stdout msg
@@ -41,7 +43,7 @@ let report ?(params=false) ic =
       (fun k v -> print ("  " ^ k ^ " : " ^ (Int.to_string v)))
       types
 
-let convert config_files ?(single_email=false) ic =
+let convert config_files ?(single_email=false) ic pbar =
   let open Lib.Convert.Converter in
   let open Lib.Configuration in
   let open Lib.ErrorHandling in
@@ -52,23 +54,28 @@ let convert config_files ?(single_email=false) ic =
         if single_email
         then
           let module DP = Data.Printer in
-          let* converted = acopy_email config (read ic) in
+          let* converted = acopy_email config (read ic) pbar in
           let print_both = begin
               DP.print converted ;
             end
           in Ok print_both
         else
-          acopy_mbox config ic
+          acopy_mbox config ic pbar
     in
       match processed with
       | Error err -> write stderr (Error.message err) (* TODO: better error handling *)
       | Ok _ -> ()
 
 let convert_wrapper config_files sem rpt rpt_p inp =
+  let pbar = match open_out "/dev/tty" with
+    (* no controlling tty *)
+    | exception _ -> open_out "/dev/null"
+    | other -> other
+  in 
   let report_or_convert ic =
     if rpt_p then report ~params:true ic
     else if rpt then report ic
-    else convert config_files ~single_email:sem ic in
+    else convert config_files ~single_email:sem ic pbar in
   match inp with
     | `File fn -> within (report_or_convert) fn
     | `Stdin -> report_or_convert stdin
