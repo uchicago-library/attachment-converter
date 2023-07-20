@@ -1,0 +1,11 @@
+# -*- mode: org; coding: utf-8 -*-
+#+TITLE: TODO List for attachment-converter
+
+* cram tests
+- include note about how they should be run on macOS
+- this is because differences in how =pdftotext= works on different
+  platforms result in superficial differences in the cram diff
+
+
+
+
