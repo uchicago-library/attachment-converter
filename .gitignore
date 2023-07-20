@@ -44,3 +44,6 @@ lib/application.pdf
 *.pdf
 /utop.out
 /tests/test_emails
+
+#macOS desktop services store file
+.DS_Store
