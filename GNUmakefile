@@ -19,6 +19,7 @@ DUNE = $(EVAL); opam exec -- dune $1 --display $(DISPLAY)
 FREEBSDHOST = ocaml # what is this for?
 HOME_DESTDIR = ~
 DESTDIR = /usr
+PROJECT_ROOT = $(shell pwd)
 
 include $(LIB)/Makefile.gnumake
 include $(LIB)/Makefile.debug
@@ -27,7 +28,6 @@ include $(LIB)/Makefile.debug
 
 all build::				## build the project binaries
 	$(call DUNE, build @@default)
-	
 .PHONY: build all
 
 production release:: 			## build production binaries
@@ -61,7 +61,7 @@ sandbox::
 
 opam:
 	./os-install.sh opam
-	opam init --yes --yes
+	opam init --yes --yes --disable-sandboxing
 .PHONY: opam
 
 mercurial: opam
@@ -69,7 +69,7 @@ mercurial: opam
 .PHONY: mercurial
 
 cd-home:
-	cd $(HOME_DESTDIR)/attachment-converter
+	cd $(PROJECT_ROOT)
 
 deps::
 	$(EVAL); opam repository add dldc https://dldc.lib.uchicago.edu/opam
@@ -84,9 +84,9 @@ os-deps.maketrack: opam-deps.maketrack deps
 	touch os-deps.maketrack
 
 shell-copy: os-deps.maketrack
-	cd $(HOME_DESTDIR)/attachment-converter
+	cd $(PROJECT_ROOT)
 	mkdir -p ~/.config/attachment-converter/scripts
-	cp conversion-scripts/*.sh ~/.config/attachment-converter/scripts
+	cp $(wildcard conversion-scripts/*.sh) ~/.config/attachment-converter/scripts
 .PHONY: shell-copy
 
 opam-install::
@@ -100,9 +100,6 @@ home-install: shell-copy opam-install
 	ls -lh $(HOME_DESTDIR)/bin/attc
 	@echo Attachment Converter has been installed to $(HOME_DESTDIR)/bin/attc. 
 	@echo Please ensure that $(HOME_DESTDIR)/bin is on your path.
-
-	cd $(HOME_DESTDIR)/attachment-converter
-	mv _build/default/main.exe $(HOME_DESTDIR)/bin/attc
 .PHONY: home-install
 
 install: shell-copy opam-install
@@ -112,7 +109,7 @@ install: shell-copy opam-install
 	@echo Attachment Converter has been installed to $(DESTDIR)/bin/attc. 
 	@echo Please ensure that $(DESTDIR)/bin is on your path.
 
-	cd $(HOME_DESTDIR)/attachment-converter
+	cd $(PROJECT_ROOT)
 	mv _build/default/main.exe $(DESTDIR)/bin/attc
 .PHONY: install
 
