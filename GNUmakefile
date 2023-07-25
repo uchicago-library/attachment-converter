@@ -14,7 +14,8 @@ NAME = attachment-converter
 LIB = makefiles
 SUBCLEANS = # what is this for?
 DISPLAY = short
-DUNE = dune $1 --display $(DISPLAY)
+EVAL = eval $$(opam env)
+DUNE = $(EVAL); opam exec -- dune $1 --display $(DISPLAY)
 FREEBSDHOST = ocaml # what is this for?
 HOME_DESTDIR = ~
 DESTDIR = /usr
@@ -51,8 +52,7 @@ clean: $(SUBCLEANS)		## clean up build artifacts
 .PHONY: clean
 
 sandbox::
-	opam switch create . --deps-only --repos dldc=https://dldc.lib.uchicago.edu/opam,default --yes
-	eval $(opam env)
+	$(EVAL); opam switch create . --deps-only --repos dldc=https://dldc.lib.uchicago.edu/opam,default --yes
 .PHONY: sandbox
 
 -include $(LIB)/Makefile.help
@@ -62,8 +62,6 @@ sandbox::
 opam:
 	./os-install.sh opam
 	opam init --yes --yes
-	./eval-command.sh
-
 .PHONY: opam
 
 mercurial: opam
@@ -74,12 +72,12 @@ cd-home:
 	cd $(HOME_DESTDIR)/attachment-converter
 
 deps::
-	opam repository add dldc https://dldc.lib.uchicago.edu/opam
-	opam install . --deps-only --yes
+	$(EVAL); opam repository add dldc https://dldc.lib.uchicago.edu/opam
+	$(EVAL); opam install . --deps-only --yes
 .PHONY: deps
 
 opam-deps.maketrack: mercurial cd-home deps	
-	touch opam-deps.maketrack
+	$(EVAL); touch opam-deps.maketrack
 
 os-deps.maketrack: opam-deps.maketrack deps
 	./os-install.sh libreoffice pandoc ghostscript gnumeric vips verapdf catdoc
@@ -92,27 +90,27 @@ shell-copy: os-deps.maketrack
 .PHONY: shell-copy
 
 opam-install::
-	$(call DUNE,build)
-	$(call DUNE,install)
+	$(EVAL); $(call DUNE,build)
+	$(EVAL); $(call DUNE,install)
 .PHONY: opam-install
 
 home-install: shell-copy opam-install
-	echo Installing to $(HOME_DESTDIR)/bin/attc...
-	cp $(shell opam var bin)/attachment-converter $(HOME_DESTDIR)/bin/attc
+	@echo Installing to $(HOME_DESTDIR)/bin/attc...
+	$(EVAL); cp $(shell opam var bin)/attc $(HOME_DESTDIR)/bin
 	ls -lh $(HOME_DESTDIR)/bin/attc
-	echo Attachment Converter has been installed to $(HOME_DESTDIR)/bin/attc. 
-	echo Please ensure that $(HOME_DESTDIR)/bin is on your path.
+	@echo Attachment Converter has been installed to $(HOME_DESTDIR)/bin/attc. 
+	@echo Please ensure that $(HOME_DESTDIR)/bin is on your path.
 
 	cd $(HOME_DESTDIR)/attachment-converter
 	mv _build/default/main.exe $(HOME_DESTDIR)/bin/attc
 .PHONY: home-install
 
 install: shell-copy opam-install
-	echo Installing to $(DESTDIR)/bin/attc...
-	cp $(shell opam var bin)/attachment-converter $(DESTDIR)/bin/attc
+	@echo Installing to $(DESTDIR)/bin/attc...
+	$(EVAL); cp $(shell opam var bin)/attachment-converter $(DESTDIR)/bin/attc
 	ls -lh $(DESTDIR)/bin/attc
-	echo Attachment Converter has been installed to $(DESTDIR)/bin/attc. 
-	echo Please ensure that $(DESTDIR)/bin is on your path.
+	@echo Attachment Converter has been installed to $(DESTDIR)/bin/attc. 
+	@echo Please ensure that $(DESTDIR)/bin is on your path.
 
 	cd $(HOME_DESTDIR)/attachment-converter
 	mv _build/default/main.exe $(DESTDIR)/bin/attc
