@@ -13,9 +13,9 @@ findOS(){
             os="sudo pacman -S --needed"
         elif command -v apt > /dev/null; then
             os="sudo apt install"
-            if [ $2 = "opam" ]; then
-                sudo add-apt-repository ppa:avsm/ppa
-                sudo apt update
+            # if [ $2 = "opam" ]; then
+            #     sudo add-apt-repository ppa:avsm/ppa
+            #     sudo apt update
         fi
     fi
 }
