@@ -51,7 +51,10 @@ findOS
 while [[ $# -gt 0 ]]; do
     customizeArg "$os" $1
     if [ "$customarg" != "NaN" ]; then
-        $os $customarg
+        if [ "$os" = "sudo apt install" ]; then
+            $os $customarg -y
+        else
+            $os $customarg
     fi
     shift
 done
