@@ -55,6 +55,9 @@ while [[ $# -gt 0 ]]; do
             $os $customarg -y
         else
             $os $customarg
+        fi
+    else
+        $os $customarg
     fi
     shift
 done
