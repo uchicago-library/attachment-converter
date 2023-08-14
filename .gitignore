@@ -34,6 +34,9 @@ setup.log
 # Local OPAM switch
 _opam/
 
+# opam files
+*.opam
+
 lib/3164_crlf
 lib/application.pdf
 /sample.txt
@@ -46,4 +49,4 @@ lib/application.pdf
 /tests/test_emails
 
 #macOS desktop services store file
-.DS_Store
+**.DS_Store
