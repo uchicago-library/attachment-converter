@@ -5,4 +5,5 @@
     ../conversion-scripts/pandoc-wrapper.sh
     ../conversion-scripts/pdftotext-wrapper.sh
     ../conversion-scripts/pdf2archive-wrapper.sh
+    base64.sh
     ))
