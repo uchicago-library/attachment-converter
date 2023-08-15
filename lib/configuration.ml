@@ -1,5 +1,69 @@
 open Prelude
 
+module Mime_type = struct
+  module Type = struct
+    type t =
+      | Text
+      | Image
+      | Audio
+      | Video
+      | Application
+      | Message
+      | Multipart
+      | Other of string
+
+    let to_string ty =
+      match ty with
+      | Text -> "text"
+      | Image -> "image"
+      | Audio -> "audio"
+      | Video -> "video"
+      | Application -> "application"
+      | Message -> "message"
+      | Multipart -> "multipart"
+      | Other name -> name
+
+    let of_string str =
+      match String.lowercase_ascii str with
+      | "text" -> Text
+      | "image" -> Image
+      | "audio" -> Audio
+      | "video" -> Video
+      | "application" -> Application
+      | "message" -> Message
+      | "multipart" -> Multipart
+      | other -> Other other
+  end
+
+  module Subtype = struct
+    type t = { name : string }
+
+    let to_string st = st.name
+    let of_string name = { name = name }
+  end
+
+  type t =
+    { typ : Type.t;
+      subtype : Subtype.t;
+    }
+
+  let type_of mt = mt.typ
+  let subtype mt = mt.subtype
+
+  let to_string mt =
+    Type.to_string (type_of mt)
+    ^ "/"
+    ^ Subtype.to_string (subtype mt)
+end
+
+module Transform_data = struct
+  type t =
+    { target_type : Mime_type.t;
+      target_ext :
+    }
+end
+
+
 module Formats = struct
 
   type transform_data =
@@ -34,7 +98,43 @@ module Formats = struct
   let conversions d ct =
     Option.default []
       (Dict.find_opt ct d)
- end
+end
+
+module MimeType = struct
+  type t = Mrmime.Content_type.t
+
+  let to_string mty =
+    let open Mrmime.Content_type in
+    Type.to_string (ty mty) ^ "/" ^ Subtype.to_string (subty mty)
+end
+
+module ConfigEntry = struct
+  type t =
+    { source_type : MimeType.t ;
+      target_type : MimeType.t ;
+      target_ext : string option;
+      shell_cmd : string ;
+      convert_id : string ;
+    }
+
+  let make st tt te sc id : t =
+    { source_type = st ;
+      target_type = tt ;
+      target_ext = te ;
+      shell_cmd = sc ;
+      convert_id = id ;
+    }
+
+  let to_refer entry : Refer.t =
+    List.map
+      (fun ext -> "target_ext" , ext)
+      (Option.to_list entry.target_ext)
+    @ [ "source_type" , MimeType.to_string entry.source_type ;
+        "target_type" , MimeType.to_string entry.target_type ;
+        "shell_command" , entry.shell_cmd ;
+        "convert_id" , entry.convert_id ;
+      ]
+end
 
 module ParseConfig = struct
   open Formats
@@ -83,7 +183,7 @@ module ParseConfig = struct
     }
 
   let entry_of_assoc config_assoc =
-    let construct_config_entry st tt te ss id =
+    let make st tt te ss id =
       { source_type   = st ;
         target_type   = tt ;
         target_ext    = te ;
@@ -105,7 +205,7 @@ module ParseConfig = struct
                       (check TargetExt)
     in
     let* id       = check ConvertID    in
-    Ok (construct_config_entry st tt te ss id)
+    Ok (make st tt te ss id)
 
   let transform_data_of_entry entry =
     { target_type   = entry.target_type   ;
