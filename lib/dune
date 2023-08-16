@@ -5,7 +5,7 @@
 (library
  (name lib)
  (libraries prelude mrmime threads netstring unix re)
- (modules lib configuration errorHandling report convert mbox header utils serialize skeleton progress_bar))
+ (modules lib configuration errorHandling report convert mbox header utils serialize skeleton progress_bar mime_type))
 
 (env
   (dev                                  ; make warnings non-fatal
