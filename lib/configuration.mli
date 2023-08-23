@@ -1,3 +1,11 @@
+module Conv_util : sig
+  type t
+
+  val soffice : t
+  val pandoc : t
+  val vips : t
+  val pdftotext : t
+end
 
 module Transform_data : sig
   type t
@@ -15,6 +23,8 @@ module Transform_data : sig
   val make_no_ext : target_type:Mime_type.t ->
                     shell_command:string ->
                     convert_id:string -> t
+
+  val of_conv_util : Conv_util.t -> Mime_type.t -> Mime_type.t -> t
 end
 
 module Config_key : sig
@@ -65,6 +75,7 @@ module Formats : sig
       | `DummyError
       ]
 
+  val of_assoc_list : (string * Transform_data.t list) list -> t
   val of_string : string -> (t, Error.t) result
 end
 

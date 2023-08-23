@@ -32,6 +32,10 @@ module Type = struct
     | "message" -> Message
     | "multipart" -> Multipart
     | other -> Other other
+
+  let application = Application
+  let text = Text
+  let image = Image
 end
 
 module Subtype = struct
@@ -39,6 +43,17 @@ module Subtype = struct
 
   let to_string st = st.name
   let of_string name = { name = name }
+
+  let pdf = of_string "pdf"
+  let plain = of_string "plain"
+  let msword = of_string "msword"
+  let docx_subty = of_string "vnd.openxmlformats-officedocument.wordprocessingml.document"
+  let excel = of_string "vnd.ms-excel"
+  let tsv = of_string "tab-separated-values"
+  let gif = of_string "gif"
+  let bmp = of_string "bmp"
+  let tiff = of_string "tiff"
+  let jpeg = of_string "jpeg"
 end
 
 module Error = struct
@@ -83,3 +98,15 @@ let extension mt =
   | "text/tab-separated-values" -> ".tsv"
   | "image/tiff" -> ".tif"
   | _ -> "" (* TODO: default to no extension should be logged *)
+
+let pdf = make Type.application Subtype.pdf
+let pdfa = make Type.application Subtype.pdf
+let txt = make Type.text Subtype.plain
+let doc = make Type.application Subtype.msword
+let docx = make Type.application Subtype.docx_subty
+let xls = make Type.application Subtype.excel
+let tsv = make Type.text Subtype.tsv
+let gif = make Type.image Subtype.gif
+let bmp = make Type.image Subtype.bmp
+let tiff = make Type.image Subtype.tiff
+let jpeg = make Type.image Subtype.jpeg
