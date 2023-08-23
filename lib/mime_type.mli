@@ -19,6 +19,7 @@ type t
 
 val type_of : t -> Type.t
 val subtype : t -> Subtype.t
+val make : Type.t -> Subtype.t -> t
 
 val to_string : t -> string
 val of_string : string -> (t, Error.t) result
