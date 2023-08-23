@@ -238,21 +238,24 @@ module Formats = struct
       (Refer.of_string config_str)
 end
 
-let default_config () =
-  let open Mime_type in
-  let open Formats in
+
+
+let into = flip << Transform_data.of_conv_util
+let conv source transformers = source , map ((|>) source) transformers
+
+let default_assoc_list () =
   let open Conv_util in
-  let into = flip << Transform_data.of_conv_util in
-  let make source transformers = source , map ((|>) source) transformers in
-  of_assoc_list
-    [ make pdf [ into soffice pdfa ; into pdftotext txt ] ;
-      make doc [ into soffice pdfa ; into soffice txt ] ;
-      make docx [ into soffice pdfa ; into pandoc txt ] ;
-      make xls  [ into soffice tsv ] ;
-      make gif  [ into vips tiff ] ;
-      make bmp  [ into vips tiff ] ;
-      make jpeg [ into vips tiff ] ;
-    ]
+  let open Mime_type in
+  [ conv pdf [ into soffice pdfa ; into pdftotext txt ] ;
+    conv doc [ into soffice pdfa ; into soffice txt ] ;
+    conv docx [ into soffice pdfa ; into pandoc txt ] ;
+    conv xls  [ into soffice tsv ] ;
+    conv gif  [ into vips tiff ] ;
+    conv bmp  [ into vips tiff ] ;
+    conv jpeg [ into vips tiff ] ;
+  ]
+
+let default_config () = Formats.of_assoc_list (default_assoc_list ())
 
 let get_config config_files =
   let config_files =
