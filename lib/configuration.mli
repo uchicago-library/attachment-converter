@@ -66,16 +66,16 @@ end
 module Formats : sig
   type t
 
-  val conversions : t -> string -> Transform_data.t list
+  val conversions : t -> Mime_type.t -> Transform_data.t list
 
   module Error : Utils.ERROR with
-    type t = [
-      | `ConfigData of int * Config_key.t
-      | `ReferParse of int * string
-      | `DummyError
-      ]
+           type t = [
+             | `ConfigData of int * Config_key.t
+             | `ReferParse of int * string
+             | `DummyError
+             ]
 
-  val of_assoc_list : (string * Transform_data.t list) list -> t
+  val of_assoc_list : (Mime_type.t * Transform_data.t list) list -> t
   val of_string : string -> (t, Error.t) result
 end
 

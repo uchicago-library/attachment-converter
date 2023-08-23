@@ -99,6 +99,8 @@ let extension mt =
   | "image/tiff" -> ".tif"
   | _ -> "" (* TODO: default to no extension should be logged *)
 
+let compare = assert false
+
 let pdf = make Type.application Subtype.pdf
 let pdfa = make Type.application Subtype.pdf
 let txt = make Type.text Subtype.plain
