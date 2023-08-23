@@ -41,7 +41,11 @@ end
 
 module Config_entry : sig
 
-  module Error : Utils.ERROR
+  module Error : Utils.ERROR with
+           type t = [
+             | Mime_type.Error.t
+             | `MissingKey of Config_key.t
+             ]
 
   type t
 
@@ -58,9 +62,9 @@ module Config_entry : sig
              convert_id:string -> t
 
   val to_refer : t -> Prelude.Refer.t
-  val of_refer : Prelude.Refer.t -> (t, Config_key.t) result
+  val of_refer : Prelude.Refer.t -> (t, [> Error.t]) result
 
-  val to_transform_data : t -> (Transform_data.t, Error.t) result
+  val to_transform_data : t -> (Transform_data.t, [> Error.t]) result
 end
 
 module Formats : sig
@@ -72,12 +76,12 @@ module Formats : sig
            type t = [
              | `ConfigData of int * Config_key.t
              | `ReferParse of int * string
-             | `DummyError
+             | Mime_type.Error.t
              ]
 
   val of_assoc_list : (Mime_type.t * Transform_data.t list) list -> t
-  val of_string : string -> (t, Error.t) result
+  val of_string : string -> (t, [> Error.t]) result
 end
 
 val default_config : unit -> Formats.t
-val get_config : string list -> (Formats.t, Formats.Error.t) result
+val get_config : string list -> (Formats.t, [> Formats.Error.t]) result

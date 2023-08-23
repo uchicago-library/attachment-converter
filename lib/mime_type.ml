@@ -99,7 +99,7 @@ let extension mt =
   | "image/tiff" -> ".tif"
   | _ -> "" (* TODO: default to no extension should be logged *)
 
-let compare = assert false
+let compare mt1 mt2 = String.compare (to_string mt1) (to_string mt2)
 
 let pdf = make Type.application Subtype.pdf
 let pdfa = make Type.application Subtype.pdf
