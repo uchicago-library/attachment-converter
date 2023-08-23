@@ -168,7 +168,7 @@ module Config_entry = struct
 end
 
 module Formats = struct
-  module Dict = Map.Make (String)
+  module Dict = Map.Make (Mime_type)
   type t = (Transform_data.t list) Dict.t
 
   let of_assoc_list =
@@ -211,7 +211,8 @@ module Formats = struct
       let* entry= Result.witherr (fun k -> `ConfigData (line_num, k)) (of_refer next) in
       let* trans_data =
         Result.witherr (fun _ -> `DummyError) (to_transform_data entry) in
-      let updated_dict = insert_append (source_type entry) trans_data accum in
+      let* mty = Result.witherr (fun _ -> `DummyError) (Mime_type.of_string (source_type entry)) in
+      let updated_dict = insert_append mty trans_data accum in
       Ok updated_dict
     in
     let on_error line_num line _ = Error (`ReferParse (line_num, line)) in
@@ -225,17 +226,17 @@ let default_config () =
   let open Mime_type in
   let open Formats in
   let open Conv_util in
-  let go = Transform_data.of_conv_util in
+  let into = flip << Transform_data.of_conv_util in
+  let make source transformers = source , map ((|>) source) transformers in
   of_assoc_list
-    [ "application/pdf" , [ go soffice pdf pdfa ; go pdftotext pdf txt ] ;
-      "application/msword" , [ go soffice doc pdfa ; go soffice doc txt ] ;
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document" , [ go soffice docx pdfa ; go pandoc docx txt ] ;
-      "application/vnd.ms-excel" , [ go soffice xls tsv ] ;
-      "image/gif" , [ go vips gif tiff ] ;
-      "image/bmp" , [ go vips bmp tiff ] ;
-      "image/jpeg" , [ go vips jpeg tiff ] ;
+    [ make pdf [ into soffice pdfa ; into pdftotext txt ] ;
+      make doc [ into soffice pdfa ; into soffice txt ] ;
+      make docx [ into soffice pdfa ; into pandoc txt ] ;
+      make xls  [ into soffice tsv ] ;
+      make gif  [ into vips tiff ] ;
+      make bmp  [ into vips tiff ] ;
+      make jpeg [ into vips tiff ] ;
     ]
-
 
 let get_config config_files =
   let config_files =

@@ -434,13 +434,15 @@ module Conversion = struct
         then match T.content_type (Attachment.header att) with
         | None -> []
         | Some ct_hv ->
-            let ct = Header.Field.Value.value ct_hv in
-            let hashed = Hashtbl.hash (Attachment.data att) in
-            let conversions = Formats.conversions dict ct in
-            let trans_lst = filter_converted hashed done_converting conversions in
-            let create_params trans_data =
-              let open Parsetree_utils(T) in
-                { source_type = ct;
+           match Mime_type.of_string (Header.Field.Value.value ct_hv) with
+           | Error _ -> []
+           | Ok mty ->
+              let hashed = Hashtbl.hash (Attachment.data att) in
+              let conversions = Formats.conversions dict mty in
+              let trans_lst = filter_converted hashed done_converting conversions in
+              let create_params trans_data =
+                let open Parsetree_utils(T) in
+                { source_type = Mime_type.to_string mty;
                   target_type = Mime_type.to_string (Transform_data.target_type trans_data);
                   conversion_id = Transform_data.convert_id trans_data;
                   script = Transform_data.shell_command trans_data;
@@ -448,13 +450,13 @@ module Conversion = struct
                   extension = Transform_data.target_ext trans_data;
                   filename = Option.default "CONVERTED_ATTACHMENT" (attachment_name att);
                   timestamp = "";
-                }
-            in
-              att :: (List.map (convert_attachment att pbar << create_params) trans_lst |> Option.reduce)
+             }
+           in
+           att :: (List.map (convert_attachment att pbar << create_params) trans_lst |> Option.reduce)
         else
           [att]
       in
-        T.replace_attachments process tree
+      T.replace_attachments process tree
 
     let acopy ?(idem=true) dict tree pbar =
       convert_attachments ~idem:idem dict tree pbar
