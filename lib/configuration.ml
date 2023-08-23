@@ -93,7 +93,20 @@ end
 
 module Config_entry = struct
 
-  module Error = Mime_type.Error
+  module Error = struct
+    type t = [
+      | Mime_type.Error.t
+      | `MissingKey of Config_key.t
+      ]
+
+    let message err = match err with
+      | #Mime_type.Error.t as e ->
+         Mime_type.Error.message e
+      | `MissingKey key ->
+         Printf.sprintf
+           "Config Entry Error: Missing key '%s'"
+           (Config_key.to_string key)
+  end
 
   type t =
     { source_type : string ;
@@ -134,7 +147,7 @@ module Config_entry = struct
   let of_refer rentry =
     let check key =
       Option.to_result
-        ~none:key
+        ~none:(`MissingKey key)
         (assoc_opt (Config_key.to_string key) rentry)
     in
     let ( let* ) = Result.(>>=) in
@@ -182,7 +195,7 @@ module Formats = struct
     type t = [
       | `ConfigData of int * Config_key.t
       | `ReferParse of int * string
-      | `DummyError
+      | Mime_type.Error.t
       ]
 
     let message err =
@@ -197,7 +210,8 @@ module Formats = struct
            "Refer Parse Error: (line %d) Cannot parse '%s'"
            line_num
            line
-      | `DummyError -> "dummy"
+      | #Mime_type.Error.t as e ->
+         Mime_type.Error.message e
   end
 
   let of_string config_str =
@@ -208,10 +222,12 @@ module Formats = struct
     let on_ok line_num next raccum =
       let open Config_entry in
       let* accum = raccum in
-      let* entry= Result.witherr (fun k -> `ConfigData (line_num, k)) (of_refer next) in
-      let* trans_data =
-        Result.witherr (fun _ -> `DummyError) (to_transform_data entry) in
-      let* mty = Result.witherr (fun _ -> `DummyError) (Mime_type.of_string (source_type entry)) in
+      let convert_error err = match err with
+        | `MissingKey key -> `ConfigData (line_num, key)
+      in
+      let* entry= Result.witherr convert_error (of_refer next) in
+      let* trans_data = to_transform_data entry in
+      let* mty = Mime_type.of_string (source_type entry) in
       let updated_dict = insert_append mty trans_data accum in
       Ok updated_dict
     in
