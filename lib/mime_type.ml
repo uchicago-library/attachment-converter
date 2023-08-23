@@ -1,3 +1,5 @@
+open Prelude
+
 module Type = struct
   type t =
     | Text
@@ -57,12 +59,22 @@ type t =
 let type_of mt = mt.typ
 let subtype mt = mt.subtype
 
+let make typ subty =
+  { typ = typ ;
+    subtype = subty ;
+  }
+
 let to_string mt =
   Type.to_string (type_of mt)
   ^ "/"
   ^ Subtype.to_string (subtype mt)
 
-let of_string _ = assert false
+let of_string s =
+  let ( let* ) = Result.(>>=) in
+  let ty_str, opt_subty_str = String.cut ~sep:"/" s in
+  let* subty_str = Result.of_option `MimeType opt_subty_str in
+  let mt = make (Type.of_string ty_str) (Subtype.of_string subty_str) in
+  Ok mt
 
 let extension mt =
   match to_string mt with
