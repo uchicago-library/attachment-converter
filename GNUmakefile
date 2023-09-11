@@ -115,10 +115,8 @@ home-install: shell-copy opam-install
 	ls -lh $(HOME_DESTDIR)/bin/attc
 	@echo Attachment Converter has been installed to $(HOME_DESTDIR)/bin/attc. 
 	@echo Please ensure that $(HOME_DESTDIR)/bin is on your path.
-
 	@echo For Mac users, run:
 	@echo     $ echo "export PATH=~/bin:$PATH" >> ~/.zshrc
-
 	@echo For WSL Debian & Arch Linux users, run:
 	@echo     $ echo "export PATH=~/bin:$PATH" >> ~/.bashrc
 .PHONY: home-install
