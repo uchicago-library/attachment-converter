@@ -36,8 +36,13 @@ echo %id soffice-doc-to-txt
 echo
 echo %source_type application/vnd.ms-excel
 echo %target_type text/tab-separated-values
-echo %shell_command $(pwd)/conversion-scripts/soffice-wrapper.sh -i xls -o tsv
-echo %id soffice-xls-to-tsv
+echo %shell_command $(pwd)/conversion-scripts/ssconvert-wrapper.sh -i xls -o tsv
+echo %id ssconvert-xls-to-tsv
+echo
+echo %source_type application/vnd.ms-excel
+echo %target_type text/tab-separated-values
+echo %shell_command $(pwd)/conversion-scripts/ssconvert-wrapper.sh -i xlsx -o tsv
+echo %id ssconvert-xlsx-to-tsv
 echo
 echo %source_type image/gif
 echo %target_type image/tiff
