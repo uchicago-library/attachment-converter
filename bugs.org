@@ -1,0 +1,10 @@
+* TODO throws an exception on keith's CSV email
+- will include the actual example, coming soon
+* TODO email serialization error on Nishchay's HTML email
+- will include the actual example, coming soon
+* TODO funny empty config file behavior
+- if the config file is blank, Attachment Converter prints that it
+  converted each attachment to itself
+- and seems to actually do that as well, since a diff reveals the
+  output MBOX to be identical to the input MBOX except in whitespace,
+  etc.
