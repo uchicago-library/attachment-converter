@@ -1,11 +1,6 @@
 #!/bin/bash
 echo %source_type application/pdf
 echo %target_type application/pdf
-echo %shell_command $HOME/.config/attachment-converter/scripts/pdf2archive-wrapper.sh
-echo %id pdf2archive-pdf-to-pdfa
-echo
-echo %source_type application/pdf
-echo %target_type application/pdf
 echo %shell_command $HOME/.config/attachment-converter/scripts/soffice-wrapper.sh -i pdf -o pdf
 echo %id soffice-pdf-to-pdfa
 echo
