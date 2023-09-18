@@ -21,3 +21,7 @@
 
 + pdftotext in ArchLinux is actually python-pdftotext
 + vips for ArchLinux is actually libvips
+
+** perhaps plaintext shouldn't be base64 encoded
+
++ for example so that we can use it for searching / search indexing
