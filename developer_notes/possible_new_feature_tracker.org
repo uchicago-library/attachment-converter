@@ -1,0 +1,12 @@
+* TODO explore the possibility of recursing into zip files
+
++ maybe not technically a bug
+
+* TODO look at what to do with images in signatures
+
++ maybe not technically a bug
++ some people at iPres suggested that we should skip them for the sake
+  of space
++ Nishchay and Matt think there's no way to tell whether an image is
+  in a signature
+

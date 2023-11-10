@@ -1,0 +1,43 @@
+* TODO Shell script problem
+
++ soffice-wrapper.sh should do error handling on extensions (and other
+  things) (case statement)
+
+* TODO plaintext shouldn't be base64 encoded
+
++ for example so that we can use it for searching / search indexing
+
+* TODO throws an exception on keith's CSV email
+
+- will include the actual example, coming soon
+- possible cause: no filename?
+
+* TODO email serialization error on Nishchay's HTML email
+
+- will include the actual example, coming soon
+- the serialization error only happens using Mr. Mime
+- also, let's double check that we are even converting attachments in
+  MIME multipart/related emails in general
+
+* TODO app should complain if the config file is empty
+
+- currently, attc checks the config file every time it sees an
+  attachment, and then never finds that input mime type, and then
+  never converts any attachment
+- instead, it should print some kind of error message saying please
+  put something in the config file or delete it
+
+* TODO attc shouldn't print before/after skeleton when it doesn't convert
+
+- currently, when attc finds an attachment whose MIME type it doesn't
+  recogize, it prints the before and after skeletons (which are
+  identical)
+- instead, it shouldn't print anything
+
+* TODO line breaks should be consistent
+
++ we found during iPres that =attc= is sometimes mixing CRLF-s and
+  straight LFs
++ we'll need to look at both the OCamlnet and Mr. Mime backends to see
+  what's going on with that
++ we should aim to make the line breaks =attc= outputs consistent

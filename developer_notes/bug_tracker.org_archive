@@ -1,0 +1,18 @@
+#    -*- mode: org -*-
+
+
+Archived entries from file /home/teichman/github/library/attachment-converter/developer_notes/bug_tracker.org
+
+
+* DONE Libreoffice sometimes converts to PDF-A, saying it converted to plaintext
+:PROPERTIES:
+:ARCHIVE_TIME: 2023-09-29 Fri 15:20
+:ARCHIVE_FILE: ~/github/library/attachment-converter/developer_notes/bug_tracker.org
+:ARCHIVE_CATEGORY: bug_tracker
+:ARCHIVE_TODO: DONE
+:END:
+
++ Happened on Obi's Mac
++ example input email:
+ =sequent:~/Email/'Saller Archive'/In-1-06/1569=
+
