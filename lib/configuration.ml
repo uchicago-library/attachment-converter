@@ -1,13 +1,12 @@
 open Prelude
 
-
 module Conv_util = struct
   type t =
-    { id : string ;
+    { identifier : string ;
       envoke : Mime_type.t -> Mime_type.t -> string ;
     }
 
-  let id ut = ut.id
+  let identifier ut = ut.identifier
   let envoke ut = ut.envoke
 
   let default_script_dir () = File.squiggle "~/.config/attachment-converter/scripts/"
@@ -17,22 +16,22 @@ module Conv_util = struct
     default_script_dir () ^ nm ^ " -i " ^ extension mt1 ^ " -o " ^ extension mt2
 
   let soffice =
-    { id = "soffice" ;
+    { identifier = "soffice" ;
       envoke = fun mts mtt -> script_call "soffice-wrapper.sh" mts mtt ;
     }
 
   let pandoc =
-    { id = "pandoc" ;
+    { identifier = "pandoc" ;
       envoke = fun mts mtt -> script_call "pandoc-wrapper.sh" mts mtt ;
     }
 
   let vips =
-    { id = "vips" ;
+    { identifier = "vips" ;
       envoke = fun mts mtt -> script_call "vips-wrapper.sh" mts mtt ;
     }
 
   let pdftotext =
-    { id = "pdftotext" ;
+    { identifier = "pdftotext" ;
       envoke = fun _ _ -> default_script_dir () ^ "pdftotext-wapper.sh" ;
     }
 end
@@ -70,7 +69,7 @@ module Transform_data = struct
     make_no_ext
       ~target_type:mto
       ~shell_command:(envoke ut mti mto)
-      ~convert_id:(id ut ^ "-" ^ extension mti ^ "-to-" ^ extension mto)
+      ~convert_id:(identifier ut ^ "-" ^ extension mti ^ "-to-" ^ extension mto)
 end
 
 module Config_key = struct
