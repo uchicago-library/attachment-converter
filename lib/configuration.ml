@@ -1,5 +1,104 @@
 open Prelude
 
+module ConfigKey = struct
+  type t = [
+    | `SourceType
+    | `TargetType
+    | `TargetExt
+    | `ShellCommand
+    | `ConvertID
+    ]
+
+  let to_string k =
+    match k with
+    | `SourceType -> "source_type"
+    | `TargetType -> "target_type"
+    | `TargetExt -> "target_ext"
+    | `ShellCommand -> "shell_command"
+    | `ConvertID -> "id"
+end
+
+module ConfigEntry = struct
+
+  module Error = struct
+    type t = [
+      | `MissingKey of ConfigKey.t
+      | `BadMimeType of string * ConfigKey.t
+      ]
+
+    let message err = match err with
+      | `MissingKey key ->
+         Printf.sprintf
+           "Config Entry Error: Missing key '%s'"
+           (ConfigKey.to_string key)
+      | `BadMimeType (given_str, key) ->
+         Printf.sprintf
+           "Bad Mime Type Error: Ill-formed mime type '%s' given for '%s'"
+           given_str
+           (ConfigKey.to_string key)
+  end
+
+  type t =
+    { source_type : Mime_type.t ;
+      target_type : Mime_type.t ;
+      target_ext : string ;
+      shell_command: string ;
+      convert_id : string ;
+    }
+
+  let source_type ce = ce.source_type
+  let target_type ce = ce.target_type
+  let target_ext ce = ce.target_ext
+  let shell_command ce = ce.shell_command
+  let convert_id ce = ce.convert_id
+
+  let make
+        ~source_type
+        ~target_type
+        ~target_ext
+        ~shell_command
+        ~convert_id
+    = { source_type = source_type ;
+        target_type = target_type ;
+        target_ext = Option.default (Mime_type.extension target_type) target_ext ;
+        shell_command = shell_command ;
+        convert_id = convert_id ;
+      }
+
+  let to_refer entry =
+    let open ConfigKey in
+    [ to_string `SourceType , Mime_type.to_string (source_type entry) ;
+      to_string `TargetType , Mime_type.to_string (target_type entry) ;
+      to_string `TargetExt , target_ext entry ;
+      to_string `ShellCommand , shell_command entry ;
+      to_string `ConvertID , convert_id entry ;
+    ]
+
+  let of_refer rentry =
+    let check key =
+      Option.to_result
+        ~none:(`MissingKey key)
+        (assoc_opt (ConfigKey.to_string key) rentry)
+    in
+    let ( let* ) = Result.(>>=) in
+    let* st_str = check `SourceType in
+    let* st = Result.witherr (k (`BadMimeType (st_str, `SourceType))) (Mime_type.of_string st_str) in
+    let* tt_str = check `TargetType in
+    let* tt = Result.witherr (k (`BadMimeType (tt_str, `TargetType))) (Mime_type.of_string tt_str) in
+    let* sc = check `ShellCommand in
+    let te = Result.to_option (check `TargetExt) in
+    let* id = check `ConvertID in
+    let entry =
+      make
+        ~source_type:st
+        ~target_type:tt
+        ~target_ext:te
+        ~shell_command:sc
+        ~convert_id:id
+    in
+    Ok entry
+end
+
 module ConvUtil = struct
   type t =
     { identifier : string ;
@@ -63,6 +162,16 @@ module TransformData = struct
       ~shell_command:shell_command
       ~convert_id:convert_id
 
+  let of_config_entry ce =
+    let td =
+      make
+        ~target_type:(ConfigEntry.target_type ce)
+        ~target_ext:(ConfigEntry.target_ext ce)
+        ~shell_command:(ConfigEntry.shell_command ce)
+        ~convert_id:(ConfigEntry.convert_id ce)
+    in
+    Ok td
+
   let of_conv_util ut mti mto =
     let open Mime_type in
     let open ConvUtil in
@@ -70,113 +179,6 @@ module TransformData = struct
       ~target_type:mto
       ~shell_command:(envoke ut mti mto)
       ~convert_id:(identifier ut ^ "-" ^ extension mti ^ "-to-" ^ extension mto)
-end
-
-module ConfigKey = struct
-  type t = [
-    | `SourceType
-    | `TargetType
-    | `TargetExt
-    | `ShellCommand
-    | `ConvertID
-    ]
-
-  let to_string k =
-    match k with
-    | `SourceType -> "source_type"
-    | `TargetType -> "target_type"
-    | `TargetExt -> "target_ext"
-    | `ShellCommand -> "shell_command"
-    | `ConvertID -> "id"
-end
-
-module ConfigEntry = struct
-
-  module Error = struct
-    type t = [
-      | Mime_type.Error.t
-      | `MissingKey of ConfigKey.t
-      ]
-
-    let message err = match err with
-      | #Mime_type.Error.t as e ->
-         Mime_type.Error.message e
-      | `MissingKey key ->
-         Printf.sprintf
-           "Config Entry Error: Missing key '%s'"
-           (ConfigKey.to_string key)
-  end
-
-  type t =
-    { source_type : string ;
-      target_type : string ;
-      target_ext : string option ;
-      shell_command: string ;
-      convert_id : string ;
-    }
-
-  let source_type ce = ce.source_type
-  let target_type ce = ce.target_type
-  let target_ext ce = ce.target_ext
-  let shell_command ce = ce.shell_command
-  let convert_id ce = ce.convert_id
-
-  let make
-        ~source_type
-        ~target_type
-        ~target_ext
-        ~shell_command
-        ~convert_id
-    = { source_type = source_type ;
-        target_type = target_type ;
-        target_ext = target_ext ;
-        shell_command = shell_command ;
-        convert_id = convert_id ;
-      }
-
-  let to_refer entry =
-    let open ConfigKey in
-    Option.(to_list (map (fun ext -> "target_ext", ext) (target_ext entry)))
-    @ [ to_string `SourceType , source_type entry ;
-        to_string `TargetType , target_type entry ;
-        to_string `ShellCommand , shell_command entry ;
-        to_string `ConvertID , convert_id entry ;
-      ]
-
-  let of_refer rentry =
-    let check key =
-      Option.to_result
-        ~none:(`MissingKey key)
-        (assoc_opt (ConfigKey.to_string key) rentry)
-    in
-    let ( let* ) = Result.(>>=) in
-    let* st = check `SourceType in
-    let* tt = check `TargetType in
-    let* sc = check `ShellCommand in
-    let te = Result.to_option (check `TargetExt) in
-    let* id = check `ConvertID in
-    let entry =
-      make
-        ~source_type:st
-        ~target_type:tt
-        ~target_ext:te
-        ~shell_command:sc
-        ~convert_id:id
-    in
-    Ok entry
-
-  let to_transform_data ce =
-    let ( let* ) = Result.(>>=) in
-    let* target_mtype = Mime_type.of_string (target_type ce) in
-    let ext = Option.default (Mime_type.extension target_mtype) (target_ext ce) in
-    let td =
-      TransformData.make
-        ~target_type:target_mtype
-        ~target_ext:ext
-        ~shell_command:(shell_command ce)
-        ~convert_id:(convert_id ce)
-    in
-    Ok td
 end
 
 module Formats = struct
@@ -194,7 +196,7 @@ module Formats = struct
     type t = [
       | `ConfigData of int * ConfigKey.t
       | `ReferParse of int * string
-      | Mime_type.Error.t
+      | `BadMimeType of string * ConfigKey.t * int
       ]
 
     let message err =
@@ -209,8 +211,12 @@ module Formats = struct
            "Refer Parse Error: (line %d) Cannot parse '%s'"
            line_num
            line
-      | #Mime_type.Error.t as e ->
-         Mime_type.Error.message e
+      | `BadMimeType (badmime, key, line_num) ->
+         Printf.sprintf
+           "Bad Mime Type Error: (line %d) Ill-formed mime type '%s' at given for '%s'"
+           line_num
+           badmime
+           (ConfigKey.to_string key)
   end
 
   let of_string config_str =
@@ -223,10 +229,11 @@ module Formats = struct
       let* accum = raccum in
       let convert_error err = match err with
         | `MissingKey key -> `ConfigData (line_num, key)
+        | `BadMimeType (badmime, key) -> `BadMimeType (badmime, key, line_num)
       in
-      let* entry= Result.witherr convert_error (of_refer next) in
-      let* trans_data = to_transform_data entry in
-      let* mty = Mime_type.of_string (source_type entry) in
+      let* entry = Result.witherr convert_error (of_refer next) in
+      let* trans_data = TransformData.of_config_entry entry in
+      let mty = source_type entry in
       let updated_dict = insert_append mty trans_data accum in
       Ok updated_dict
     in
