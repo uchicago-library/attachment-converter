@@ -1,4 +1,4 @@
-module Conv_util : sig
+module ConvUtil : sig
   type t
 
   val soffice : t
@@ -7,7 +7,7 @@ module Conv_util : sig
   val pdftotext : t
 end
 
-module Transform_data : sig
+module TransformData : sig
   type t
 
   val target_type : t -> Mime_type.t
@@ -24,10 +24,10 @@ module Transform_data : sig
                     shell_command:string ->
                     convert_id:string -> t
 
-  val of_conv_util : Conv_util.t -> Mime_type.t -> Mime_type.t -> t
+  val of_conv_util : ConvUtil.t -> Mime_type.t -> Mime_type.t -> t
 end
 
-module Config_key : sig
+module ConfigKey : sig
   type t = [
     | `SourceType
     | `TargetType
@@ -39,12 +39,12 @@ module Config_key : sig
   val to_string : t -> string
 end
 
-module Config_entry : sig
+module ConfigEntry : sig
 
   module Error : Utils.ERROR with
            type t = [
              | Mime_type.Error.t
-             | `MissingKey of Config_key.t
+             | `MissingKey of ConfigKey.t
              ]
 
   type t
@@ -64,22 +64,22 @@ module Config_entry : sig
   val to_refer : t -> Prelude.Refer.t
   val of_refer : Prelude.Refer.t -> (t, [> Error.t]) result
 
-  val to_transform_data : t -> (Transform_data.t, [> Error.t]) result
+  val to_transform_data : t -> (TransformData.t, [> Error.t]) result
 end
 
 module Formats : sig
   type t
 
-  val conversions : t -> Mime_type.t -> Transform_data.t list
+  val conversions : t -> Mime_type.t -> TransformData.t list
 
   module Error : Utils.ERROR with
            type t = [
-             | `ConfigData of int * Config_key.t
+             | `ConfigData of int * ConfigKey.t
              | `ReferParse of int * string
              | Mime_type.Error.t
              ]
 
-  val of_assoc_list : (Mime_type.t * Transform_data.t list) list -> t
+  val of_assoc_list : (Mime_type.t * TransformData.t list) list -> t
   val of_string : string -> (t, [> Error.t]) result
 end
 
