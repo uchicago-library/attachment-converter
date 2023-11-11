@@ -421,7 +421,7 @@ module Conversion = struct
         | [] -> r
         | (h, id) :: hs ->
             if h = hashed
-            then process hs (List.filter (fun c -> Transform_data.convert_id c <> id) r)
+            then process hs (List.filter (fun c -> TransformData.convert_id c <> id) r)
             else process hs r
       in
         process converted to_convert
@@ -443,11 +443,11 @@ module Conversion = struct
               let create_params trans_data =
                 let open Parsetree_utils(T) in
                 { source_type = Mime_type.to_string mty;
-                  target_type = Mime_type.to_string (Transform_data.target_type trans_data);
-                  conversion_id = Transform_data.convert_id trans_data;
-                  script = Transform_data.shell_command trans_data;
+                  target_type = Mime_type.to_string (TransformData.target_type trans_data);
+                  conversion_id = TransformData.convert_id trans_data;
+                  script = TransformData.shell_command trans_data;
                   hashed = string_of_int hashed;
-                  extension = Transform_data.target_ext trans_data;
+                  extension = TransformData.target_ext trans_data;
                   filename = Option.default "CONVERTED_ATTACHMENT" (attachment_name att);
                   timestamp = "";
              }

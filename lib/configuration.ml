@@ -1,6 +1,6 @@
 open Prelude
 
-module Conv_util = struct
+module ConvUtil = struct
   type t =
     { identifier : string ;
       envoke : Mime_type.t -> Mime_type.t -> string ;
@@ -36,7 +36,7 @@ module Conv_util = struct
     }
 end
 
-module Transform_data = struct
+module TransformData = struct
   type t =
     { target_type : Mime_type.t ;
       target_ext : string ;
@@ -65,14 +65,14 @@ module Transform_data = struct
 
   let of_conv_util ut mti mto =
     let open Mime_type in
-    let open Conv_util in
+    let open ConvUtil in
     make_no_ext
       ~target_type:mto
       ~shell_command:(envoke ut mti mto)
       ~convert_id:(identifier ut ^ "-" ^ extension mti ^ "-to-" ^ extension mto)
 end
 
-module Config_key = struct
+module ConfigKey = struct
   type t = [
     | `SourceType
     | `TargetType
@@ -90,12 +90,12 @@ module Config_key = struct
     | `ConvertID -> "id"
 end
 
-module Config_entry = struct
+module ConfigEntry = struct
 
   module Error = struct
     type t = [
       | Mime_type.Error.t
-      | `MissingKey of Config_key.t
+      | `MissingKey of ConfigKey.t
       ]
 
     let message err = match err with
@@ -104,7 +104,7 @@ module Config_entry = struct
       | `MissingKey key ->
          Printf.sprintf
            "Config Entry Error: Missing key '%s'"
-           (Config_key.to_string key)
+           (ConfigKey.to_string key)
   end
 
   type t =
@@ -135,7 +135,7 @@ module Config_entry = struct
       }
 
   let to_refer entry =
-    let open Config_key in
+    let open ConfigKey in
     Option.(to_list (map (fun ext -> "target_ext", ext) (target_ext entry)))
     @ [ to_string `SourceType , source_type entry ;
         to_string `TargetType , target_type entry ;
@@ -147,7 +147,7 @@ module Config_entry = struct
     let check key =
       Option.to_result
         ~none:(`MissingKey key)
-        (assoc_opt (Config_key.to_string key) rentry)
+        (assoc_opt (ConfigKey.to_string key) rentry)
     in
     let ( let* ) = Result.(>>=) in
     let* st = check `SourceType in
@@ -170,7 +170,7 @@ module Config_entry = struct
     let* target_mtype = Mime_type.of_string (target_type ce) in
     let ext = Option.default (Mime_type.extension target_mtype) (target_ext ce) in
     let td =
-      Transform_data.make
+      TransformData.make
         ~target_type:target_mtype
         ~target_ext:ext
         ~shell_command:(shell_command ce)
@@ -181,7 +181,7 @@ end
 
 module Formats = struct
   module Dict = Map.Make (Mime_type)
-  type t = (Transform_data.t list) Dict.t
+  type t = (TransformData.t list) Dict.t
 
   let of_assoc_list =
     Dict.of_list Dict.empty
@@ -192,7 +192,7 @@ module Formats = struct
 
   module Error = struct
     type t = [
-      | `ConfigData of int * Config_key.t
+      | `ConfigData of int * ConfigKey.t
       | `ReferParse of int * string
       | Mime_type.Error.t
       ]
@@ -203,7 +203,7 @@ module Formats = struct
          Printf.sprintf
            "Config Data Error: (entry starting at line %d) Missing key '%s'"
            line_num
-           (Config_key.to_string key)
+           (ConfigKey.to_string key)
       | `ReferParse (line_num, line) ->
          Printf.sprintf
            "Refer Parse Error: (line %d) Cannot parse '%s'"
@@ -219,7 +219,7 @@ module Formats = struct
       Dict.update k (fun curr -> Some (v :: Option.default [] curr))
     in
     let on_ok line_num next raccum =
-      let open Config_entry in
+      let open ConfigEntry in
       let* accum = raccum in
       let convert_error err = match err with
         | `MissingKey key -> `ConfigData (line_num, key)
@@ -237,13 +237,11 @@ module Formats = struct
       (Refer.of_string config_str)
 end
 
-
-
-let into = flip << Transform_data.of_conv_util
+let into = flip << TransformData.of_conv_util
 let conv source transformers = source , map ((|>) source) transformers
 
 let default_assoc_list () =
-  let open Conv_util in
+  let open ConvUtil in
   let open Mime_type in
   [ conv pdf [ into soffice pdfa ; into pdftotext txt ] ;
     conv doc [ into soffice pdfa ; into soffice txt ] ;
