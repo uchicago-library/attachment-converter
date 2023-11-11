@@ -18,12 +18,12 @@ let nwf =
     "shell_command" , "soffice-to-pdfa.sh" ;
   ]
 
-let wf_to_entry_ok = check_is_ok (Config_entry.of_refer wf) "(entry_of_assoc wf)"
-let extra_to_entry_ok = check_is_ok (Config_entry.of_refer extra) "(entry_of_assoc extra)"
-let nwf_to_entry_error = check_is_error (Config_entry.of_refer nwf) "entry_of_assoc"
+let wf_to_entry_ok = check_is_ok (ConfigEntry.of_refer wf) "(entry_of_assoc wf)"
+let extra_to_entry_ok = check_is_ok (ConfigEntry.of_refer extra) "(entry_of_assoc extra)"
+let nwf_to_entry_error = check_is_error (ConfigEntry.of_refer nwf) "entry_of_assoc"
 
 let check_entry l description st tt ss =
-  let open Config_entry in
+  let open ConfigEntry in
   let l_parsed = Result.get_ok (of_refer l) in
   let st_check _ = assert_equal (source_type l_parsed) st in
   let tt_check _ = assert_equal (target_type l_parsed) tt in
@@ -49,8 +49,8 @@ let extra_correct =
     "soffice-to-pdfa.sh"
 
 let check_trans_data e description tt sc =
-  let open Transform_data in
-  let td = Result.get_ok (Config_entry.to_transform_data e) in
+  let open TransformData in
+  let td = Result.get_ok (ConfigEntry.to_transform_data e) in
   let tt_check _ = assert_equal (target_type td) tt in
   let ss_check _ = assert_equal (shell_command td) sc in
   description >:::
@@ -59,13 +59,13 @@ let check_trans_data e description tt sc =
     ]
 
 let wf_trans_data_correct =
-  check_trans_data (Result.get_ok (Config_entry.of_refer wf))
+  check_trans_data (Result.get_ok (ConfigEntry.of_refer wf))
     "entry with source = target converts to transform_data"
     Mime_type.pdf
     "soffice-to-pdfa.sh"
 
 let extra_trans_data_correct =
-  check_trans_data (Result.get_ok (Config_entry.of_refer extra))
+  check_trans_data (Result.get_ok (ConfigEntry.of_refer extra))
     "entry with source = target converts to transform_data"
     Mime_type.pdf
     "soffice-to-pdfa.sh"
@@ -78,7 +78,7 @@ let t_neq_s =
   ]
 
 let t_neq_s_trans_data_correct =
-  check_trans_data (Result.get_ok (Config_entry.of_refer t_neq_s))
+  check_trans_data (Result.get_ok (ConfigEntry.of_refer t_neq_s))
     "entry with source /= target converts to transform data"
     Mime_type.txt
     "c"
@@ -123,13 +123,13 @@ let wf_cs_to_data_ok = check_is_ok (Formats.of_string wf_cs) "(parse wf_cs)"
 let extra_cs_to_data_ok = check_is_ok (Formats.of_string extra_cs) "(parse extra_cs)"
 let missing_cs_to_data_error = check_is_error (Formats.of_string missing_cs) "(parse missing_cs)"
 
-let e1 = Transform_data.make
+let e1 = TransformData.make
            ~target_type:Mime_type.txt
            ~target_ext:"q"
            ~shell_command:"c d e"
            ~convert_id:"id"
 
-let e2 = Transform_data.make
+let e2 = TransformData.make
            ~target_type:Mime_type.bmp
            ~target_ext:"q"
            ~shell_command:"h"
@@ -186,7 +186,6 @@ let double_entry_cs =
 let check_double_entry_cs =
   let open Formats in
   let d = Result.get_ok (of_string double_entry_cs) in
-  let () = print_string ("ETE" ^ (Transform_data.target_ext (List.hd (conversions d Mime_type.pdf)))) in
   check_eq_basic
     "check access for double_entry_cs"
     (conversions d Mime_type.pdf)
