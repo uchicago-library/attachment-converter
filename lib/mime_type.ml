@@ -93,10 +93,11 @@ let of_string s =
 
 let extension mt =
   match to_string mt with
-  | "application/pdf" -> ".pdf"
-  | "text/plain" -> ".txt"
-  | "text/tab-separated-values" -> ".tsv"
-  | "image/tiff" -> ".tif"
+  | "application/pdf" -> "pdf"
+  | "text/plain" -> "txt"
+  | "text/tab-separated-values" -> "tsv"
+  | "image/tiff" -> "tif"
+  | "image/bmp" -> "bmp"
   | _ -> "" (* TODO: default to no extension should be logged *)
 
 let compare mt1 mt2 = String.compare (to_string mt1) (to_string mt2)

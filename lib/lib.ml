@@ -13,6 +13,7 @@ module Progress_bar  = Progress_bar
 module Header        = Header
 module Serialize     = Serialize
 module Skeleton      = Skeleton
+module Mime_type     = Mime_type
 
 (*
  * Copyright (c) 2021 Matt Teichman

@@ -87,7 +87,7 @@ module Config_key = struct
     | `TargetType -> "target_type"
     | `TargetExt -> "target_ext"
     | `ShellCommand -> "shell_command"
-    | `ConvertID -> "convert_id"
+    | `ConvertID -> "id"
 end
 
 module Config_entry = struct
@@ -168,7 +168,7 @@ module Config_entry = struct
   let to_transform_data ce =
     let ( let* ) = Result.(>>=) in
     let* target_mtype = Mime_type.of_string (target_type ce) in
-    let ext = Mime_type.extension target_mtype in
+    let ext = Option.default (Mime_type.extension target_mtype) (target_ext ce) in
     let td =
       Transform_data.make
         ~target_type:target_mtype
