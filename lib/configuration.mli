@@ -1,3 +1,41 @@
+module ConfigKey : sig
+  type t = [
+    | `SourceType
+    | `TargetType
+    | `TargetExt
+    | `ShellCommand
+    | `ConvertID
+    ]
+
+  val to_string : t -> string
+end
+
+module ConfigEntry : sig
+
+  module Error : Utils.ERROR with
+           type t = [
+             | `MissingKey of ConfigKey.t
+             | `BadMimeType of string * ConfigKey.t
+             ]
+
+  type t
+
+  val source_type : t -> Mime_type.t
+  val target_type : t -> Mime_type.t
+  val target_ext : t -> string
+  val shell_command : t -> string
+  val convert_id : t -> string
+
+  val make : source_type:Mime_type.t ->
+             target_type:Mime_type.t ->
+             target_ext:string option ->
+             shell_command:string ->
+             convert_id:string -> t
+
+  val to_refer : t -> Prelude.Refer.t
+  val of_refer : Prelude.Refer.t -> (t, [> Error.t]) result
+end
+
 module ConvUtil : sig
   type t
 
@@ -24,47 +62,8 @@ module TransformData : sig
                     shell_command:string ->
                     convert_id:string -> t
 
+  val of_config_entry : ConfigEntry.t -> (t, [> ConfigEntry.Error.t]) result
   val of_conv_util : ConvUtil.t -> Mime_type.t -> Mime_type.t -> t
-end
-
-module ConfigKey : sig
-  type t = [
-    | `SourceType
-    | `TargetType
-    | `TargetExt
-    | `ShellCommand
-    | `ConvertID
-    ]
-
-  val to_string : t -> string
-end
-
-module ConfigEntry : sig
-
-  module Error : Utils.ERROR with
-           type t = [
-             | Mime_type.Error.t
-             | `MissingKey of ConfigKey.t
-             ]
-
-  type t
-
-  val source_type : t -> string
-  val target_type : t -> string
-  val target_ext : t -> string option
-  val shell_command : t -> string
-  val convert_id : t -> string
-
-  val make : source_type:string ->
-             target_type:string ->
-             target_ext:string option ->
-             shell_command:string ->
-             convert_id:string -> t
-
-  val to_refer : t -> Prelude.Refer.t
-  val of_refer : Prelude.Refer.t -> (t, [> Error.t]) result
-
-  val to_transform_data : t -> (TransformData.t, [> Error.t]) result
 end
 
 module Formats : sig
@@ -76,7 +75,7 @@ module Formats : sig
            type t = [
              | `ConfigData of int * ConfigKey.t
              | `ReferParse of int * string
-             | Mime_type.Error.t
+             | `BadMimeType of string *  ConfigKey.t * int
              ]
 
   val of_assoc_list : (Mime_type.t * TransformData.t list) list -> t
