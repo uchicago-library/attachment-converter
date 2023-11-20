@@ -39,20 +39,21 @@ let checkExecutables_test2 =
 let checkDependencies_test = 
   check_eq_basic
   "check that nothing happens when the OS and Dependencies are all good to go"
-  (Ok ())
+  (Ok "")
   (checkDependencies ())
 
-(* let printError_testUnsupported = 
+let printError_testUnsupported =  
   check_eq_basic
+  "test that error message for unsupported operating system displays correctly"
   ("MacOS is not a supported operating system for Attachment Converter.")
-  (Error.printError (`UnsupportedOS "MacOS"))
+  (Error.message (`UnsupportedOS "MacOS"))
 
 let printError_testNotInstalled = 
-  let open Error in
   let open Package in
   check_eq_basic
-  ("the following applications still need to be installed: pandoc libvips")
-  (printError (`NotInstalled [{app = Pandoc; packageName = "pandoc"; executable = Exists "pandoc"}; {app = Vips; packageName = "libvips"; executable = Exists "vips"}])) *)
+  "check that the error message for uninstalled dependencies displays correctly"
+  ("The following applications still need to be installed:\npandoc\nlibvips")
+  (Error.message (`NotInstalled [{app = Pandoc; packageName = "pandoc"; executable = Exists "pandoc"}; {app = Vips; packageName = "libvips"; executable = Exists "vips"}]))
 
 let tests = 
    "test suite for dependency" >:::
@@ -64,9 +65,8 @@ let tests =
     checkExecutables_test1_Darwin;
     checkExecutables_test2;
     checkDependencies_test;
-    (* printError_testUnsupported;
+    printError_testUnsupported;
     printError_testNotInstalled;
- *)
    ]
    
 let _ = run_test_tt_main tests

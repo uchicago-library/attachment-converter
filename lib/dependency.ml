@@ -30,13 +30,17 @@ end
 
 module Error = struct 
   type t = [ 
-    |`NotInstalled of Package.t list (*keep track of the whole package*)
+    |`NotInstalled of Package.t list 
     |`UnsupportedOS of string
   ] 
 
-  let printError error = match error with
-    |`UnsupportedOS os -> print_endline (os^" is not a supported operating system for Attachment Converter.")
-    |`NotInstalled lis -> print_string "the following applications still need to be installed: "; List.iter (let open Package in fun pckg -> print_string (pckg.packageName^" ")) lis 
+  let message err = match err with
+  |`UnsupportedOS os -> 
+    os^" is not a supported operating system for Attachment Converter."
+  |`NotInstalled lis -> 
+    "The following applications still need to be installed:\n" ^ 
+    String.concat "\n" (List.map (let open Package in fun pckg -> pckg.packageName) lis)
+
 end
 
 let getUserOS () = 
@@ -61,37 +65,16 @@ let checkExecutables pkgs =
     |[] -> Ok () 
     |h::t -> Error (`NotInstalled (h::t))
 
-let checkDependencies () = 
+let checkDependencies () =
   let open Prelude.Result in   
   let ( let* ) = (>>=) in 
   let* userPckg = getUserOS () in 
   match checkExecutables userPckg with 
-    |Ok _ -> Ok ()
-    |Error e -> Error.printError e; Error e
+    |Ok _ -> Ok ""
+    |Error e -> Error e
 
+let main () = 
+  match checkDependencies () with
+  |Ok _ -> ()
+  |Error e -> print_string (Error.message (e))
 
-
-
-
- 
-(*make fails take the whole app and then ok if all results are or list is empty and error of list if something is missing*)
-(* let fails res = 
-  let rec fails' res acc = match res with
-    | [] -> acc
-    | (pn, exec) :: t -> begin
-      match exec with
-      | Ok _ -> fails' t acc
-      | Error exec -> (pn, exec) :: fails' t acc 
-      end in 
-  match (fails' res [] ) with 
-  |[] -> Ok []
-  |lis -> Error (`NotInstalled lis) *)
-
-  
-
-(* let printMissingPkgs execs = (*this all gets handled by an error printer?*)
-  let open Error in 
-  if execs = [] then () 
-  else
-    let execsString = String.concat ", " (List.map (fun x -> getPkgFromExec x) execs) in 
-    failwith (execsString ^ " still need(s) to be installed") *)
