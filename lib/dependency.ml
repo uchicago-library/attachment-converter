@@ -36,10 +36,10 @@ module Error = struct
 
   let message err = match err with
   |`UnsupportedOS os -> 
-    os^" is not a supported operating system for Attachment Converter."
+    os^" is not a supported operating system for Attachment Converter.\n"
   |`NotInstalled lis -> 
     "The following applications still need to be installed:\n" ^ 
-    String.concat "\n" (List.map (let open Package in fun pckg -> pckg.packageName) lis)
+    String.concat "\n" (List.map (let open Package in fun pckg -> pckg.packageName) lis)^"\n"
 
 end
 
@@ -76,5 +76,5 @@ let checkDependencies () =
 let main () = 
   match checkDependencies () with
   |Ok _ -> ()
-  |Error e -> print_string (Error.message (e))
+  |Error e -> print_endline (Error.message (e))
 

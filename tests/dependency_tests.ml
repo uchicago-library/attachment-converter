@@ -4,21 +4,15 @@ open Prelude.Prereq
 open Prelude.Unix.Shell
 open Lib.Dependency
 
-let getUserOS_test1_Linux = 
+let getUserOS_test_Linux = 
   let test _ = (skip_if (snd (input Prelude.readline @@ cmd ["uname";"-s"]) = "Darwin") "this test won't run work with MaCOS"); 
   assert_equal (Ok Package.linux) (getUserOS ()) in 
   "check that correct package is assigned for Linux machine" >:: test 
 
-let getUserOS_test1_Darwin = 
+let getUserOS_test_Darwin = 
   let test _ = (skip_if (snd (input Prelude.readline @@ cmd ["uname";"-s"]) = "Linux") "this test won't run work with Linux"); 
   assert_equal (Ok Package.darwin) (getUserOS ()) in 
   "check that correct package is assigned for Darwin machine" >:: test
-
-(* let getUserOS_test2 = 
-  check_eq_basic 
-  "check that error is triggered if user is using an unsupported os"
-  (Error (`UnsupportedOS "put example text in here"))
-  (getUserOS ()) *)
 
 let checkExecutables_test1_Linux =
   let test _ =  (skip_if (snd (input Prelude.readline @@ cmd ["uname";"-s"]) = "Darwin") "this test won't run work with MaCOS");
@@ -57,10 +51,9 @@ let printError_testNotInstalled =
 
 let tests = 
    "test suite for dependency" >:::
-   [
-    getUserOS_test1_Linux;
-    getUserOS_test1_Darwin;
-    (* getUserOS_test2; *)
+   [ 
+    getUserOS_test_Linux;
+    getUserOS_test_Darwin;
     checkExecutables_test1_Linux;
     checkExecutables_test1_Darwin;
     checkExecutables_test2;
