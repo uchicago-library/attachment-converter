@@ -11,6 +11,8 @@ end
 
 module Package = struct 
   type t = {app : Application.t; packageName: string; executable: validator}
+  
+  let getName pckg = pckg.packageName
 
   let linux : t list = [
     {app = LibreOffice; packageName = "libreoffice"; executable = Exists "soffice"};
@@ -36,10 +38,10 @@ module Error = struct
 
   let message err = match err with
   |`UnsupportedOS os -> 
-    os^" is not a supported operating system for Attachment Converter.\n"
+    os^" is not a supported operating system for Attachment Converter.\nHere is a list of supported Os-es:\n\n\tmacOS\n\tArch Linux\n\tWSL Debian\n\r"
   |`NotInstalled lis -> 
-    "The following applications still need to be installed:\n" ^ 
-    String.concat "\n" (List.map (let open Package in fun pckg -> pckg.packageName) lis)^"\n"
+    "Attachment Converter will not run unless all of its OS-level dependencies are installed.\n\nIt looks like the following software packages still need to be installed:\n\t" ^ 
+    String.concat "\n\t" (List.map Package.getName lis)^"\n\r"
 
 end
 

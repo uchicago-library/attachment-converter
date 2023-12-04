@@ -5,22 +5,23 @@ open Prelude.Unix.Shell
 open Lib.Dependency
 
 let getUserOS_test_Linux = 
-  let test _ = (skip_if (snd (input Prelude.readline @@ cmd ["uname";"-s"]) = "Darwin") "this test won't run work with MaCOS"); 
+  let test _ = (skip_if (snd (input Prelude.readline @@ cmd ["uname";"-s"]) = "Darwin") "this test won't run with MaCOS"); 
   assert_equal (Ok Package.linux) (getUserOS ()) in 
   "check that correct package is assigned for Linux machine" >:: test 
 
+
 let getUserOS_test_Darwin = 
-  let test _ = (skip_if (snd (input Prelude.readline @@ cmd ["uname";"-s"]) = "Linux") "this test won't run work with Linux"); 
+  let test _ = (skip_if (snd (input Prelude.readline @@ cmd ["uname";"-s"]) = "Linux") "this test won't run with Linux"); 
   assert_equal (Ok Package.darwin) (getUserOS ()) in 
   "check that correct package is assigned for Darwin machine" >:: test
 
 let checkExecutables_test1_Linux =
-  let test _ =  (skip_if (snd (input Prelude.readline @@ cmd ["uname";"-s"]) = "Darwin") "this test won't run work with MaCOS");
+  let test _ =  (skip_if (snd (input Prelude.readline @@ cmd ["uname";"-s"]) = "Darwin") "this test won't run with MaCOS");
   assert_equal (Ok ()) (checkExecutables Package.linux) in 
   "check that checkExecutables returns an empty result is returned when all dependencies are met" >:: test
   
 let checkExecutables_test1_Darwin =
-  let test _ =  (skip_if (snd (input Prelude.readline @@ cmd ["uname";"-s"]) = "Linux") "this test won't run work with Linux");
+  let test _ =  (skip_if (snd (input Prelude.readline @@ cmd ["uname";"-s"]) = "Linux") "this test won't run with Linux");
   assert_equal (Ok ()) (checkExecutables Package.darwin) in 
   "check that checkExecutables returns an empty result is returned when all dependencies are met" >:: test
 
@@ -37,16 +38,16 @@ let checkDependencies_test =
   (checkDependencies ())
 
 let printError_testUnsupported =  
-  check_eq_basic
+  check_eq_string
   "test that error message for unsupported operating system displays correctly"
-  ("MacOS is not a supported operating system for Attachment Converter.")
-  (Error.message (`UnsupportedOS "MacOS"))
+  ("BadOS is not a supported operating system for Attachment Converter.\nHere is a list of supported Os-es:\n\n\tmacOS\n\tArch Linux\n\tWSL Debian\n\r")
+  (Error.message (`UnsupportedOS "BadOS"))
 
 let printError_testNotInstalled = 
   let open Package in
-  check_eq_basic
+  check_eq_string
   "check that the error message for uninstalled dependencies displays correctly"
-  ("The following applications still need to be installed:\npandoc\nlibvips")
+  ("Attachment Converter will not run unless all of its OS-level dependencies are installed.\n\nIt looks like the following software packages still need to be installed:\n\tpandoc\n\tlibvips\n\r")
   (Error.message (`NotInstalled [{app = Pandoc; packageName = "pandoc"; executable = Exists "pandoc"}; {app = Vips; packageName = "libvips"; executable = Exists "vips"}]))
 
 let tests = 
