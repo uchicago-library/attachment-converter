@@ -6,38 +6,55 @@ open Lib.Dependency
 
 let getUserOS_test_Linux = 
   let test _ = (skip_if (snd (input Prelude.readline @@ cmd ["uname";"-s"]) = "Darwin") "this test won't run with MaCOS"); 
-  assert_equal (Ok Package.linux) (getUserOS ()) in 
+  assert_equal (Ok Package.linux) (getUserOS ()) ~printer:(fun x -> x |> Result.get_ok |> Package.toString) in 
   "check that correct package is assigned for Linux machine" >:: test 
 
-
-let getUserOS_test_Darwin = 
+let getUserOS_test_Darwin =
   let test _ = (skip_if (snd (input Prelude.readline @@ cmd ["uname";"-s"]) = "Linux") "this test won't run with Linux"); 
-  assert_equal (Ok Package.darwin) (getUserOS ()) in 
+  assert_equal (Ok Package.darwin) (getUserOS ()) ~printer:(fun x -> x |> Result.get_ok |> Package.toString) in 
   "check that correct package is assigned for Darwin machine" >:: test
 
-let checkExecutables_test1_Linux =
-  let test _ =  (skip_if (snd (input Prelude.readline @@ cmd ["uname";"-s"]) = "Darwin") "this test won't run with MaCOS");
-  assert_equal (Ok ()) (checkExecutables Package.linux) in 
-  "check that checkExecutables returns an empty result is returned when all dependencies are met" >:: test
-  
-let checkExecutables_test1_Darwin =
-  let test _ =  (skip_if (snd (input Prelude.readline @@ cmd ["uname";"-s"]) = "Linux") "this test won't run with Linux");
-  assert_equal (Ok ()) (checkExecutables Package.darwin) in 
-  "check that checkExecutables returns an empty result is returned when all dependencies are met" >:: test
+let checkExecutables_test1_Linux=
+  let description =
+    Printf.sprintf
+    "%s is Ok"
+    "(checkExecutables Package.linux)"
+  in
+  let error_str =
+    Printf.sprintf
+      "actually %s is not Ok"
+      "(checkExecutables Package.linux)"
+  in
+  let open Prelude.Result in let test _ = (skip_if (snd (input Prelude.readline @@ cmd ["uname";"-s"]) = "Darwin") "this test won't run with MaCOS"); 
+    (checkExecutables Package.linux) |> good |> assert_bool error_str in
+    description >:: test
 
-let checkExecutables_test2 =  
-  check_eq_basic
-  "check that correct error with packages is returned when executables are missing"
-  (Error (`NotInstalled [{Package.app = Verapdf; packageName = "verapdf"; executable = Exists "verapdf"}]))
-  (checkExecutables [{app = Verapdf; packageName = "verapdf"; executable = Exists "verapdf"}; {app = Vips; packageName = "libvips"; executable = Exists "vips"}])
+let checkExecutables_test1_Darwin =
+  let description =
+     Printf.sprintf
+      "%s is Ok"
+      "(checkExecutables Package.darwin)"
+  in
+  let error_str =
+    Printf.sprintf
+      "actually %s is not Ok"
+      "(checkExecutables Package.darwin)"
+  in
+  let open Prelude.Result in let test _ = (skip_if (snd (input Prelude.readline @@ cmd ["uname";"-s"]) = "Linux") "this test won't run with Linux"); 
+    (checkExecutables Package.darwin) |> good |> assert_bool error_str in
+    description >:: test
+
+let checkExecutables_test2 = 
+  let test _ = assert_equal 
+    (Error (`NotInstalled [{Package.app = Verapdf; packageName = "verapdf"; executable = Exists "verapdf"}]))
+    (checkExecutables [{app = Verapdf; packageName = "verapdf"; executable = Exists "verapdf"}; {app = Vips; packageName = "libvips"; executable = Exists "vips"}])
+    ~printer:(fun x -> match x with |Error y -> Error.toString y |Ok _ -> "") in
+    "check that correct error with packages is returned when executables are missing" >:: test
 
 let checkDependencies_test = 
-  check_eq_basic
-  "check that nothing happens when the OS and Dependencies are all good to go"
-  (Ok "")
-  (checkDependencies ())
+  check_is_ok (checkDependencies ()) "(checkDependencies ())"
 
-let printError_testUnsupported =  
+let printError_testUnsupported = 
   check_eq_string
   "test that error message for unsupported operating system displays correctly"
   ("BadOS is not a supported operating system for Attachment Converter.\nHere is a list of supported Os-es:\n\n\tmacOS\n\tArch Linux\n\tWSL Debian\n\r")

@@ -28,6 +28,11 @@ module Package = struct
     {app = GhostScript; packageName = "ghostscript"; executable = Exists "gs"}
   ]
 
+  let toString pckglist = 
+    if pckglist = linux then "linux: [" ^ String.concat ", " (List.map getName linux) ^ "]"
+    else if pckglist = darwin then "darwin: [" ^ String.concat ", " (List.map getName darwin) ^ "]"
+    else ""
+
 end
 
 module Error = struct 
@@ -37,12 +42,15 @@ module Error = struct
   ] 
 
   let message err = match err with
-  |`UnsupportedOS os -> 
-    os^" is not a supported operating system for Attachment Converter.\nHere is a list of supported Os-es:\n\n\tmacOS\n\tArch Linux\n\tWSL Debian\n\r"
-  |`NotInstalled lis -> 
-    "Attachment Converter will not run unless all of its OS-level dependencies are installed.\n\nIt looks like the following software packages still need to be installed:\n\t" ^ 
-    String.concat "\n\t" (List.map Package.getName lis)^"\n\r"
+    |`UnsupportedOS os -> 
+      os^" is not a supported operating system for Attachment Converter.\nHere is a list of supported Os-es:\n\n\tmacOS\n\tArch Linux\n\tWSL Debian\n\r"
+    |`NotInstalled lis -> 
+      "Attachment Converter will not run unless all of its OS-level dependencies are installed.\n\nIt looks like the following software packages still need to be installed:\n\t" ^ 
+      String.concat "\n\t" (List.map Package.getName lis)^"\n\r"
 
+  let toString err = match err with
+    |`UnsupportedOS os -> "`UnsupportedOS " ^ os 
+    |`NotInstalled lis -> "`NotInstalled [" ^ String.concat ", " (List.map Package.getName lis) ^ "]" 
 end
 
 let getUserOS () = 
@@ -64,7 +72,7 @@ let checkExecutables pkgs =
       |[] -> [] in 
   let results = (checkExecutables' pkgs []) in 
   match results with 
-    |[] -> Ok () 
+    |[] -> Ok ()
     |h::t -> Error (`NotInstalled (h::t))
 
 let checkDependencies () =
