@@ -13,6 +13,7 @@ module Progress_bar  = Progress_bar
 module Header        = Header
 module Serialize     = Serialize
 module Skeleton      = Skeleton
+module Dependency    = Dependency
 
 (*
  * Copyright (c) 2021 Matt Teichman
