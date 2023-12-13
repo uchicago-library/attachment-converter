@@ -41,3 +41,21 @@
 + we'll need to look at both the OCamlnet and Mr. Mime backends to see
   what's going on with that
 + we should aim to make the line breaks =attc= outputs consistent
+
+* TODO issue parsing multipart/signed emails
++ happens with both OCamlnet and Mr. Mime, OCamlnet gives an "error parsing email" error, Mr. Mime gives a conversion failure when parsing
+
+* TODO -s as shortened flag for --single-email isn't working and isn't in the man page 
+
+* TODO --single-email is not working when attc is run with Mr. Mime
++ works fine with a single email if the --single-email is omitted but gives a parsing error if it is included
+
+* TODO attc won't convert jpeg files if the content-type is not image/jpeg 
++ jpeg attachments with content-types of "image/jpg" or "image/pjpeg" are recognized as attachments and printed in the skeleton, but not converted
++ might be because image/jpeg is the only one that is a registered MIME type
+
+* TODO attc won't convert certain xlsx files
++ wouldn't convert an attachment with content-type application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, which is a registered MIME type 
+
+* TODO closing " is missing when converted attachment name is printed
++ the unconverted attachment names have closing " but the converted ones do not
