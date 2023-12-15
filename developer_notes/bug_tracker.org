@@ -42,20 +42,52 @@
   what's going on with that
 + we should aim to make the line breaks =attc= outputs consistent
 
+* TODO pdf to txt conversion failure
+
++ Conversion Failure: Could not run pdftotext-pdf-to-text script, 
+  produced message "exit 1" with all pdfs 
+
 * TODO issue parsing multipart/signed emails
-+ happens with both OCamlnet and Mr. Mime, OCamlnet gives an "error parsing email" error, Mr. Mime gives a conversion failure when parsing
+
++ happens with both OCamlnet and Mr. Mime, OCamlnet gives an "error parsing 
+  email" error, Mr. Mime gives a conversion failure when parsing
+
+* TODO issue parsing multipart/report emails
+
++ prints a message saying there was a conversion failure, but still generates a 
+  converted email when run with Mr. Mime
++ also happens with emails that are both multipart/report and 
+  multipart/alternative
++ OCamlnet seems to handle these without problems
 
 * TODO -s as shortened flag for --single-email isn't working and isn't in the man page 
 
 * TODO --single-email is not working when attc is run with Mr. Mime
-+ works fine with a single email if the --single-email is omitted but gives a parsing error if it is included
 
-* TODO attc won't convert jpeg files if the content-type is not image/jpeg 
-+ jpeg attachments with content-types of "image/jpg" or "image/pjpeg" are recognized as attachments and printed in the skeleton, but not converted
++ works fine with a single email if the --single-email is omitted but gives a 
+  parsing error if it is included
++ --single-email is fine with OCamlnet
+
+* TODO attc won't convert jpeg files if the content-type is not image/jpeg
+
++ jpeg attachments with content-types of "image/jpg" or "image/pjpeg" are 
+  recognized as attachments and printed in the skeleton, but not converted
 + might be because image/jpeg is the only one that is a registered MIME type
++ happens with both OCamlnet and Mr. Mime
+
+* TODO attc won't convert attachments with application/octet-stream as the 
+  content-type
+
++ maybe similar to the jpeg issue, the content-type doesn't match the file 
+  format in the file name
++ all kinds of file formats show up with this content-type (pdf, doc, jpg)
 
 * TODO attc won't convert certain xlsx files
-+ wouldn't convert an attachment with content-type application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, which is a registered MIME type 
 
-* TODO closing " is missing when converted attachment name is printed
++ wouldn't convert an attachment with content-type 
+  application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, which is a 
+  registered MIME type 
+
+* TODO closing " is missing when converted attachment names are printed
+
 + the unconverted attachment names have closing " but the converted ones do not
