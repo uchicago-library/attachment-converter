@@ -50,6 +50,7 @@ let convert config_files ?(single_email=false) ic pbar =
   let open Lib.Mbox.Copier in
   let ( let* ) = Result.(>>=) in
     let processed =
+      let open Lib.Dependency in let* _ = checkDependencies () in
       let* config = get_config config_files in
         if single_email
         then
