@@ -112,11 +112,11 @@ let extra_cs =
 %id id"
 
 let missing_cs =
-"%source_type a
-%target_type b
+"%source_type application/pdf
+%target_type application/pdf
 
-%source_type f
-%target_type g
+%source_type application/pdf
+%target_type application/pdf
 %shell_command h"
 
 let wf_cs_to_data_ok = check_is_ok (Formats.of_string wf_cs) "(parse wf_cs)"
@@ -146,9 +146,11 @@ let check_wf_cs_or_extra_cs cs =
     ]
 
 let missing_cs_error_msg =
+  let r = Result.get_error (Formats.of_string missing_cs) in
+  let _ = print_endline (ErrorHandling.Error.message r) in
   check_eq_basic
     "Error not as expected, wanted ConfigData"
-    (Result.get_error (Formats.of_string missing_cs))
+    r
     (`ConfigData (1, `ShellCommand))
 
 let bad_refer_cs =
