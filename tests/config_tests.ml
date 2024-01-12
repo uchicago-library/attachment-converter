@@ -146,11 +146,10 @@ let check_wf_cs_or_extra_cs cs =
     ]
 
 let missing_cs_error_msg =
-  let r = Result.get_error (Formats.of_string missing_cs) in
-  let _ = print_endline (ErrorHandling.Error.message r) in
+  let error = Result.get_error (Formats.of_string missing_cs) in
   check_eq_basic
     "Error not as expected, wanted ConfigData"
-    r
+    error
     (`ConfigData (1, `ShellCommand))
 
 let bad_refer_cs =
