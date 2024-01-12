@@ -37,20 +37,20 @@ let check_entry l description st tt ss =
 let wf_correct =
   check_entry wf
     "well-formed associativity list converts to entry"
-    "application/pdf"
-    "application/pdf"
+    Mime_type.pdf
+    Mime_type.pdf
     "soffice-to-pdfa.sh"
 
 let extra_correct =
   check_entry extra
     "well-formed associativity list with extra value converts to entry"
-    "application/pdf"
-    "application/pdf"
+    Mime_type.pdf
+    Mime_type.pdf
     "soffice-to-pdfa.sh"
 
 let check_trans_data e description tt sc =
   let open TransformData in
-  let td = Result.get_ok (ConfigEntry.to_transform_data e) in
+  let td = Result.get_ok (TransformData.of_config_entry e) in
   let tt_check _ = assert_equal (target_type td) tt in
   let ss_check _ = assert_equal (shell_command td) sc in
   description >:::
