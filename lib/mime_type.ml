@@ -39,6 +39,16 @@ module Subtype = struct
   let of_string name = { name = name }
 end
 
+module Error = struct
+  type t = [
+    | `MimeType
+    ]
+
+  let message err =
+    match err with
+    | `MimeType -> "Cannot parse mime type"
+end
+
 type t =
   { typ : Type.t;
     subtype : Subtype.t;
