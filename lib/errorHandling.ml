@@ -15,6 +15,7 @@ module Error : ERROR with
     | Convert.Converter.Error.t
     | Configuration.Formats.Error.t
     | Dependency.Error.t
+  ]
 
   let message err =
     match err with
