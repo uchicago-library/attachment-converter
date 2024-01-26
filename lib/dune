@@ -17,6 +17,7 @@
   serialize
   skeleton
   progress_bar
+  mime_type
   dependency))
 
 (env
