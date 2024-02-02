@@ -6,10 +6,10 @@ which is viewable by the entire world, because most emails contain
 sensitive information in both the headers and the body, such as IP
 addresses, email addresses, phone numbers, and people's full names.
 
-* Private `git` repos
+* Private =git= repos
 
 To get around this problem, our stalwart sysadmins at the DLDC have
-created private `git` repositories, where the Attachment Converter
+created private =git= repositories, where the Attachment Converter
 development team can create and host cram tests that contain sensitive
 information.
 
@@ -19,20 +19,20 @@ Authorization to push to these repositories is pretty simple.  If
 you're on the development team and you would like to be able to access
 our private repositories, you just need to make a request to our
 system administrators to put your public key in
-`~/.ssh/authorized_keys` for the `attconv` user on our private repo
-server, `vault.lib.uchicago.edu`.
+=~/.ssh/authorized_keys= for the =attconv= user on our private repo
+server, =vault.lib.uchicago.edu=.
 
 ** Creating a new repository
 
-To create a new private Git repository on `vault.lib`, run the
-following command, with `attconv` as the username and
-`vault.lib.uchicago.edu` as the hostname:
+To create a new private Git repository on =vault.lib=, run the
+following command, with =attconv= as the username and
+=vault.lib.uchicago.edu= as the hostname:
 
-```console
-$ ssh username@hostname newgit name-of-project
-```
+#+begin_example
+  $ ssh username@hostname newgit name-of-project
+#+end_example
 
-As long as you are authorized to interact with `vault.lib`, it should
+As long as you are authorized to interact with =vault.lib=, it should
 work smoothly.
 
 ** Deleting an old repository
@@ -43,13 +43,13 @@ the repository directory.
 
 ** Cloning a repository
 
-To clone one of our private repositories, run the following `git`
-command, where the username is `attconv` and the hostname is
-`vault.lib.uchicago.edu`:
+To clone one of our private repositories, run the following =git=
+command, where the username is =attconv= and the hostname is
+=vault.lib.uchicago.edu=:
 
-```console
-$ git clone username@hostname:~/name-of-your-repo.git
-```
+#+begin_example
+  $ git clone username@hostname:~/name-of-your-repo.git
+#+end_example
 
 * I cloned it; now what?
 
@@ -57,67 +57,67 @@ To run cram tests from the repository you cloned, we recommend
 symbolically linking the repository directory into your Attachment
 Converter project:
 
-```console
-$ cd /path/to/attachment-converter
-$ ln -s /path/to/private-cram-repository .
-```
+#+begin_example
+  $ cd /path/to/attachment-converter
+  $ ln -s /path/to/private-cram-repository .
+#+end_example
 
-The `dune runtest` command will recursively scan the entire project
-for files and directories with the `.t` extension and treat them as
+The =dune runtest= command will recursively scan the entire project
+for files and directories with the =.t= extension and treat them as
 cram tests wherever it finds them.  It will also run normal unit tests
 in the Attachment Converter test suite.
 
 ** How to add a cram test
 
-To add a cram test, either open an existing `.t` file or add a new
-`.t` file observing the following syntax:
+To add a cram test, either open an existing =.t= file or add a new
+=.t= file observing the following syntax:
 
 - non-indented text is a comment
-- indented text that starts with a `$` runs a given command
+- indented text that starts with a =$= runs a given command
 
-For example, you can write a file called `example.t` that looks like
+For example, you can write a file called =example.t= that looks like
 this:
 
-```
-For this cram test, we will make sure we are on Linux.
-  $ uname -s
-```
+#+begin_example
+  For this cram test, we will make sure we are on Linux.
+    $ uname -s
+#+end_example
 
-Then, when you first run `dune runtest`, the output should look
+Then, when you first run =dune runtest=, the output should look
 approximately like this:
 
-```diff
-> dune runtest
---- a/_build/.sandbox/240ab47cacf441f941f02e50d51b13ad/default/test/cram-tests/example.t
-+++ b/_build/.sandbox/240ab47cacf441f941f02e50d51b13ad/default/test/cram-tests/example.t.corrected
-@@ -1,2 +1,3 @@
- For this cram test, we will make sure we are on Linux.
-   $ uname -s
-+  Linux
-```
+#+begin_src diff
+  > dune runtest
+  --- a/_build/.sandbox/240ab47cacf441f941f02e50d51b13ad/default/test/cram-tests/example.t
+  +++ b/_build/.sandbox/240ab47cacf441f941f02e50d51b13ad/default/test/cram-tests/example.t.corrected
+  @@ -1,2 +1,3 @@
+   For this cram test, we will make sure we are on Linux.
+     $ uname -s
+  +  Linux
+#+end_src
 
 The green part is what the command output.  If that output looks
 correct to you (it does to me!), then to add it to the file, you run:
 
-```console
-$ dune promote
-Promoting _build/default/test/cram-tests/example.t.corrected to
-  test/cram-tests/example.t.
-```
+#+begin_example
+  $ dune promote
+  Promoting _build/default/test/cram-tests/example.t.corrected to
+    test/cram-tests/example.t.
+#+end_example
 
 This will take the plus-green part of the diff and add it to the
 actual file, which should now look like this:
 
-```console
-$ cat test/cram-tests/example.t
-For this cram test, we will make sure we are on Linux.
-  $ uname -s
-  Linux
-```
+#+begin_example
+  $ cat test/cram-tests/example.t
+  For this cram test, we will make sure we are on Linux.
+    $ uname -s
+    Linux
+#+end_example
 
-The fact that `Linux` is now indented but doesn't begin with a `$`
-means that `dune` will treat `Linux` as the expected output of the
-command `$uname -s` when you run `dune runtest`.
+The fact that =Linux= is now indented but doesn't begin with a =$=
+means that =dune= will treat =Linux= as the expected output of the
+command =$uname -s= when you run =dune runtest=.
 
 * Why are there two different cram test repos?
 
@@ -135,8 +135,8 @@ should use our Linux private cram test repository.
 Currently, the Attachment Converter project has two private cram test
 repos:
 
-- `private-cram-tests-linux.git`
-- `private-cram-tests-macos.git`
+- =private-cram-tests-linux.git=
+- =private-cram-tests-macos.git=
 
 * Questions?
 
