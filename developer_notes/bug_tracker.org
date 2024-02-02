@@ -27,13 +27,6 @@
 - instead, it should print some kind of error message saying please
   put something in the config file or delete it
 
-* TODO attc shouldn't print before/after skeleton when it doesn't convert
-
-- currently, when attc finds an attachment whose MIME type it doesn't
-  recogize, it prints the before and after skeletons (which are
-  identical)
-- instead, it shouldn't print anything
-
 * TODO line breaks should be consistent
 
 + we found during iPres that =attc= is sometimes mixing CRLF-s and

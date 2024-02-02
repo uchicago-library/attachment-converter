@@ -16,3 +16,16 @@ Archived entries from file /home/teichman/github/library/attachment-converter/de
 + example input email:
  =sequent:~/Email/'Saller Archive'/In-1-06/1569=
 
+
+* attc shouldn't print before/after skeleton when it doesn't convert
+:PROPERTIES:
+:ARCHIVE_TIME: 2024-02-02 Fri 11:17
+:ARCHIVE_FILE: ~/Code/GitHub/attachment-converter/developer_notes/bug_tracker.org
+:ARCHIVE_CATEGORY: bug_tracker
+:END:
+
+- currently, when attc finds an attachment whose MIME type it doesn't
+  recogize, it prints the before and after skeletons (which are
+  identical)
+- instead, it shouldn't print anything
+
