@@ -117,7 +117,9 @@ actual file, which should now look like this:
 
 The fact that =Linux= is now indented but doesn't begin with a =$=
 means that =dune= will treat =Linux= as the expected output of the
-command =$uname -s= when you run =dune runtest=.
+command =$uname -s= when you run =dune runtest=.  Then whenever you've
+updated your code such that the output changes but should be the new
+expectation, you can update the file by running =dune promote= again.
 
 * Why are there two different cram test repos?
 
