@@ -38,8 +38,8 @@ work smoothly.
 ** Deleting an old repository
 
 For the time being, you should plan on deleting an old repository
-totally manually, i.e. by making a request to our sysadmins to delete
-the repository directory.
+manually, i.e. by making a request to our sysadmins to delete the
+repository directory.
 
 ** Cloning a repository
 
