@@ -19,8 +19,8 @@ Authorization to push to these repositories is pretty simple.  If
 you're on the development team and you would like to be able to access
 our private repositories, you just need to make a request to our
 system administrators to put your public key in
-=~/.ssh/authorized_keys= for the =attconv= user on our private repo
-server, =vault.lib.uchicago.edu=.
+=~/.ssh/authorized_keys= for the =attconv= user on our private Git
+repo server, =vault.lib.uchicago.edu=.
 
 ** Creating a new repository
 
