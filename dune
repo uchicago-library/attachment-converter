@@ -13,3 +13,4 @@
    (flags (:standard -warn-error -A)))
  (release
   (flags (:standard -ccopt -static))))
+
