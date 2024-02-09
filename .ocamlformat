@@ -1,0 +1,7 @@
+profile = ocamlformat
+break-cases = vertical
+margin = 77
+wrap-comments = true
+line-endings = lf
+if-then-else = keyword-first
+break-before-in = fit-or-vertical
