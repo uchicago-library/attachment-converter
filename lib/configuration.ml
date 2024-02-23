@@ -112,7 +112,14 @@ module ConvUtil = struct
 
   let script_call nm mt1 mt2 =
     let open Mime_type in
-    default_script_dir () ^ nm ^ " -i " ^ extension mt1 ^ " -o " ^ extension mt2
+    String.(concat ""
+              [ default_script_dir ()
+              ; nm
+              ; " -i "
+              ; trimleft "." (extension mt1)
+              ; " -o "
+              ; trimleft "." (extension mt2)
+              ])
 
   let soffice =
     { identifier = "soffice" ;
@@ -175,10 +182,18 @@ module TransformData = struct
   let of_conv_util ut mti mto =
     let open Mime_type in
     let open ConvUtil in
+    let conv_id = String.(concat ""
+                       [ identifier ut
+                       ; "-"
+                       ; trimleft "." (extension mti)
+                       ; "-to-"
+                       ; trimleft "." (extension mto)
+                       ])
+    in
     make_no_ext
       ~target_type:mto
       ~shell_command:(envoke ut mti mto)
-      ~convert_id:(identifier ut ^ "-" ^ extension mti ^ "-to-" ^ extension mto)
+      ~convert_id:conv_id
 end
 
 module Formats = struct
