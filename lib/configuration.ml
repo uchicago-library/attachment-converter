@@ -138,7 +138,7 @@ module ConvUtil = struct
 
   let pdftotext =
     { identifier = "pdftotext" ;
-      envoke = fun _ _ -> default_script_dir () ^ "pdftotext-wapper.sh" ;
+      envoke = fun _ _ -> default_script_dir () ^ "pdftotext-wrapper.sh" ;
     }
 end
 
