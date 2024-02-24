@@ -491,7 +491,7 @@ module Conversion = struct
       let open Configuration.TransformData in
       String.concat ""
         [ name
-        ;  " --> "
+        ;  " to "
         ;  Mime_type.to_string (target_type conv)
         ;  " ("
         ;  convert_id conv
@@ -504,6 +504,7 @@ module Conversion = struct
       let* tree = Result.witherr (k `EmailParse) (T.of_string email) in
       let convs = attachments_to_convert ~idem config tree in
       if List.empty convs then
+        let () = Progress_bar.Printer.print "Nothing to convert...\nProcessing complete." pbar in
         Ok (T.to_string tree)
       else
         let () =
@@ -522,10 +523,9 @@ module Conversion = struct
           let lines =
             [ "Conversions to perform...\n"
             ; "=================================\n"
-            ] @
-            map (fun c -> display_conv c ^ "\n") convs @
-            [ "\n"
-            ; "=================================\n"
+            ; String.join ~sep:"\n" (map display_conv convs)
+            ; "\n"
+            ; "================================="
             ]
           in
           let msg = String.concat "" lines in
