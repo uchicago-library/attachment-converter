@@ -53,6 +53,14 @@ module Parsetree_utils (T : PARSETREE) = struct
     Attachment.header >>
     T.meta_val >>
     Option.something
+
+  let mime_type_opt =
+    let open Option in
+    Attachment.header >>
+    T.content_type >=>
+    (Header.Field.Value.value >>
+     Mime_type.of_string >>
+     Result.to_option)
 end
 
 module Mrmime_parsetree = struct
@@ -398,61 +406,71 @@ module Conversion = struct
       let* converted_data = convert_data (Attachment.data att) in
         Some (Attachment.make new_header converted_data)
 
+
+    let hashed_data = Attachment.data >> Hashtbl.hash
+
     let already_converted tree =
       let attachments = T.attachments tree in
       let process att =
         let ( let* ) = Option.(>>=) in
-        let* meta = T.meta_val (T.header (T.of_attachment att)) in
+        let* meta = T.meta_val (Attachment.header att) in
         let* hashed = Header.Field.Value.lookup_param "original-file-hash" meta in
         let* id = Header.Field.Value.lookup_param "conversion-id" meta in
-          Some (int_of_string hashed, id)
+        Some (int_of_string hashed, id)
       in
-        Option.reduce (List.map process attachments)
+      Option.reduce (List.map process attachments)
 
-    let is_converted =
-      Attachment.header >>
-      T.meta_val >>
-      Option.something
+    let filter_converted already_converted conversions att =
+      let open Configuration.TransformData in
+      let convs_of_att = filter (fst >> (=) (hashed_data att)) already_converted in
+      let pred c =
+        let rec go l =
+          match l with
+          | [] -> true
+          | (_, conv_id) :: hs -> convert_id c <> conv_id && go hs
+        in go convs_of_att
+      in filter pred conversions
 
-    let filter_converted hashed converted to_convert =
-      let open Configuration in
-      let rec process l r =
-        match l with
-        | [] -> r
-        | (h, id) :: hs ->
-            if h = hashed
-            then process hs (List.filter (fun c -> TransformData.convert_id c <> id) r)
-            else process hs r
-      in
-        process converted to_convert
+    let to_convert ?(idem=true) config tree att =
+      let open Configuration.Formats in
+      let open Parsetree_utils(T) in
+      match mime_type_opt att with
+      | None -> []
+      | Some mty ->
+        let conversions = conversions config mty in
+        if idem then
+          conversions
+        else
+          filter_converted
+            (already_converted tree)
+            conversions
+            att
 
     let convert_attachments ?(idem=true) dict tree pbar =
       let open Configuration in
-      let done_converting = if idem then already_converted tree else [] in
+      let open Parsetree_utils(T) in
       let process att =
         if not idem || not (is_converted att)
-        then match T.content_type (Attachment.header att) with
+        then match mime_type_opt att with
         | None -> []
-        | Some ct_hv ->
-           match Mime_type.of_string (Header.Field.Value.value ct_hv) with
-           | Error _ -> []
-           | Ok mty ->
-              let hashed = Hashtbl.hash (Attachment.data att) in
-              let conversions = Formats.conversions dict mty in
-              let trans_lst = filter_converted hashed done_converting conversions in
-              let create_params trans_data =
-                let open Parsetree_utils(T) in
-                { source_type = Mime_type.to_string mty;
-                  target_type = Mime_type.to_string (TransformData.target_type trans_data);
-                  conversion_id = TransformData.convert_id trans_data;
-                  script = TransformData.shell_command trans_data;
-                  hashed = string_of_int hashed;
-                  extension = TransformData.target_ext trans_data;
-                  filename = Option.default "CONVERTED_ATTACHMENT" (attachment_name att);
-                  timestamp = "";
-             }
-           in
-           att :: (List.map (convert_attachment att pbar << create_params) trans_lst |> Option.reduce)
+        | Some mty ->
+          let conversions = Formats.conversions dict mty in
+          let trans_lst =
+            if idem
+            then conversions
+            else filter_converted (already_converted tree) conversions att in
+          let create_params trans_data =
+            { source_type = Mime_type.to_string mty;
+              target_type = Mime_type.to_string (TransformData.target_type trans_data);
+              conversion_id = TransformData.convert_id trans_data;
+              script = TransformData.shell_command trans_data;
+              hashed = string_of_int (hashed_data att);
+              extension = TransformData.target_ext trans_data;
+              filename = Option.default "CONVERTED_ATTACHMENT" (attachment_name att);
+              timestamp = "";
+            }
+          in
+          att :: (List.map (convert_attachment att pbar << create_params) trans_lst |> Option.reduce)
         else
           [att]
       in
@@ -461,40 +479,74 @@ module Conversion = struct
     let acopy ?(idem=true) dict tree pbar =
       convert_attachments ~idem:idem dict tree pbar
 
+    let attachments_to_convert ?(idem=true) config tree =
+      let open Parsetree_utils(T) in
+      let match_convs att =
+        let dname = "UNNAMED ATTACHMENT" in
+        let add_name c = (Option.default dname (attachment_name att), c) in
+        map add_name (to_convert ~idem config tree att)
+      in concat_map match_convs (attachments tree)
+
+    let display_conv (name, conv) =
+      let open Configuration.TransformData in
+      String.concat ""
+        [ name
+        ;  " --> "
+        ;  Mime_type.to_string (target_type conv)
+        ;  " ("
+        ;  convert_id conv
+        ;  ")"
+        ]
+
     let acopy_email ?(idem=true) config email pbar =
       let ( let* ) = Result.(>>=) in
       let () = Progress_bar.Printer.print "Parsing email..." pbar in
       let* tree = Result.witherr (k `EmailParse) (T.of_string email) in
-      let () =
-        let skel_str = Skeleton.to_string (to_skeleton tree) in
-        let msg =
-          String.concat ""
-          [ "Processing email with structure...\n" ;
-            "=================================\n" ;
-            skel_str ;
-            "\n" ;
-            "=================================" ;
-          ]
+      let convs = attachments_to_convert ~idem config tree in
+      if List.empty convs then
+        Ok (T.to_string tree)
+      else
+        let () =
+          let skel_str = Skeleton.to_string (to_skeleton tree) in
+          let msg =
+            String.concat ""
+              [ "Processing email with structure...\n"
+              ;  "=================================\n"
+              ;  skel_str
+              ;  "\n"
+              ;  "================================="
+              ]
+          in Progress_bar.Printer.print msg pbar
         in
-        Progress_bar.Printer.print msg pbar
-      in
-      let converted_tree = acopy ~idem:idem config tree pbar in
-      let () =
-        let skel_str = Skeleton.to_string (to_skeleton converted_tree) in
-        let msg =
-          String.concat ""
-            [ "Email now has structure...\n" ;
-              "=================================\n" ;
-               skel_str ;
-              "\n" ;
-              "=================================\n" ;
-              "Processing complete."
+        let () =
+          let lines =
+            [ "Conversions to perform...\n"
+            ; "=================================\n"
+            ] @
+            map (fun c -> display_conv c ^ "\n") convs @
+            [ "\n"
+            ; "=================================\n"
             ]
+          in
+          let msg = String.concat "" lines in
+          Progress_bar.Printer.print msg pbar
         in
-        Progress_bar.Printer.print msg pbar
-      in
-      Ok (T.to_string converted_tree)
-
+        let converted_tree = acopy ~idem:idem config tree pbar in
+        let () =
+          let skel_str = Skeleton.to_string (to_skeleton converted_tree) in
+          let msg =
+            String.concat ""
+              [ "Email now has structure...\n"
+              ;  "=================================\n"
+              ;  skel_str
+              ;  "\n"
+              ;  "=================================\n"
+              ;  "Processing complete."
+              ]
+          in
+          Progress_bar.Printer.print msg pbar
+        in
+        Ok (T.to_string converted_tree)
   end
 end
 
