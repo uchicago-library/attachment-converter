@@ -482,7 +482,7 @@ module Conversion = struct
     let attachments_to_convert ?(idem=true) config tree =
       let open Parsetree_utils(T) in
       let match_convs att =
-        let dname = "UNNAMED ATTACHMENT" in
+        let dname = "UNNAMED_ATTACHMENT" in
         let add_name c = (Option.default dname (attachment_name att), c) in
         map add_name (to_convert ~idem config tree att)
       in concat_map match_convs (attachments tree)
