@@ -25,17 +25,12 @@ module Field = struct
         if quotes && p.quotes
         then quoted p.value
         else p.value
+      let quotes p = p.quotes
 
       let make ?(quotes=false) attr value =
-        { attr = attr;
-          value = value;
-          quotes = quotes;
-        }
-
-      let make_ attr value =
         { attr = attr ;
           value = unquoted value ;
-          quotes = is_quoted value ;
+          quotes = is_quoted value || quotes;
         }
 
       let map_attr f p = { p with attr = f p.attr }
@@ -46,14 +41,7 @@ module Field = struct
           | left, Some right -> Some (left, right)
           | _, None -> None
         in
-        let ( let* ) = Option.(>>=) in
-        let* (attr, value) = cut_or_none str in
-          Some (
-            if is_quoted value then
-              make ~quotes:true attr (unquoted value)
-            else
-              make attr value
-          )
+        Option.map (uncurry make) (cut_or_none str)
 
       let to_string { attr; value; quotes } =
         attr ^ "=" ^ (if quotes then quoted value else value)
@@ -95,17 +83,17 @@ module Field = struct
         | [] -> value
         | _  -> List.foldl f value params
 
-    let lookup_param attr hv =
+    let lookup_param ?(quotes=false) attr hv =
       let rec lookup attr ls =
         match ls with
         | [] -> None
         | p :: ps ->
             if Parameter.attr p = attr then
-              Some (Parameter.value ~quotes:true p)
+              Some (Parameter.value ~quotes p)
             else
               lookup attr ps
       in
-        lookup attr (params hv)
+      lookup attr (params hv)
 
     let update_value new_value hv =
       { hv with value = new_value }
@@ -127,7 +115,7 @@ module Field = struct
        paramater. *)
     let add_param ?(quotes=false) attr value =
       update_param attr
-        (k (Some (Parameter.make ~quotes:quotes attr value)))
+        (k (Some (Parameter.make ~quotes attr value)))
   end
 
   type t = {

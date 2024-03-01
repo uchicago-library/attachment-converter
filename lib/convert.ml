@@ -115,7 +115,7 @@ module Mrmime_parsetree = struct
     let mime_ty = ty ^ "/" ^ subty in
     let params =
       let form (name, value) =
-        Header.Field.Value.Parameter.make_
+        Header.Field.Value.Parameter.make
           name
           (match value with `String s -> s | `Token s -> s) (* TODO: Is this really necessary? *)
         in
@@ -365,7 +365,7 @@ module Conversion = struct
       let cd_header_val =
         let value = "attachment" in
         let params =
-          [ "filename", md.filename;
+          [ "filename", quoted md.filename;
           ]
         in
           Header.Field.Value.make
