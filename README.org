@@ -5,34 +5,49 @@
 
 * For Outside Users
 
-Attachment Converter is in pre-alpha.  If you'd like to try it out,
-please follow the instructions on [[https://dldc.lib.uchicago.edu/open/attachment-converter][our project website]].
+Attachment Converter is in alpha.  If you'd like to try it out, please
+follow the instructions on [[https://dldc.lib.uchicago.edu/open/attachment-converter][our project website]].
 
 * For UChicago Library Developers
 
-Welcome on board the =attachment-converter= project!  We're getting
-close to being about to try it out ourselves on some of the archives
-we have here at UChicago, which is rather exciting.
+Welcome on board the =attachment-converter= project!
 
 ** Guides for Developers
 
-We have now broken our guides on our development workflow into two
-main documents:
+The guides on our development workflow break down into two main
+documents:
 
 + [[doc/new-features.md][adding new features]]
 + [[doc/sandboxing.md][using sandboxed switches]]
 
 ** Current State of the Project
 
-Attachment Converter follows library-executable design.  That is,
-it can be installed either as an OCaml library, or as an executable
-that you run from the command line.  At the DLDC, we have
-historically found that this design is useful for when we'd like to
-have our command line tools overlap somewhat in the functionality
-they offer.  If I want =tool2= to be able to do one of the things
-that =tool= does, all I have to do is include the library for
-=tool1= in =tool2= and I can start having =tool2= do it directly,
-no sweat.
+We have ambitions to make Attachment Converter follow
+library-executable design.  Although it can be installed as a library,
+for the first release, we are focusing on its executable
+functionality.
+
+The following features are presently working:
+
++ Attachment Converter can be used with one of two email parsing
+  backends: [[http://projects.camlcity.org/projects/ocamlnet.html][OCamlnet]] or [[https://github.com/mirage/mrmime][Mr. Mime]].  (This is not yet configurable but
+  it will be soon---right now, you have to change the email parsing
+  backend by changing one line of the source code.)
++ Attachment Converter will print out a "skeleton" of the email it is
+  converting, showing the user the before and after structure.
++ By default, Attachment Converter converts:
+  - PDF
+  - DOC
+  - DOCX
+  - XLS
+  - XLSX
+  - JPG
+  - GIF
++ Attachment Converter follows Unix filter design, accepting standard
+  in and outputting to standard out.
++ Attachment Converter allows the user to configure the external
+  utilities it calls out to to perform the relevant conversions in its
+  configuration file.
 
 ** Current Team
 
@@ -40,21 +55,19 @@ Our illustrious team of developers currently includes:
 
 + [[https://elucidations.vercel.app/][Matt Teichman]]
 + [[https://github.com/nmmull][Nathan Mull]]
++ [[https://www.lib.uchicago.edu/about/directory/staff/emily-schartz/][Emily Schartz]]
++ [[https://www.linkedin.com/in/mattjackson23/][Matt Jackson]]
+
+Previous developers include:
+
++ [[https://github.com/OwenPriceSkelly][Owen Price Skelly]]
++ [[https://github.com/cormacd9818][Cormac Duhamel]]
 + [[https://www.linkedin.com/in/nk45/][Nishchay Karle]]
++ [[https://theworldofobi.github.io/][Obi Obetta]]
 
-Previous developers include Owen Price Skelly, who wrote much of the
-initial exploratory code from this project in 2020 as part of a
-research practicum, then returned during the 2021-2022 academic year
-to build some of the core functionality out, [[https://github.com/cormacd9818][Cormac Duhamel]], who built
-the command line interface as well as the initial version of Email
-Scrubber, which we plan to use to generate fake emails for testing,
-and [[https://theworldofobi.github.io/][Obi Obetta]], who fleshed out our project website, researched new
-conversion utilities we could use, and created a Makefile for the
-project that anyone can use to build and install it.
-
-[[https://elucidations.vercel.app/][Matt Teichman]], [[https://github.com/nmmull][Nathan Mull]], and [[https://www2.lib.uchicago.edu/keith/][Keith Waclena]] will be contributing to
-and maintaining the project on an longterm basis.  Matt is currently
-in charge of managing the project.
+[[https://elucidations.vercel.app/][Matt Teichman]], [[https://github.com/nmmull][Nathan Mull]], [[https://www.lib.uchicago.edu/about/directory/staff/emily-schartz/][Emily Schartz]], and [[https://www2.lib.uchicago.edu/keith/][Keith Waclena]] will be
+contributing to and maintaining the project on an longterm basis.
+Matt is currently in charge of managing the project.
 
 * Background on the email format
     
