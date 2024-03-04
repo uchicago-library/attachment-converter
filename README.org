@@ -10,10 +10,6 @@ follow the instructions on [[https://dldc.lib.uchicago.edu/open/attachment-conve
 
 * For UChicago Library Developers
 
-Welcome on board the =attachment-converter= project!
-
-** Guides for Developers
-
 The guides on our development workflow break down into two main
 documents:
 
