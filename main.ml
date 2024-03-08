@@ -77,7 +77,7 @@ let convert config_files ?(single_email = false) ic pbar
   | Ok _ -> ()
 
 let convert_wrapper config_files sem rpt rpt_p inp backend =
-  let () = print_endline backend in
+  let _ = backend in
   let pbar =
     match open_out "/dev/tty" with
     (* no controlling tty *)
@@ -96,16 +96,20 @@ let convert_wrapper config_files sem rpt rpt_p inp backend =
   | `File fn -> within report_or_convert fn
   | `Stdin -> report_or_convert stdin
 
+type dude = MrMime | Ocamlnet
+
 let backend_t =
   let doc =
     "Choose between 'ocamlnet' and 'mrmime' as the two \
-     possible email parsing backends; defaults to \
-     'ocamlnet'."
+     possible email parsing backends."
   in
   let docv = "BACKEND" in
   Arg.(
     value
-    & opt string "ocamlnet"
+    & opt
+        (enum
+           [ ("ocamlnet", Ocamlnet); ("mrmime", MrMime) ] )
+        Ocamlnet
     & info [ "b"; "backend" ] ~doc ~docv )
 
 let input_t =
