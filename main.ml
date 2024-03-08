@@ -91,14 +91,16 @@ let convert_wrapper config_files sem rpt rpt_p inp =
   | `Stdin -> report_or_convert stdin
 
 let backend_t =
-  let doc = assert false in
-  let docv = assert false in
-  let inf = assert false in
+  let open Cmdliner.Arg in
+  let doc =
+    "Choose between 'ocamlnet' and 'mrmime' as the two \
+     possible email parsing backends; defaults to \
+     'ocamlnet'."
+  in
+  let docv = "BACKEND" in
+  let inf = info [ "b"; "backend" ] ~doc ~docv in
   let arg_type = opt string "ocamlnet" in
   value (arg_type inf)
-
-(* Arg.(value & opt int 10 & info ["c"; "count"]
-   ~docv:"COUNT" ~doc) *)
 
 let input_t =
   let doc = "Input file to be converted." in
