@@ -90,11 +90,15 @@ let convert_wrapper config_files sem rpt rpt_p inp =
   | `File fn -> within report_or_convert fn
   | `Stdin -> report_or_convert stdin
 
-(* let backend_t =
- *   let doc = assert false in
- *   let docv = assert false in
- *   let inf = assert false in
- *   let arg_type = *)
+let backend_t =
+  let doc = assert false in
+  let docv = assert false in
+  let inf = assert false in
+  let arg_type = opt string "ocamlnet" in
+  value (arg_type inf)
+
+(* Arg.(value & opt int 10 & info ["c"; "count"]
+   ~docv:"COUNT" ~doc) *)
 
 let input_t =
   let doc = "Input file to be converted." in
