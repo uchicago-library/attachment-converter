@@ -8,7 +8,7 @@
 open Prelude
 open Cmdliner
 
-let pbar_channel = open_out "/dev/tty"
+(* let pbar_channel = open_out "/dev/tty" *)
 
 module Data = struct
   module Printer = struct
@@ -16,12 +16,12 @@ module Data = struct
   end
 end
 
-type cmd_input = [`Stdin | `File of string]
+(* type cmd_input = [`Stdin | `File of string] *)
 
-type cmd_input_parser =
-  string -> (cmd_input, [`Msg of string]) Stdlib.result
+(* type cmd_input_parser =
+ *   string -> (cmd_input, [`Msg of string]) Stdlib.result *)
 
-type cmd_input_printer = cmd_input Arg.printer
+(* type cmd_input_printer = cmd_input Arg.printer *)
 
 let cmd_input_parser str =
   if Sys.file_exists str
@@ -48,7 +48,11 @@ let report ?(params = false) ic =
     (fun k v -> print ("  " ^ k ^ " : " ^ Int.to_string v))
     types
 
-let convert config_files ?(single_email = false) ic pbar =
+let convert config_files ?(single_email = false) ic pbar
+    backend =
+  (* temporary, to shut warnings up; please eventually
+     remove *)
+  let _ = backend in
   let open Lib.Convert.Converter in
   let open Lib.Configuration in
   let open Lib.ErrorHandling in
@@ -72,7 +76,8 @@ let convert config_files ?(single_email = false) ic pbar =
     (* TODO: better error handling *)
   | Ok _ -> ()
 
-let convert_wrapper config_files sem rpt rpt_p inp =
+let convert_wrapper config_files sem rpt rpt_p inp backend =
+  let () = print_endline backend in
   let pbar =
     match open_out "/dev/tty" with
     (* no controlling tty *)
@@ -84,23 +89,24 @@ let convert_wrapper config_files sem rpt rpt_p inp =
     then report ~params:true ic
     else if rpt
     then report ic
-    else convert config_files ~single_email:sem ic pbar
+    else
+      convert config_files ~single_email:sem ic pbar backend
   in
   match inp with
   | `File fn -> within report_or_convert fn
   | `Stdin -> report_or_convert stdin
 
 let backend_t =
-  let open Cmdliner.Arg in
   let doc =
     "Choose between 'ocamlnet' and 'mrmime' as the two \
      possible email parsing backends; defaults to \
      'ocamlnet'."
   in
   let docv = "BACKEND" in
-  let inf = info [ "b"; "backend" ] ~doc ~docv in
-  let arg_type = opt string "ocamlnet" in
-  value (arg_type inf)
+  Arg.(
+    value
+    & opt string "ocamlnet"
+    & info [ "b"; "backend" ] ~doc ~docv )
 
 let input_t =
   let doc = "Input file to be converted." in
@@ -144,7 +150,8 @@ let convert_t =
     $ single_email_t
     $ report_t
     $ report_params_t
-    $ input_t )
+    $ input_t
+    $ backend_t )
 
 let cmd =
   let doc = "Converts email attachments." in
