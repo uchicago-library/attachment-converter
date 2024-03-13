@@ -8,20 +8,11 @@
 open Prelude
 open Cmdliner
 
-(* let pbar_channel = open_out "/dev/tty" *)
-
 module Data = struct
   module Printer = struct
     let print msg = write stdout msg
   end
 end
-
-(* type cmd_input = [`Stdin | `File of string] *)
-
-(* type cmd_input_parser =
- *   string -> (cmd_input, [`Msg of string]) Stdlib.result *)
-
-(* type cmd_input_printer = cmd_input Arg.printer *)
 
 let cmd_input_parser str =
   if Sys.file_exists str
@@ -48,15 +39,29 @@ let report ?(params = false) ic =
     (fun k v -> print ("  " ^ k ^ " : " ^ Int.to_string v))
     types
 
+type backend = Mrmime | Ocamlnet
+
 let convert config_files ?(single_email = false) ic pbar
     backend =
-  (* temporary, to shut warnings up; please eventually
-     remove *)
-  let _ = backend in
-  let open Lib.Convert.Converter in
+  let b =
+    match backend with
+    | Mrmime ->
+      print_endline "MR MIME MAN" ;
+      ( module Lib.Convert.Mrmime_Converter
+      : Lib.Convert.PARSETREE )
+    | Ocamlnet ->
+      print_endline "OCAMLNET MAN" ;
+      ( module Lib.Convert.Ocamlnet_Converter
+      : Lib.Convert.PARSETREE )
+  in
+  let module B = (val b) in
+  let open B in
+  (* note: why did changing the below to open B cause a
+     compile error? *)
+  (* let open Lib.Convert.Converter in *)
   let open Lib.Configuration in
   let open Lib.ErrorHandling in
-  let open Lib.Mbox.Copier in
+  let open Lib.Mbox.ToOutput.Make (B) in
   let ( let* ) = Result.( >>= ) in
   let processed =
     let open Lib.Dependency in
@@ -77,7 +82,6 @@ let convert config_files ?(single_email = false) ic pbar
   | Ok _ -> ()
 
 let convert_wrapper config_files sem rpt rpt_p inp backend =
-  let _ = backend in
   let pbar =
     match open_out "/dev/tty" with
     (* no controlling tty *)
@@ -96,20 +100,18 @@ let convert_wrapper config_files sem rpt rpt_p inp backend =
   | `File fn -> within report_or_convert fn
   | `Stdin -> report_or_convert stdin
 
-type dude = MrMime | Ocamlnet
-
 let backend_t =
   let doc =
     "Choose between 'ocamlnet' and 'mrmime' as the two \
      possible email parsing backends."
   in
   let docv = "BACKEND" in
+  let backends =
+    [ ("ocamlnet", Ocamlnet); ("mrmime", Mrmime) ]
+  in
   Arg.(
     value
-    & opt
-        (enum
-           [ ("ocamlnet", Ocamlnet); ("mrmime", MrMime) ] )
-        Ocamlnet
+    & opt (enum backends) Ocamlnet
     & info [ "backend" ] ~doc ~docv )
 
 let input_t =
