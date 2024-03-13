@@ -45,7 +45,7 @@ let to_string_test2 =
 let lookup_param_test1 =
   check_eq_basic
     "basic lookup_param test"
-    (Some "\"test.gif\"")
+    (Some "test.gif")
     (lookup_param "filename" cd)
 
 let update_tests =
