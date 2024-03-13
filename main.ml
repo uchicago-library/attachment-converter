@@ -110,7 +110,7 @@ let backend_t =
         (enum
            [ ("ocamlnet", Ocamlnet); ("mrmime", MrMime) ] )
         Ocamlnet
-    & info [ "b"; "backend" ] ~doc ~docv )
+    & info [ "backend" ] ~doc ~docv )
 
 let input_t =
   let doc = "Input file to be converted." in
