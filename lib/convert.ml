@@ -583,6 +583,17 @@ module Conversion = struct
   end
 end
 
+module type CONVERTER = sig
+  include PARSETREE
+
+  val acopy_email :
+    ?idem:bool ->
+    Configuration.Formats.t ->
+    string ->
+    out_channel ->
+    (string, [> `EmailParse]) result
+end
+
 module Ocamlnet_Converter =
   Conversion.Make (Ocamlnet_parsetree)
 

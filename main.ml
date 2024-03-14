@@ -46,13 +46,11 @@ let convert config_files ?(single_email = false) ic pbar
   let b =
     match backend with
     | Mrmime ->
-      print_endline "MR MIME MAN" ;
       ( module Lib.Convert.Mrmime_Converter
-      : Lib.Convert.PARSETREE )
+      : Lib.Convert.CONVERTER )
     | Ocamlnet ->
-      print_endline "OCAMLNET MAN" ;
       ( module Lib.Convert.Ocamlnet_Converter
-      : Lib.Convert.PARSETREE )
+      : Lib.Convert.CONVERTER )
   in
   let module B = (val b) in
   let open B in
