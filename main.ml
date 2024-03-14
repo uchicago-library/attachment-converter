@@ -54,9 +54,6 @@ let convert config_files ?(single_email = false) ic pbar
   in
   let module B = (val b) in
   let open B in
-  (* note: why did changing the below to open B cause a
-     compile error? *)
-  (* let open Lib.Convert.Converter in *)
   let open Lib.Configuration in
   let open Lib.ErrorHandling in
   let open Lib.Mbox.ToOutput.Make (B) in
