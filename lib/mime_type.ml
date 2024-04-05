@@ -42,12 +42,15 @@ module Subtype = struct
   type t = { name : string }
 
   let to_string st = st.name
-  let of_string name = { name = name }
-
+  let of_string name = { name }
   let pdf = of_string "pdf"
   let plain = of_string "plain"
   let msword = of_string "msword"
-  let docx_subty = of_string "vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+  let docx_subty =
+    of_string
+      "vnd.openxmlformats-officedocument.wordprocessingml.document"
+
   let excel = of_string "vnd.ms-excel"
   let tsv = of_string "tab-separated-values"
   let gif = of_string "gif"
@@ -57,27 +60,18 @@ module Subtype = struct
 end
 
 module Error = struct
-  type t = [
-    | `MimeType
-    ]
+  type t = [`MimeType]
 
   let message err =
     match err with
     | `MimeType -> "Cannot parse mime type"
 end
 
-type t =
-  { typ : Type.t;
-    subtype : Subtype.t;
-  }
+type t = { typ : Type.t; subtype : Subtype.t }
 
 let type_of mt = mt.typ
 let subtype mt = mt.subtype
-
-let make typ subty =
-  { typ = typ ;
-    subtype = subty ;
-  }
+let make typ subty = { typ; subtype = subty }
 
 let to_string mt =
   Type.to_string (type_of mt)
@@ -85,10 +79,16 @@ let to_string mt =
   ^ Subtype.to_string (subtype mt)
 
 let of_string s =
-  let ( let* ) = Result.(>>=) in
+  let ( let* ) = Result.( >>= ) in
   let ty_str, opt_subty_str = String.cut ~sep:"/" s in
-  let* subty_str = Result.of_option `MimeType opt_subty_str in
-  let mt = make (Type.of_string ty_str) (Subtype.of_string subty_str) in
+  let* subty_str =
+    Result.of_option `MimeType opt_subty_str
+  in
+  let mt =
+    make
+      (Type.of_string ty_str)
+      (Subtype.of_string subty_str)
+  in
   Ok mt
 
 let extension mt =
@@ -100,11 +100,14 @@ let extension mt =
   | "image/bmp" -> ".bmp"
   | "image/gif" -> ".gif"
   | "image/jpeg" -> ".jpeg"
-  | "application/vnd.openxmlformats-officedocument.wordprocessingml.document" -> ".docx"
+  | "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    -> ".docx"
   | "application/vnd.ms-excel" -> ".xls"
-  | _ -> ".unknown" (* TODO: default to no extension should be logged *)
+  | _ -> ".unknown"
+(* TODO: default to no extension should be logged *)
 
-let compare mt1 mt2 = String.compare (to_string mt1) (to_string mt2)
+let compare mt1 mt2 =
+  String.compare (to_string mt1) (to_string mt2)
 
 let pdf = make Type.application Subtype.pdf
 let pdfa = make Type.application Subtype.pdf

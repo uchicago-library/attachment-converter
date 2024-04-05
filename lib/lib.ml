@@ -2,19 +2,19 @@
  * attachment-converter.ml
  * Copyright (c) 2021 Matt Teichman. All rights reserved.
  * Distributed under the ISC license, see terms at the end of the file.
-*)
+ *)
 
 module Configuration = Configuration
-module Report        = Report
-module Mbox          = Mbox
-module Convert       = Convert
+module Report = Report
+module Mbox = Mbox
+module Convert = Convert
 module ErrorHandling = ErrorHandling
-module Progress_bar  = Progress_bar
-module Header        = Header
-module Serialize     = Serialize
-module Skeleton      = Skeleton
-module Dependency    = Dependency
-module Mime_type     = Mime_type
+module Progress_bar = Progress_bar
+module Header = Header
+module Serialize = Serialize
+module Skeleton = Skeleton
+module Dependency = Dependency
+module Mime_type = Mime_type
 
 (*
  * Copyright (c) 2021 Matt Teichman
@@ -31,7 +31,6 @@ module Mime_type     = Mime_type
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *)
-
 
 (*
  * Copyright (c) 2021 Matt Teichman
