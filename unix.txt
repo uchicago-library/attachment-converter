@@ -1,5 +1,5 @@
 Here is a short example of a text file.
 
-This text file should in principle use CRLFs.
+This text file should in principle use LFs.
 
 Let's see!
