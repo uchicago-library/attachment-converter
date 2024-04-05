@@ -15,6 +15,7 @@ module Serialize     = Serialize
 module Skeleton      = Skeleton
 module Dependency    = Dependency
 module Mime_type     = Mime_type
+module Line_endings  = Line_endings
 
 (*
  * Copyright (c) 2021 Matt Teichman

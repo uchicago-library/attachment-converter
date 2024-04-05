@@ -18,7 +18,8 @@
   skeleton
   progress_bar
   mime_type
-  dependency))
+  dependency
+  line_endings))
 
 (env
  (dev ; make warnings non-fatal
