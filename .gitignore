@@ -47,3 +47,5 @@ lib/application.pdf
 
 #macOS desktop services store file
 .DS_Store
+
+**/*.exe
