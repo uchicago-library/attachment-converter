@@ -194,8 +194,6 @@ module ToOutput = struct
   end
 end
 
-module Copier = ToOutput.Make (Convert.Converter)
-
 (*
  * A simple utility function for reading in emails
  * and replacing newlines

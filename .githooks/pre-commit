@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+
+TMP=$(mktemp /tmp/githook_spinupXXXXXX)
+trap 'rm -f $TMP' 0
+
+unset GIT_LITERAL_PATHSPECS
+(opam exec -- dune build @fmt 2> $TMP || true) &&
+opam exec -- dune promote &&
+git add $(cat $TMP | sed -n '/^--- /{s///;s;a/_build/default/;;p}')
+true
