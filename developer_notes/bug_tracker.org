@@ -19,14 +19,6 @@
 - also, let's double check that we are even converting attachments in
   MIME multipart/related emails in general
 
-* TODO app should complain if the config file is empty
-
-- currently, attc checks the config file every time it sees an
-  attachment, and then never finds that input mime type, and then
-  never converts any attachment
-- instead, it should print some kind of error message saying please
-  put something in the config file or delete it
-
 * TODO line breaks should be consistent
 
 + we found during iPres that =attc= is sometimes mixing CRLF-s and
@@ -84,3 +76,7 @@
 * TODO closing " is missing when converted attachment names are printed
 
 + the unconverted attachment names have closing " but the converted ones do not
+
+* TODO 706 email produces empty output with Mr. Mime
+
++ /path/to/Email/Saller Archive/In-1-06/706

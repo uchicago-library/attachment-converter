@@ -29,3 +29,18 @@ Archived entries from file /home/teichman/github/library/attachment-converter/de
   identical)
 - instead, it shouldn't print anything
 
+
+* TODO app should complain if the config file is empty
+:PROPERTIES:
+:ARCHIVE_TIME: 2024-04-16 Tue 10:41
+:ARCHIVE_FILE: ~/Code/GitHub/attachment-converter/developer_notes/bug_tracker.org
+:ARCHIVE_CATEGORY: bug_tracker
+:ARCHIVE_TODO: TODO
+:END:
+
+- currently, attc checks the config file every time it sees an
+  attachment, and then never finds that input mime type, and then
+  never converts any attachment
+- instead, it should print some kind of error message saying please
+  put something in the config file or delete it
+
