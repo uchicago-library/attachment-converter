@@ -140,6 +140,8 @@ module MBoxIterator
 
   exception End_of_input
 
+  (* TODO: parameterize next on line break format, e.g. let next
+     ?(line_feed:Unix) t = etc. *)
   let next t =
     Buffer.clear t.buf;
     let rec read () =
@@ -152,7 +154,13 @@ module MBoxIterator
                else read ()
              end
         else begin
-               Buffer.add_string t.buf line;
+            Buffer.add_string t.buf line;
+            (* TODO: make CRLF parameterizable *)
+            (* because this is where we're writing what we're reading
+               in to the output buffer, ergo this is for
+               pre-processing *)
+            (* alternatively, always make this CRLF, and then
+               conditionally convert it back on the way out *)
                Buffer.add_string t.buf (eol CRLF);
                read ()
              end

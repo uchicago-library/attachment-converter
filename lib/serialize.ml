@@ -137,18 +137,21 @@ let stream_of_string str : stream =
         consumed := true;
         Some (str, 0, String.length str)
 
-
+(* fun, romain's code *)
+(* parameterize line break format here *)
 let stream_of_lines lines =
-let lines = ref lines in
-let go () =
-  match !lines with
-  | [] -> None
-  | x :: r ->
-      lines := r;
-      Some (x ^ "\r\n", 0, String.length x + 2)
-in
+  let lines = ref lines in
+  let go () =
+    match !lines with
+    | [] -> None
+    | x :: r ->
+       lines := r;
+       (* TODO: parameterize things here *)
+       Some (x ^ "\r\n", 0, String.length x + 2)
+  in
   go
 
+(* maybe define lf () here *)
 let crlf () = stream_of_string "\r\n"
 let ( @ ) a b = concat a b
 
