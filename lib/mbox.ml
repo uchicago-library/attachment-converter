@@ -161,9 +161,9 @@ module MBoxIterator
                pre-processing *)
             (* alternatively, always make this CRLF, and then
                conditionally convert it back on the way out *)
-               Buffer.add_string t.buf (eol CRLF);
-               read ()
-             end
+            Buffer.add_string t.buf (eol CRLF);
+            read ()
+          end
     in
     try
       read ()
