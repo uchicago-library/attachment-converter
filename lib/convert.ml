@@ -18,14 +18,48 @@ let gen_multi_header =
          (Constants.meta_header_name, "generated multipart")
        ] )
 
+module LineEnding = struct
+  type t = Windows | Unix
+
+  let determine_line_ending str =
+    (* round no-line-breaks up to Unix *)
+    (* round Apple line breaks up to Windows *)
+    let open Prelude.String in
+    let not_line_break c = not (c <> '\r' && c <> '\n') in
+    let suffix = dropwhile not_line_break str in
+    if suffix = ""
+    then Unix
+    else
+      match suffix.[0] with
+      | '\r' -> Windows
+      | _ -> Unix
+end
+
 module type PARSETREE = sig
   module Error : ERROR
 
   type t
 
   val of_string : string -> (t, Error.t) result
+
+  (* val of_string : line_ending -> string -> (t, Error.t)
+     result *)
   val to_string : t -> string
+
+  (* val to_string : t -> (string, line_ending) *)
   val of_list : t list -> t
+
+  (* incoming:  *)
+  (* mr. mime -> make it CRLF if it isn't *)
+  (* ocamlnet -> nothing *)
+
+  (* outgoing: *)
+  (* ocamlnet, windows -> output windows *)
+  (* ocamlnet, unix -> output unix *)
+  (* mrmime, windows -> have Mrmime_parsetree.to_string add
+     CRLFs *)
+  (* mrmime, unix -> have Mrmime_parsetree.to_string add
+     LFs *)
 
   type header
 

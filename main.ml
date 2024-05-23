@@ -21,12 +21,14 @@ type cmd_input_parser =
 
 type cmd_input_printer = cmd_input Arg.printer
 
-let cmd_input_parser str =
+let cmd_input_parser : cmd_input_parser =
+ fun str ->
   if Sys.file_exists str
   then Ok (`File str)
   else Error (`Msg ("File: " ^ str ^ " does not exist."))
 
-let cmd_input_printer fmt input =
+let cmd_input_printer : cmd_input_printer =
+ fun fmt input ->
   let str =
     match input with
     | `Stdin -> "STDIN"

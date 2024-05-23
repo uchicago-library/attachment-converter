@@ -7,30 +7,28 @@ let basic_cont_dis =
    \tfilename*=utf-8''test.gif;\r\n\
    \tfilename=\"test.gif\""
 
-let basic_cont_dis_conv_0 =
-  "attachment;\r\n\
-   \tfilename*=utf-8''test_CONVERTED.tiff;\r\n\
-   \tfilename=\"test.gif\""
+(* let basic_cont_dis_conv_0 = *)
+(* "attachment;\r\n\ *) (*
+   \tfilename*=utf-8''test_CONVERTED.tiff;\r\n\ *) (*
+   \tfilename=\"test.gif\"" *)
 
-let basic_cont_dis_conv_1 =
-  "attachment;\r\n\
-   \tfilename*=utf-8''test.gif;\r\n\
-   \tfilename=\"test_CONVERTED.tiff\""
+(* let basic_cont_dis_conv_1 = *)
+(* "attachment;\r\n\ *) (* \tfilename*=utf-8''test.gif;\r\n\
+   *) (* \tfilename=\"test_CONVERTED.tiff\"" *)
 
-let basic_cont_dis_conv_2 =
-  "attachment;\r\n\
-   \tfilename*=utf-8''test_CONVERTED.tiff;\r\n\
-   \tfilename=\"test_CONVERTED.tiff\""
+(* let basic_cont_dis_conv_2 = *)
+(* "attachment;\r\n\ *) (*
+   \tfilename*=utf-8''test_CONVERTED.tiff;\r\n\ *) (*
+   \tfilename=\"test_CONVERTED.tiff\"" *)
 
-let basic_cont_dis_1 =
-  "attachment;\r\n\
-   \tfilename=\"test.gif\";\r\n\
-   \tfilename*=utf-8''test.gif"
+(* let basic_cont_dis_1 = *)
+(* "attachment;\r\n\ *) (* \tfilename=\"test.gif\";\r\n\ *)
+   (* \tfilename*=utf-8''test.gif" *)
 
-let basic_cont_dis_conv_3 =
-  "attachment;\r\n\
-   \tfilename=\"test_CONVERTED.tiff\";\r\n\
-   \tfilename*=utf-8''test_CONVERTED.tiff"
+(* let basic_cont_dis_conv_3 = *)
+(* "attachment;\r\n\ *) (*
+   \tfilename=\"test_CONVERTED.tiff\";\r\n\ *) (*
+   \tfilename*=utf-8''test_CONVERTED.tiff" *)
 
 let of_string_test1 =
   let param1 : Parameter.t =

@@ -141,7 +141,7 @@ struct
         else read () )
       else (
         Buffer.add_string t.buf line ;
-        Buffer.add_string t.buf (eol CRLF) ;
+        Buffer.add_string t.buf (eol LF) ;
         read () )
     in
     try read ()
