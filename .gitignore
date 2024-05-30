@@ -45,5 +45,8 @@ lib/application.pdf
 /utop.out
 /tests/test_emails
 
-#macOS desktop services store file
+# macOS desktop services store file
 .DS_Store
+
+# executables built by dune
+*.exe
