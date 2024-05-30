@@ -10,13 +10,21 @@ module Attachment = struct
 end
 
 let gen_multi_header =
-  Result.get_ok
-    (Header.of_assoc_list
-       [ ( "Content-Type",
-           "multipart/mixed; boundary=attachment converter \
-            generated boundary" );
-         (Constants.meta_header_name, "generated multipart")
-       ] )
+  let open Header in
+  of_list
+    [ Field.make
+        "Content-Type"
+        (Field.Value.make
+           "multipart/mixed"
+           ~params:
+             [ Field.Value.Parameter.make
+                 "boundary"
+                 "attachment converter generated boundary"
+             ])
+    ; Field.make
+        Constants.meta_header_name
+        (Field.Value.make "generated multipart")
+    ]
 
 module type PARSETREE = sig
   module Error : ERROR
