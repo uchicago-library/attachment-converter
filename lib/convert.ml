@@ -391,6 +391,7 @@ module Conversion = struct
       }
 
     let create_new_header md =
+      let open Header in
       let meta_header_val =
         let value = "converted" in
         let params =
@@ -401,33 +402,37 @@ module Conversion = struct
             ("original-file-hash", md.hashed)
           ]
         in
-        Header.Field.Value.make
+        Field.Value.make
           ~params:
             (map
-               (uncurry Header.Field.Value.Parameter.make)
+               (uncurry Field.Value.Parameter.make)
                params )
           value
       in
       let cd_header_val =
         let value = "attachment" in
         let params = [ ("filename", quoted md.filename) ] in
-        Header.Field.Value.make
+        Field.Value.make
           ~params:
             (map
-               (uncurry Header.Field.Value.Parameter.make)
+               (uncurry Field.Value.Parameter.make)
                params )
           value
       in
-      Result.get_ok
-        (Header.of_assoc_list
-           [ ("Content-Transfer-Encoding", "base64");
-             ("Content-Type", md.target_type);
-             ( "Content-Disposition",
-               Header.Field.Value.to_string cd_header_val );
-             ( "X-Attachment-Converter",
-               Header.Field.Value.to_string meta_header_val
-             )
-           ] )
+      of_list
+        [ Field.make
+            "Content-Transfer-Encoding"
+            (Field.Value.make "base64")
+        ; Field.make
+            "Content-Type"
+            (Field.Value.make md.target_type)
+        ; Field.make
+            "Content-Disposition"
+            cd_header_val
+        ; Field.make
+            "X-Attachment-Converter"
+            meta_header_val
+        ]
 
     let convert_attachment att pbar md =
       let convert_data str =
