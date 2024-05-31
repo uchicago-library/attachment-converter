@@ -12,17 +12,13 @@ end
 let gen_multi_header =
   let open Header in
   of_list
-    [ Field.make
-        "Content-Type"
-        (Field.Value.make
-           "multipart/mixed"
+    [ Field.make "Content-Type"
+        (Field.Value.make "multipart/mixed"
            ~params:
-             [ Field.Value.Parameter.make
-                 "boundary"
+             [ Field.Value.Parameter.make "boundary"
                  "attachment converter generated boundary"
-             ])
-    ; Field.make
-        Constants.meta_header_name
+             ] );
+      Field.make Constants.meta_header_name
         (Field.Value.make "generated multipart")
     ]
 
@@ -101,7 +97,9 @@ module Mrmime_parsetree = struct
 
   let make_header h =
     let decoder = Mrmime.Header.Decoder.header None in
-    let of_string = Angstrom.parse_string ~consume:All decoder in
+    let of_string =
+      Angstrom.parse_string ~consume:All decoder
+    in
     match of_string (Header.to_string h) with
     | Ok h -> h
     | Error _ -> raise HeaderRepresentationError
@@ -119,8 +117,7 @@ module Mrmime_parsetree = struct
     let* field = List.head (Mrmime.Header.assoc fname hd) in
     match field with
     | Field (_, Unstructured, data) ->
-      ( Prettym.to_string
-          ~margin:Constants.max_line_length
+      ( Prettym.to_string ~margin:Constants.max_line_length
           Mrmime.Unstructured.Encoder.unstructured
       >> Header.Field.Value.of_string
       >> Result.to_option )
@@ -423,17 +420,12 @@ module Conversion = struct
           value
       in
       of_list
-        [ Field.make
-            "Content-Transfer-Encoding"
-            (Field.Value.make "base64")
-        ; Field.make
-            "Content-Type"
-            (Field.Value.make md.target_type)
-        ; Field.make
-            "Content-Disposition"
-            cd_header_val
-        ; Field.make
-            "X-Attachment-Converter"
+        [ Field.make "Content-Transfer-Encoding"
+            (Field.Value.make "base64");
+          Field.make "Content-Type"
+            (Field.Value.make md.target_type);
+          Field.make "Content-Disposition" cd_header_val;
+          Field.make "X-Attachment-Converter"
             meta_header_val
         ]
 
