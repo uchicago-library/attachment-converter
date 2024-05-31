@@ -177,7 +177,9 @@ let map f stream =
 let stream_of_header header =
   map
     (fun s -> (s, 0, String.length s))
-    (Prettym.to_stream Header.Encoder.header header)
+    (Prettym.to_stream
+       ~margin:Utils.Constants.max_line_length
+       Header.Encoder.header header)
 
 let stream_of_header_and_encoded_body header stream =
   let content_encoding = Header.content_encoding header in

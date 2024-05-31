@@ -116,7 +116,9 @@ module Mrmime_parsetree = struct
     let* field = List.head (Mrmime.Header.assoc fname hd) in
     match field with
     | Field (_, Unstructured, data) ->
-      ( Mrmime.Unstructured.to_string
+      ( Prettym.to_string
+          ~margin:Constants.max_line_length
+          Mrmime.Unstructured.Encoder.unstructured
       >> Header.Field.Value.of_string
       >> Result.to_option )
         data
