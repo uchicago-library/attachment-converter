@@ -79,6 +79,7 @@ end
 
 module Mrmime_parsetree = struct
   exception HeaderRepresentationError
+
   module Error = struct
     type t = [`EmailParse]
 
