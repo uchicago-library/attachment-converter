@@ -78,6 +78,7 @@ module Parsetree_utils (T : PARSETREE) = struct
 end
 
 module Mrmime_parsetree = struct
+  exception HeaderRepresentationError
   module Error = struct
     type t = [`EmailParse]
 
@@ -97,11 +98,12 @@ module Mrmime_parsetree = struct
   let to_string = Serialize.(make >> to_string)
   let header = fst
 
-  let make_header =
-    Header.to_string
-    >> Angstrom.parse_string ~consume:All
-         (Mrmime.Header.Decoder.header None)
-    >> Result.get_ok (* TODO *)
+  let make_header h =
+    let decoder = Mrmime.Header.Decoder.header None in
+    let of_string = Angstrom.parse_string ~consume:All decoder in
+    match of_string (Header.to_string h) with
+    | Ok h -> h
+    | Error _ -> raise HeaderRepresentationError
 
   let of_list (l : t list) =
     match len l with
