@@ -114,6 +114,17 @@ module Mrmime_parsetree = struct
   type header = Mrmime.Header.t
   type attachment = header Attachment.t
 
+  let of_string_linebreak s =
+    let parse =
+      Angstrom.parse_string ~consume:All
+        (Mrmime.Mail.mail None)
+      >> Result.map (fun (h, b) -> (h, Some b))
+      >> Result.witherr (k `EmailParse)
+    in
+    let result = parse s in
+    let line_ending = LineEnding.determine_line_ending s in
+    (line_ending, result)
+
   let of_string =
     Angstrom.parse_string ~consume:All
       (Mrmime.Mail.mail None)
