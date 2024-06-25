@@ -118,10 +118,10 @@ home-install: shell-copy opam-install
 	echo "Please ensure that $(HOME_DESTDIR)/bin is on your path."
 	echo
 	echo "For Mac users, run:"
-	echo '    $$ echo "export PATH=~/bin:$$PATH >> ~/.zshrc"'
+	echo '    $$ echo "export PATH=~/bin:$$PATH" >> ~/.zshrc'
 	echo
 	echo "For WSL Debian & Arch Linux users, run:"
-	echo '    $$ echo "export PATH=~/bin:$$PATH >> ~/.bashrc"'
+	echo '    $$ echo "export PATH=~/bin:$$PATH" >> ~/.bashrc'
 .PHONY: home-install
 
 install: shell-copy opam-install
