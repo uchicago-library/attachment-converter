@@ -10,13 +10,17 @@ module Attachment = struct
 end
 
 let gen_multi_header =
-  Result.get_ok
-    (Header.of_assoc_list
-       [ ( "Content-Type",
-           "multipart/mixed; boundary=attachment converter \
-            generated boundary" );
-         (Constants.meta_header_name, "generated multipart")
-       ] )
+  let open Header in
+  of_list
+    [ Field.make "Content-Type"
+        (Field.Value.make "multipart/mixed"
+           ~params:
+             [ Field.Value.Parameter.make "boundary"
+                 "attachment converter generated boundary"
+             ] );
+      Field.make Constants.meta_header_name
+        (Field.Value.make "generated multipart")
+    ]
 
 module type PARSETREE = sig
   module Error : ERROR
@@ -70,6 +74,8 @@ module Parsetree_utils (T : PARSETREE) = struct
 end
 
 module Mrmime_parsetree = struct
+  exception HeaderRepresentationError
+
   module Error = struct
     type t = [`EmailParse]
 
@@ -89,11 +95,14 @@ module Mrmime_parsetree = struct
   let to_string = Serialize.(make >> to_string)
   let header = fst
 
-  let make_header =
-    Header.to_string
-    >> Angstrom.parse_string ~consume:All
-         (Mrmime.Header.Decoder.header None)
-    >> Result.get_ok (* TODO *)
+  let make_header h =
+    let decoder = Mrmime.Header.Decoder.header None in
+    let of_string =
+      Angstrom.parse_string ~consume:All decoder
+    in
+    match of_string (Header.to_string h) with
+    | Ok h -> h
+    | Error _ -> raise HeaderRepresentationError
 
   let of_list (l : t list) =
     match len l with
@@ -108,7 +117,8 @@ module Mrmime_parsetree = struct
     let* field = List.head (Mrmime.Header.assoc fname hd) in
     match field with
     | Field (_, Unstructured, data) ->
-      ( Mrmime.Unstructured.to_string
+      ( Prettym.to_string ~margin:Constants.max_line_length
+          Mrmime.Unstructured.Encoder.unstructured
       >> Header.Field.Value.of_string
       >> Result.to_option )
         data
@@ -381,6 +391,7 @@ module Conversion = struct
       }
 
     let create_new_header md =
+      let open Header in
       let meta_header_val =
         let value = "converted" in
         let params =
@@ -391,33 +402,32 @@ module Conversion = struct
             ("original-file-hash", md.hashed)
           ]
         in
-        Header.Field.Value.make
+        Field.Value.make
           ~params:
             (map
-               (uncurry Header.Field.Value.Parameter.make)
+               (uncurry Field.Value.Parameter.make)
                params )
           value
       in
       let cd_header_val =
         let value = "attachment" in
         let params = [ ("filename", quoted md.filename) ] in
-        Header.Field.Value.make
+        Field.Value.make
           ~params:
             (map
-               (uncurry Header.Field.Value.Parameter.make)
+               (uncurry Field.Value.Parameter.make)
                params )
           value
       in
-      Result.get_ok
-        (Header.of_assoc_list
-           [ ("Content-Transfer-Encoding", "base64");
-             ("Content-Type", md.target_type);
-             ( "Content-Disposition",
-               Header.Field.Value.to_string cd_header_val );
-             ( "X-Attachment-Converter",
-               Header.Field.Value.to_string meta_header_val
-             )
-           ] )
+      of_list
+        [ Field.make "Content-Transfer-Encoding"
+            (Field.Value.make "base64");
+          Field.make "Content-Type"
+            (Field.Value.make md.target_type);
+          Field.make "Content-Disposition" cd_header_val;
+          Field.make "X-Attachment-Converter"
+            meta_header_val
+        ]
 
     let convert_attachment att pbar md =
       let convert_data str =
