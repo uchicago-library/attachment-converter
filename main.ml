@@ -9,17 +9,15 @@
 open Prelude
 open Cmdliner
 
-let pbar_channel = open_out "/dev/tty"
-
 module Data = struct
   module Printer = struct
     let print msg = write stdout msg
   end
 end
 
-type cmd_input = [`Stdin | `File of string]
-type cmd_input_parser = string -> (cmd_input, [`Msg of string]) Stdlib.result
-type cmd_input_printer = cmd_input Arg.printer
+(* type cmd_input = [`Stdin | `File of string] *)
+(* type cmd_input_parser = string -> (cmd_input, [`Msg of string]) Stdlib.result *)
+(* type cmd_input_printer = cmd_input Arg.printer *)
 
 let cmd_input_parser str =
   if Sys.file_exists str

@@ -20,7 +20,7 @@ let line_iterator_test_1 =
       "line 3 check" >:: check_3 ;
     ]
 
-let fromline = "From jorge@babel.lib Thu Aug 24 12:00:00 1899"
+(* let fromline = "From jorge@babel.lib Thu Aug 24 12:00:00 1899" *)
 
 (* Written by Owen *)
 let to_mbox ?(escape=false) ?(eol="\n") ?(fromline="From BLAH") =
