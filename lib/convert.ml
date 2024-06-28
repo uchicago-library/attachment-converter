@@ -101,6 +101,18 @@ module Parsetree_utils (T : PARSETREE) = struct
         >> Result.to_option )
 end
 
+(* incoming:  *)
+(* mr. mime -> make it CRLF if it isn't *)
+(* ocamlnet -> nothing *)
+
+(* outgoing: *)
+(* ocamlnet, windows -> output windows *)
+(* ocamlnet, unix -> output unix *)
+(* mrmime, windows -> have Mrmime_parsetree.to_string add
+   CRLFs *)
+(* mrmime, unix -> have Mrmime_parsetree.to_string add
+   LFs *)
+
 module Mrmime_parsetree = struct
   exception HeaderRepresentationError
 
@@ -120,10 +132,18 @@ module Mrmime_parsetree = struct
     >> Result.map (fun (h, b) -> (h, Some b))
     >> Result.witherr (k `EmailParse)
 
-  let of_string_line_feed str =
+  let of_string_line_feed email_str =
     let ( let* ) = Result.( >>= ) in
-    let* parsed = of_string str in
-    Ok (parsed, Line_feed.figure_out_line_ending str)
+    let lf_type =
+      Line_feed.figure_out_line_ending email_str
+    in
+    let processed =
+      match lf_type with
+      | Unix -> Prelude.String.replace "\n" "\r\n" email_str
+      | Dos -> email_str
+    in
+    let* parsed = of_string processed in
+    Ok (parsed, lf_type)
 
   let to_string = Serialize.(make >> to_string)
 
@@ -131,8 +151,9 @@ module Mrmime_parsetree = struct
       =
     let preliminary_output = to_string tree in
     match line_feed with
-    | Unix -> assert false
-    | Dos -> assert false
+    | Unix ->
+      String.filter (fun c -> c <> '\r') preliminary_output
+    | Dos -> preliminary_output
 
   let header = fst
 
