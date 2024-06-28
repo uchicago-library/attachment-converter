@@ -127,9 +127,12 @@ module Mrmime_parsetree = struct
 
   let to_string = Serialize.(make >> to_string)
 
-  let to_string_line_feed ?(line_feed = Line_feed.Unix) _ =
-    let _ = line_feed in
-    assert false
+  let to_string_line_feed ?(line_feed = Line_feed.Unix) tree
+      =
+    let preliminary_output = to_string tree in
+    match line_feed with
+    | Unix -> assert false
+    | Dos -> assert false
 
   let header = fst
 
