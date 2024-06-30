@@ -33,7 +33,9 @@ module ConfigEntry : sig
     t
 
   val to_refer : t -> Prelude.Refer.t
-  val of_refer : Prelude.Refer.t -> (t, Configuration_error.t) result
+
+  val of_refer :
+    Prelude.Refer.t -> (t, Configuration_error.t) result
 end
 
 module ConvUtil : sig

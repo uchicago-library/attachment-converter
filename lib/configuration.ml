@@ -1,5 +1,4 @@
 open Prelude
-
 module E = Configuration_error
 module Trace = Global_error.T
 
@@ -34,8 +33,8 @@ module ConfigEntry = struct
   (*         (ConfigKey.to_string key) *)
   (*     | `BadMimeType (given_str, key) -> *)
   (*       Printf.sprintf *)
-  (*         "Bad Mime Type Error: Ill-formed mime type '%s' \ *)
-  (*          given for '%s'" *)
+  (* "Bad Mime Type Error: Ill-formed mime type '%s' \ *) (*
+     given for '%s'" *)
   (*         given_str *)
   (*         (ConfigKey.to_string key) *)
   (* end *)

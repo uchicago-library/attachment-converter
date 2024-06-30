@@ -1,5 +1,4 @@
 type error = Configuration_error.t
-
 type t = error list
 
 module type TRACE = sig
