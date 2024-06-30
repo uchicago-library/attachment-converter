@@ -38,10 +38,11 @@ module Line_feed : LINE_FEED = struct
     let not_cr c = not (contains "\r\n" c) in
     match dropwhile not_cr email_string with
     | "" -> Unix
-    | nonempty -> (
+    | nonempty -> begin
       match nonempty.[0] with
       | '\r' -> Dos
-      | _ -> Unix )
+      | _ -> Unix
+    end
 
   let remove_crs str =
     let b = Buffer.create 0 in
