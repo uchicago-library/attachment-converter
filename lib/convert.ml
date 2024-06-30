@@ -26,6 +26,8 @@ module type LINE_FEED = sig
   type t = Dos | Unix
 
   val figure_out_line_ending : string -> t
+  val remove_crs : string -> string
+  val add_crs : string -> string
 end
 
 module Line_feed : LINE_FEED = struct
@@ -40,6 +42,34 @@ module Line_feed : LINE_FEED = struct
       match nonempty.[0] with
       | '\r' -> Dos
       | _ -> Unix )
+
+  let remove_crs str =
+    let b = Buffer.create 0 in
+    let mk_new_string () =
+      for i = 0 to String.length str - 1 do
+        let c = str.[i] in
+        match c with
+        | '\r' -> ()
+        | _ -> Buffer.add_char b c
+      done
+    in
+    mk_new_string () ;
+    Buffer.contents b
+
+  let add_crs str =
+    let b = Buffer.create 0 in
+    let mk_new_string () =
+      for i = 0 to String.length str - 1 do
+        let c = str.[i] in
+        match c with
+        | '\n' ->
+          Buffer.add_char b '\r' ;
+          Buffer.add_char b '\n'
+        | _ -> Buffer.add_char b c
+      done
+    in
+    mk_new_string () ;
+    Buffer.contents b
 end
 
 module type PARSETREE = sig
