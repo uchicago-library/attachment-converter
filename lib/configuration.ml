@@ -1,41 +1,44 @@
 open Prelude
 
-module ConfigKey = struct
-  type t =
-    [ `SourceType
-    | `TargetType
-    | `TargetExt
-    | `ShellCommand
-    | `ConvertID ]
+module E = Configuration_error
+module Trace = Global_error.T
 
-  let to_string k =
-    match k with
-    | `SourceType -> "source_type"
-    | `TargetType -> "target_type"
-    | `TargetExt -> "target_ext"
-    | `ShellCommand -> "shell_command"
-    | `ConvertID -> "id"
-end
+(* module ConfigKey = struct *)
+(*   type t = *)
+(*     [ `SourceType *)
+(*     | `TargetType *)
+(*     | `TargetExt *)
+(*     | `ShellCommand *)
+(*     | `ConvertID ] *)
+
+(*   let to_string k = *)
+(*     match k with *)
+(*     | `SourceType -> "source_type" *)
+(*     | `TargetType -> "target_type" *)
+(*     | `TargetExt -> "target_ext" *)
+(*     | `ShellCommand -> "shell_command" *)
+(*     | `ConvertID -> "id" *)
+(* end *)
 
 module ConfigEntry = struct
-  module Error = struct
-    type t =
-      [ `MissingKey of ConfigKey.t
-      | `BadMimeType of string * ConfigKey.t ]
+  (* module Error = struct *)
+  (*   type t = *)
+  (*     [ `MissingKey of ConfigKey.t *)
+  (*     | `BadMimeType of string * ConfigKey.t ] *)
 
-    let message err =
-      match err with
-      | `MissingKey key ->
-        Printf.sprintf
-          "Config Entry Error: Missing key '%s'"
-          (ConfigKey.to_string key)
-      | `BadMimeType (given_str, key) ->
-        Printf.sprintf
-          "Bad Mime Type Error: Ill-formed mime type '%s' \
-           given for '%s'"
-          given_str
-          (ConfigKey.to_string key)
-  end
+  (*   let message err = *)
+  (*     match err with *)
+  (*     | `MissingKey key -> *)
+  (*       Printf.sprintf *)
+  (*         "Config Entry Error: Missing key '%s'" *)
+  (*         (ConfigKey.to_string key) *)
+  (*     | `BadMimeType (given_str, key) -> *)
+  (*       Printf.sprintf *)
+  (*         "Bad Mime Type Error: Ill-formed mime type '%s' \ *)
+  (*          given for '%s'" *)
+  (*         given_str *)
+  (*         (ConfigKey.to_string key) *)
+  (* end *)
 
   type t =
     { source_type : Mime_type.t;
@@ -64,7 +67,7 @@ module ConfigEntry = struct
     }
 
   let to_refer entry =
-    let open ConfigKey in
+    let open Config_key in
     [ ( to_string `SourceType,
         Mime_type.to_string (source_type entry) );
       ( to_string `TargetType,
@@ -77,7 +80,7 @@ module ConfigEntry = struct
   let of_refer rentry =
     let check key =
       Option.to_result ~none:(`MissingKey key)
-        (assoc_opt (ConfigKey.to_string key) rentry)
+        (assoc_opt (Config_key.to_string key) rentry)
     in
     let ( let* ) = Result.( >>= ) in
     let* st_str = check `SourceType in
@@ -216,9 +219,9 @@ module Formats = struct
 
   module Error = struct
     type t =
-      [ `ConfigData of int * ConfigKey.t
+      [ `ConfigData of int * Config_key.t
       | `ReferParse of int * string
-      | `BadMimeType of string * ConfigKey.t * int ]
+      | `BadMimeType of string * Config_key.t * int ]
 
     let message err =
       match err with
@@ -227,7 +230,7 @@ module Formats = struct
           "Config Data Error: (entry starting at line %d) \
            Missing key '%s'"
           line_num
-          (ConfigKey.to_string key)
+          (Config_key.to_string key)
       | `ReferParse (line_num, line) ->
         Printf.sprintf
           "Refer Parse Error: (line %d) Cannot parse '%s'"
@@ -237,7 +240,7 @@ module Formats = struct
           "Bad Mime Type Error: (line %d) Ill-formed mime \
            type '%s' at given for '%s'"
           line_num badmime
-          (ConfigKey.to_string key)
+          (Config_key.to_string key)
   end
 
   let of_string config_str =

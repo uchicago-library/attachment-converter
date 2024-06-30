@@ -1,20 +1,20 @@
-module ConfigKey : sig
-  type t =
-    [ `SourceType
-    | `TargetType
-    | `TargetExt
-    | `ShellCommand
-    | `ConvertID ]
+(* module ConfigKey : sig *)
+(*   type t = *)
+(*     [ `SourceType *)
+(*     | `TargetType *)
+(*     | `TargetExt *)
+(*     | `ShellCommand *)
+(*     | `ConvertID ] *)
 
-  val to_string : t -> string
-end
+(*   val to_string : t -> string *)
+(* end *)
 
 module ConfigEntry : sig
-  module Error :
-    Utils.ERROR
-      with type t =
-        [ `MissingKey of ConfigKey.t
-        | `BadMimeType of string * ConfigKey.t ]
+  (* module Error : *)
+  (*   Utils.ERROR *)
+  (*     with type t = *)
+  (*       [ `MissingKey of Config_key.t *)
+  (*       | `BadMimeType of string * Config_key.t ] *)
 
   type t
 
@@ -33,7 +33,7 @@ module ConfigEntry : sig
     t
 
   val to_refer : t -> Prelude.Refer.t
-  val of_refer : Prelude.Refer.t -> (t, [> Error.t]) result
+  val of_refer : Prelude.Refer.t -> (t, Configuration_error.t) result
 end
 
 module ConvUtil : sig
@@ -67,7 +67,7 @@ module TransformData : sig
     t
 
   val of_config_entry :
-    ConfigEntry.t -> (t, [> ConfigEntry.Error.t]) result
+    ConfigEntry.t -> (t, Configuration_error.t) result
 
   val of_conv_util :
     ConvUtil.t -> Mime_type.t -> Mime_type.t -> t
@@ -81,9 +81,9 @@ module Formats : sig
   module Error :
     Utils.ERROR
       with type t =
-        [ `ConfigData of int * ConfigKey.t
+        [ `ConfigData of int * Config_key.t
         | `ReferParse of int * string
-        | `BadMimeType of string * ConfigKey.t * int ]
+        | `BadMimeType of string * Config_key.t * int ]
 
   val of_assoc_list :
     (Mime_type.t * TransformData.t list) list -> t

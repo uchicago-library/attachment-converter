@@ -7,7 +7,11 @@
  (libraries prelude mrmime threads netstring unix re)
  (modules
   lib
+  global_error
+  global_error_intf
+  config_key
   configuration
+  configuration_error
   errorHandling
   report
   convert
