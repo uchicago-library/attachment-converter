@@ -169,7 +169,7 @@ module Mrmime_parsetree = struct
     in
     let processed =
       match lf_type with
-      | Unix -> Prelude.String.replace "\n" "\r\n" email_str
+      | Unix -> Line_feed.add_crs email_str
       | Dos -> email_str
     in
     let* parsed = of_string processed in
