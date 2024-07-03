@@ -47,12 +47,12 @@ module Line_feed : LINE_FEED = struct
   let remove_crs str =
     let b = Buffer.create 0 in
     let mk_new_string () =
-      for i = 0 to String.length str - 1 do
-        let c = str.[i] in
+      let each_char c =
         match c with
         | '\r' -> ()
         | _ -> Buffer.add_char b c
-      done
+      in
+      String.iter each_char str
     in
     mk_new_string () ;
     Buffer.contents b
@@ -60,14 +60,14 @@ module Line_feed : LINE_FEED = struct
   let add_crs str =
     let b = Buffer.create 0 in
     let mk_new_string () =
-      for i = 0 to String.length str - 1 do
-        let c = str.[i] in
+      let each_char c =
         match c with
         | '\n' ->
           Buffer.add_char b '\r' ;
           Buffer.add_char b '\n'
         | _ -> Buffer.add_char b c
-      done
+      in
+      String.iter each_char str
     in
     mk_new_string () ;
     Buffer.contents b
@@ -182,8 +182,7 @@ module Mrmime_parsetree = struct
       =
     let preliminary_output = to_string tree in
     match line_feed with
-    | Unix ->
-      String.filter (fun c -> c <> '\r') preliminary_output
+    | Unix -> Line_feed.remove_crs preliminary_output
     | Dos -> preliminary_output
 
   let header = fst
