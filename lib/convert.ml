@@ -742,7 +742,7 @@ module Conversion = struct
           in
           Progress_bar.Printer.print msg pbar
         in
-        Ok (T.to_string converted_tree)
+        Ok (T.to_string_line_feed ~line_feed converted_tree)
   end
 end
 
