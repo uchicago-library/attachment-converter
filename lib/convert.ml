@@ -132,18 +132,6 @@ module Parsetree_utils (T : PARSETREE) = struct
         >> Result.to_option )
 end
 
-(* incoming:  *)
-(* mr. mime -> make it CRLF if it isn't *)
-(* ocamlnet -> nothing *)
-
-(* outgoing: *)
-(* ocamlnet, windows -> output windows *)
-(* ocamlnet, unix -> output unix *)
-(* mrmime, windows -> have Mrmime_parsetree.to_string add
-   CRLFs *)
-(* mrmime, unix -> have Mrmime_parsetree.to_string add
-   LFs *)
-
 module Mrmime_parsetree = struct
   exception HeaderRepresentationError
 
@@ -350,7 +338,13 @@ module Ocamlnet_parsetree = struct
       (Netchannels.with_in_obj_channel ch)
       f
 
-  let of_string_line_feed _ = assert false
+  let of_string_line_feed email_str =
+    let ( let* ) = Result.( >>= ) in
+    let lf_type =
+      Line_feed.figure_out_line_ending email_str
+    in
+    let* processed = of_string email_str in
+    Ok (processed, lf_type)
 
   let to_string tree =
     let header, _ = tree in
@@ -370,9 +364,10 @@ module Ocamlnet_parsetree = struct
       channel_writer ;
     Stdlib.Buffer.contents buf
 
-  let to_string_line_feed ?(line_feed = Line_feed.Unix) _ =
+  let to_string_line_feed ?(line_feed = Line_feed.Unix)
+      email_str =
     let _ = line_feed in
-    assert false
+    to_string email_str
 
   let header = fst
 
@@ -687,8 +682,9 @@ module Conversion = struct
       let () =
         Progress_bar.Printer.print "Parsing email..." pbar
       in
-      let* tree =
-        Result.witherr (k `EmailParse) (T.of_string email)
+      let* tree, line_feed =
+        Result.witherr (k `EmailParse)
+          (T.of_string_line_feed email)
       in
       let convs =
         attachments_to_convert ~idem config tree
@@ -700,7 +696,7 @@ module Conversion = struct
             "Nothing to convert...\nProcessing complete."
             pbar
         in
-        Ok (T.to_string tree)
+        Ok (T.to_string_line_feed ~line_feed tree)
       else
         let () =
           let skel_str =
