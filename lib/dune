@@ -9,12 +9,15 @@
   lib
   error
   error_intf
+  error_message
   config_key
   configuration
   config_entry_error
   formats_error
   report
   convert
+  mrmime_parsetree_error
+  ocamlnet_parsetree_error
   mbox
   header
   utils
@@ -23,7 +26,9 @@
   progress_bar
   mime_type
   mime_type_error
-  dependency))
+  dependency
+  dependency_error
+  package))
 
 (env
  (dev ; make warnings non-fatal

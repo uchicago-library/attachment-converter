@@ -13,6 +13,7 @@ module T = struct
     [ coerced ]
 
   let new_error err = Error (new_list err)
+
   let return = Result.ok
   let bind = Result.bind
   let throw = new_error

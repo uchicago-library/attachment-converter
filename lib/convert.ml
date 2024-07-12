@@ -1,5 +1,6 @@
 open Prelude
 open Utils
+module Trace = Error.T
 
 module Attachment = struct
   type 'a t = { header : 'a; data : string }
@@ -72,23 +73,17 @@ module Parsetree_utils (T : PARSETREE) = struct
 end
 
 module Mrmime_parsetree = struct
+  module E = Mrmime_parsetree_error
   exception HeaderRepresentationError
-
-  module Error = struct
-    type t = [`EmailParse]
-
-    let message _ = "Error parsing email"
-  end
 
   type t = Mrmime.Header.t * string Mrmime.Mail.t option
   type header = Mrmime.Header.t
   type attachment = header Attachment.t
 
   let of_string =
-    Angstrom.parse_string ~consume:All
-      (Mrmime.Mail.mail None)
+    Angstrom.parse_string ~consume:All (Mrmime.Mail.mail None)
     >> Result.map (fun (h, b) -> (h, Some b))
-    >> Result.witherr (k `EmailParse)
+    >> Result.witherrc (Trace.new_list E.Smart.parse_err)
 
   let to_string = Serialize.(make >> to_string)
   let header = fst
@@ -234,11 +229,7 @@ end
 module _ : PARSETREE = Mrmime_parsetree
 
 module Ocamlnet_parsetree = struct
-  module Error = struct
-    type t = [`EmailParse]
-
-    let message _ = "Error parsing email"
-  end
+  module E = Ocamlnet_parsetree_error
 
   type t = Netmime.complex_mime_message
   type header = Netmime.mime_header
@@ -252,7 +243,7 @@ module Ocamlnet_parsetree = struct
         ~multipart_style:`Deep ch
     in
     Result.trapc
-      `EmailParse (* TODO: Better Error Handling *)
+      (Trace.new_list E.Smart.parse_err) (* TODO: Better Error Handling *)
       (Netchannels.with_in_obj_channel ch)
       f
 
@@ -588,7 +579,7 @@ module Conversion = struct
         Progress_bar.Printer.print "Parsing email..." pbar
       in
       let* tree =
-        Result.witherr (k `EmailParse) (T.of_string email)
+        Trace.with_error `EmailParseError (T.of_string email)
       in
       let convs =
         attachments_to_convert ~idem config tree
@@ -658,7 +649,7 @@ module type CONVERTER = sig
     Configuration.Formats.t ->
     string ->
     out_channel ->
-    (string, [> `EmailParse]) result
+    (string, Error.t) result
 end
 
 module Ocamlnet_Converter =

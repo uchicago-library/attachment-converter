@@ -62,8 +62,8 @@ let convert config_files ?(single_email = false) ic pbar
   let module B = (val b) in
   let open B in
   let open Lib.Configuration in
-  let open Lib.ErrorHandling in
   let open Lib.Mbox.ToOutput.Make (B) in
+  let open Lib.Error_message in
   let ( let* ) = Result.( >>= ) in
   let processed =
     let open Lib.Dependency in
@@ -79,7 +79,7 @@ let convert config_files ?(single_email = false) ic pbar
   in
   match processed with
   | Error err ->
-    write stderr (Error.message err)
+    write stderr (message err)
     (* TODO: better error handling *)
   | Ok _ -> ()
 
