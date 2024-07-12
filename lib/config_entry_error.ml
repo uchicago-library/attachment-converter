@@ -4,6 +4,5 @@ type t =
 
 module Smart = struct
   let missing_key_err k = `MissingKey k
-
   let bad_mime_err ty k = `BadMimeType (ty, k)
 end

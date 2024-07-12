@@ -1,8 +1,8 @@
 type error =
   [ Config_entry_error.t
   | Mime_type_error.t
-  | Formats_error.t
-  ]
+  | Formats_error.t ]
+
 type t = error list
 
 module type TRACE = sig

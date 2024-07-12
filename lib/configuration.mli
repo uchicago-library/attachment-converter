@@ -33,9 +33,7 @@ module Config_entry : sig
     t
 
   val to_refer : t -> Prelude.Refer.t
-
-  val of_refer :
-    Prelude.Refer.t -> (t, Error.t) result
+  val of_refer : Prelude.Refer.t -> (t, Error.t) result
 end
 
 module ConvUtil : sig
@@ -87,6 +85,4 @@ module Formats : sig
 end
 
 val default_config : unit -> Formats.t
-
-val get_config :
-  string list -> (Formats.t, Error.t) result
+val get_config : string list -> (Formats.t, Error.t) result

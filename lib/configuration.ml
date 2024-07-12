@@ -44,9 +44,9 @@ module Config_entry = struct
   let of_refer rentry =
     let open Trace in
     let open E.Smart in
-
     let check key =
-      of_option (missing_key_err key)
+      of_option
+        (missing_key_err key)
         (assoc_opt (Config_key.to_string key) rentry)
     in
     let ( let* ) = Result.( >>= ) in
@@ -195,7 +195,8 @@ module Formats = struct
       let open Config_entry in
       let* accum = raccum in
       let* entry =
-        Trace.with_error (`ConfigData line_num) (of_refer next)
+        Trace.with_error (`ConfigData line_num)
+          (of_refer next)
       in
       let* trans_data =
         TransformData.of_config_entry entry

@@ -77,8 +77,7 @@ let of_string s =
   let open E.Smart in
   let ( let* ) = Result.( >>= ) in
   let ty_str, opt_subty_str = String.cut ~sep:"/" s in
-  let* subty_str = of_option parse_err opt_subty_str
-  in
+  let* subty_str = of_option parse_err opt_subty_str in
   let mt =
     make
       (Type.of_string ty_str)
