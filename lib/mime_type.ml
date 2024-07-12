@@ -1,4 +1,6 @@
 open Prelude
+module E = Mime_type_error
+module Trace = Error.T
 
 module Type = struct
   type t =
@@ -59,14 +61,6 @@ module Subtype = struct
   let jpeg = of_string "jpeg"
 end
 
-module Error = struct
-  type t = [`MimeType]
-
-  let message err =
-    match err with
-    | `MimeType -> "Cannot parse mime type"
-end
-
 type t = { typ : Type.t; subtype : Subtype.t }
 
 let type_of mt = mt.typ
@@ -79,10 +73,11 @@ let to_string mt =
   ^ Subtype.to_string (subtype mt)
 
 let of_string s =
+  let open Trace in
+  let open E.Smart in
   let ( let* ) = Result.( >>= ) in
   let ty_str, opt_subty_str = String.cut ~sep:"/" s in
-  let* subty_str =
-    Result.of_option `MimeType opt_subty_str
+  let* subty_str = of_option parse_err opt_subty_str
   in
   let mt =
     make

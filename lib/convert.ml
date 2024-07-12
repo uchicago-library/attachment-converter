@@ -23,8 +23,6 @@ let gen_multi_header =
     ]
 
 module type PARSETREE = sig
-  module Error : ERROR
-
   type t
 
   val of_string : string -> (t, Error.t) result
