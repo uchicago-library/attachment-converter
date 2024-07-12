@@ -26,7 +26,8 @@ let checkExecutables pkgs =
   let results = checkExecutables' pkgs [] in
   match results with
   | [] -> Ok ()
-  | h :: t -> Trace.throw (E.Smart.not_installed_err (h :: t))
+  | h :: t ->
+    Trace.throw (E.Smart.not_installed_err (h :: t))
 
 let checkDependencies () =
   let open Prelude.Result in

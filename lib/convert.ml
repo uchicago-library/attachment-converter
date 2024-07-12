@@ -74,6 +74,7 @@ end
 
 module Mrmime_parsetree = struct
   module E = Mrmime_parsetree_error
+
   exception HeaderRepresentationError
 
   type t = Mrmime.Header.t * string Mrmime.Mail.t option
@@ -81,7 +82,8 @@ module Mrmime_parsetree = struct
   type attachment = header Attachment.t
 
   let of_string =
-    Angstrom.parse_string ~consume:All (Mrmime.Mail.mail None)
+    Angstrom.parse_string ~consume:All
+      (Mrmime.Mail.mail None)
     >> Result.map (fun (h, b) -> (h, Some b))
     >> Result.witherrc (Trace.new_list E.Smart.parse_err)
 
@@ -243,7 +245,8 @@ module Ocamlnet_parsetree = struct
         ~multipart_style:`Deep ch
     in
     Result.trapc
-      (Trace.new_list E.Smart.parse_err) (* TODO: Better Error Handling *)
+      (Trace.new_list E.Smart.parse_err)
+      (* TODO: Better Error Handling *)
       (Netchannels.with_in_obj_channel ch)
       f
 
@@ -579,7 +582,8 @@ module Conversion = struct
         Progress_bar.Printer.print "Parsing email..." pbar
       in
       let* tree =
-        Trace.with_error `EmailParseError (T.of_string email)
+        Trace.with_error `EmailParseError
+          (T.of_string email)
       in
       let convs =
         attachments_to_convert ~idem config tree

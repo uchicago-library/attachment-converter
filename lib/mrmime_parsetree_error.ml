@@ -1,4 +1,4 @@
-type t = [ `EmailParseError ]
+type t = [`EmailParseError]
 
 module Smart = struct
   let parse_err = `EmailParseError
