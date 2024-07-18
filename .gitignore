@@ -50,3 +50,5 @@ lib/application.pdf
 
 # executables built by dune
 *.exe
+
+cram_tests/*
