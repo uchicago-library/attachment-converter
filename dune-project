@@ -12,7 +12,7 @@
  (depends
   (ocaml (>= 4.12.0))
   dune
-  prelude
+  (prelude (= ~dev))
   ocamlbuild
   ocamlfind
   mrmime
