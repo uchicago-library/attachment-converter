@@ -22,13 +22,72 @@ let gen_multi_header =
         (Field.Value.make "generated multipart")
     ]
 
+module type LINE_FEED = sig
+  type t = Dos | Unix
+
+  val figure_out_line_ending : string -> t
+  val remove_crs : string -> string
+  val add_crs : string -> string
+end
+
+module Line_feed : LINE_FEED = struct
+  type t = Dos | Unix
+
+  let figure_out_line_ending email_string =
+    let open Prelude.String in
+    let not_cr c = not (contains "\r\n" c) in
+    match dropwhile not_cr email_string with
+    | "" -> Unix
+    | nonempty -> begin
+      match nonempty.[0] with
+      | '\r' -> Dos
+      | _ -> Unix
+    end
+
+  let remove_crs str =
+    let b = Buffer.create 0 in
+    let mk_new_string () =
+      let each_char c =
+        match c with
+        | '\r' -> ()
+        | _ -> Buffer.add_char b c
+      in
+      String.iter each_char str
+    in
+    mk_new_string () ;
+    Buffer.contents b
+
+  let add_crs str =
+    let b = Buffer.create 0 in
+    let mk_new_string () =
+      let each_char c =
+        match c with
+        | '\n' ->
+          Buffer.add_char b '\r' ;
+          Buffer.add_char b '\n'
+        | _ -> Buffer.add_char b c
+      in
+      String.iter each_char str
+    in
+    mk_new_string () ;
+    Buffer.contents b
+end
+
 module type PARSETREE = sig
   module Error : ERROR
 
   type t
 
   val of_string : string -> (t, Error.t) result
+
+  val of_string_line_feed :
+    string -> (t * Line_feed.t, Error.t) result
+
   val to_string : t -> string
+
+  val to_string_line_feed :
+    ?line_feed:Line_feed.t -> t -> string
+
   val of_list : t list -> t
 
   type header
@@ -92,7 +151,28 @@ module Mrmime_parsetree = struct
     >> Result.map (fun (h, b) -> (h, Some b))
     >> Result.witherr (k `EmailParse)
 
+  let of_string_line_feed email_str =
+    let ( let* ) = Result.( >>= ) in
+    let lf_type =
+      Line_feed.figure_out_line_ending email_str
+    in
+    let processed =
+      match lf_type with
+      | Unix -> Line_feed.add_crs email_str
+      | Dos -> email_str
+    in
+    let* parsed = of_string processed in
+    Ok (parsed, lf_type)
+
   let to_string = Serialize.(make >> to_string)
+
+  let to_string_line_feed ?(line_feed = Line_feed.Unix) tree
+      =
+    let preliminary_output = to_string tree in
+    match line_feed with
+    | Unix -> Line_feed.remove_crs preliminary_output
+    | Dos -> preliminary_output
+
   let header = fst
 
   let make_header h =
@@ -258,6 +338,14 @@ module Ocamlnet_parsetree = struct
       (Netchannels.with_in_obj_channel ch)
       f
 
+  let of_string_line_feed email_str =
+    let ( let* ) = Result.( >>= ) in
+    let lf_type =
+      Line_feed.figure_out_line_ending email_str
+    in
+    let* processed = of_string email_str in
+    Ok (processed, lf_type)
+
   let to_string tree =
     let header, _ = tree in
     (* defaulting to a megabyte seems like a nice round
@@ -275,6 +363,11 @@ module Ocamlnet_parsetree = struct
       (new Netchannels.output_buffer buf)
       channel_writer ;
     Stdlib.Buffer.contents buf
+
+  let to_string_line_feed ?(line_feed = Line_feed.Unix)
+      email_str =
+    let _ = line_feed in
+    to_string email_str
 
   let header = fst
 
@@ -589,8 +682,9 @@ module Conversion = struct
       let () =
         Progress_bar.Printer.print "Parsing email..." pbar
       in
-      let* tree =
-        Result.witherr (k `EmailParse) (T.of_string email)
+      let* tree, line_feed =
+        Result.witherr (k `EmailParse)
+          (T.of_string_line_feed email)
       in
       let convs =
         attachments_to_convert ~idem config tree
@@ -602,7 +696,7 @@ module Conversion = struct
             "Nothing to convert...\nProcessing complete."
             pbar
         in
-        Ok (T.to_string tree)
+        Ok (T.to_string_line_feed ~line_feed tree)
       else
         let () =
           let skel_str =
@@ -648,7 +742,7 @@ module Conversion = struct
           in
           Progress_bar.Printer.print msg pbar
         in
-        Ok (T.to_string converted_tree)
+        Ok (T.to_string_line_feed ~line_feed converted_tree)
   end
 end
 
