@@ -85,7 +85,8 @@ module Mrmime_parsetree = struct
     Angstrom.parse_string ~consume:All
       (Mrmime.Mail.mail None)
     >> Result.map (fun (h, b) -> (h, Some b))
-    >> flip Result.on_error (k (Trace.throw E.Smart.parse_err))
+    >> flip Result.on_error
+         (k (Trace.throw E.Smart.parse_err))
 
   let to_string = Serialize.(make >> to_string)
   let header = fst

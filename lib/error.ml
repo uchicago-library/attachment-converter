@@ -13,7 +13,6 @@ module T = struct
     [ coerced ]
 
   let new_error err = Error (new_list err)
-
   let throw = new_error
 
   let of_option err x =

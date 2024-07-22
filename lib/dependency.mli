@@ -1,5 +1,4 @@
-val getUserOS :
-  unit -> (Package.t list, Error.t) result
+val getUserOS : unit -> (Package.t list, Error.t) result
 
 val checkExecutables :
   Package.t list -> (unit, Error.t) result

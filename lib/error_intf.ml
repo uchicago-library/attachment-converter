@@ -9,5 +9,7 @@ type t = error list
 
 module type TRACE = sig
   val new_error : [< error] -> ('a, t) result
-  val with_error : [< error] -> ('a, t) result -> ('a, t) result
+
+  val with_error :
+    [< error] -> ('a, t) result -> ('a, t) result
 end
