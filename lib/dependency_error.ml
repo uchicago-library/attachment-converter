@@ -1,5 +1,3 @@
-open Package
-
 type t =
   [ `NotInstalled of Package.t list
   | `UnsupportedOS of string ]

@@ -3,7 +3,8 @@ type error =
   | Mime_type_error.t
   | Formats_error.t
   | Parsetree_error.t
-  | Dependency_error.t ]
+  | Dependency_error.t
+  | Value_error.t ]
 
 type t = error list
 
