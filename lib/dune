@@ -16,8 +16,7 @@
   formats_error
   report
   convert
-  mrmime_parsetree_error
-  ocamlnet_parsetree_error
+  parsetree_error
   mbox
   header
   utils

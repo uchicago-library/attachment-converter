@@ -1,21 +1,4 @@
-(* module ConfigKey : sig *)
-(*   type t = *)
-(*     [ `SourceType *)
-(*     | `TargetType *)
-(*     | `TargetExt *)
-(*     | `ShellCommand *)
-(*     | `ConvertID ] *)
-
-(*   val to_string : t -> string *)
-(* end *)
-
 module Config_entry : sig
-  (* module Error : *)
-  (*   Utils.ERROR *)
-  (*     with type t = *)
-  (*       [ `MissingKey of Config_key.t *)
-  (*       | `BadMimeType of string * Config_key.t ] *)
-
   type t
 
   val source_type : t -> Mime_type.t

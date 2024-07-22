@@ -34,8 +34,3 @@ let checkDependencies () =
   let ( let* ) = ( >>= ) in
   let* userPckg = getUserOS () in
   checkExecutables userPckg
-
-(* let main () = *)
-(*   match checkDependencies () with *)
-(*   | Ok _ -> () *)
-(*   | Error e -> print_endline (Error_message.message e) *)

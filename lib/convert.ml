@@ -73,7 +73,7 @@ module Parsetree_utils (T : PARSETREE) = struct
 end
 
 module Mrmime_parsetree = struct
-  module E = Mrmime_parsetree_error
+  module E = Parsetree_error
 
   exception HeaderRepresentationError
 
@@ -85,7 +85,7 @@ module Mrmime_parsetree = struct
     Angstrom.parse_string ~consume:All
       (Mrmime.Mail.mail None)
     >> Result.map (fun (h, b) -> (h, Some b))
-    >> Result.witherrc (Trace.new_list E.Smart.parse_err)
+    >> flip Result.on_error (k (Trace.throw E.Smart.parse_err))
 
   let to_string = Serialize.(make >> to_string)
   let header = fst
@@ -231,7 +231,7 @@ end
 module _ : PARSETREE = Mrmime_parsetree
 
 module Ocamlnet_parsetree = struct
-  module E = Ocamlnet_parsetree_error
+  module E = Parsetree_error
 
   type t = Netmime.complex_mime_message
   type header = Netmime.mime_header
