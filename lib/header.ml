@@ -124,7 +124,7 @@ module Field = struct
       Option.(
         to_result
           (map String.(trim whitespace) optValueStr)
-          ~none:(Trace.new_list value_parse_err))
+          ~none:(Trace.new_list value_parse_err) )
     in
     let* value = Value.of_string valueStr in
     Ok (make name value)
