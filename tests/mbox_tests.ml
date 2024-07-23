@@ -72,8 +72,8 @@ let to_mbox_test_2 =
   let mbox = to_mbox ~eol:"\n" [ email; email ] in
   let check _ =
     assert_equal
-      ( "From BLAH\n" ^ email ^ "\nFrom BLAH\n"
-      ^ email ^ "\n" )
+      ( "From BLAH\n" ^ email ^ "\nFrom BLAH\n" ^ email
+      ^ "\n" )
       mbox ~printer:id
   in
   description >:: check
@@ -88,15 +88,9 @@ let mbox_iter_test_1 =
   let checkf1 _ = assert_equal "From BLAH" f1 ~printer:id in
   let checkf2 _ = assert_equal "From BLAH" f2 ~printer:id in
   let checkf3 _ = assert_equal "From BLAH" f3 ~printer:id in
-  let checkm1 _ =
-    assert_equal "Email 1\n" m1 ~printer:id
-  in
-  let checkm2 _ =
-    assert_equal "Email 2\n" m2 ~printer:id
-  in
-  let checkm3 _ =
-    assert_equal "Email 3\n" m3 ~printer:id
-  in
+  let checkm1 _ = assert_equal "Email 1\n" m1 ~printer:id in
+  let checkm2 _ = assert_equal "Email 2\n" m2 ~printer:id in
+  let checkm3 _ = assert_equal "Email 3\n" m3 ~printer:id in
   description
   >::: [ "fromline check" >:: checkf1;
          "fromline check" >:: checkf2;

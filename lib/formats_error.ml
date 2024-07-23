@@ -10,4 +10,5 @@ end
 let debug e =
   match e with
   | `ConfigData _ -> "Bad config data"
-  | `ReferParse (_, line) -> "refer parse error at line: " ^ line
+  | `ReferParse (_, line) ->
+    "refer parse error at line: " ^ line

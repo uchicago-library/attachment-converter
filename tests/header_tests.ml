@@ -8,12 +8,12 @@ module P = V.Parameter
 
 let str1 =
   String.join ~sep:"\r\n"
-  [ "Test1: test1;"
-  ; "\ta1=v1"
-  ; "Test2: test2;"
-  ; "\ta2=\"v2\""
-  ; "" (* IS THIS NECESSARY *)
-  ]
+    [ "Test1: test1;";
+      "\ta1=v1";
+      "Test2: test2;";
+      "\ta2=\"v2\"";
+      "" (* IS THIS NECESSARY *)
+    ]
 
 let v1 = V.make ~params:[ P.make "a1" "v1" ] "test1"
 let f1 = F.make "Test1" v1

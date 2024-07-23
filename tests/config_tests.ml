@@ -38,9 +38,15 @@ let check_entry l description st tt ss =
   let open Config_entry in
   let open Result in
   let l_parsed = of_refer l in
-  let st_check _ = assert_equal (map source_type l_parsed) (Ok st) in
-  let tt_check _ = assert_equal (map target_type l_parsed) (Ok tt) in
-  let ss_check _ = assert_equal (map shell_command l_parsed) (Ok ss) in
+  let st_check _ =
+    assert_equal (map source_type l_parsed) (Ok st)
+  in
+  let tt_check _ =
+    assert_equal (map target_type l_parsed) (Ok tt)
+  in
+  let ss_check _ =
+    assert_equal (map shell_command l_parsed) (Ok ss)
+  in
   description
   >::: [ "source type ok" >:: st_check;
          "target type ok" >:: tt_check;
@@ -62,8 +68,12 @@ let check_trans_data e description tt sc =
   let open TransformData in
   let open Result in
   let td = bind e TransformData.of_config_entry in
-  let tt_check _ = assert_equal (map target_type td) (Ok tt) in
-  let ss_check _ = assert_equal (map shell_command td) (Ok sc) in
+  let tt_check _ =
+    assert_equal (map target_type td) (Ok tt)
+  in
+  let ss_check _ =
+    assert_equal (map shell_command td) (Ok sc)
+  in
   description
   >::: [ "target type ok" >:: tt_check;
          "script ok" >:: ss_check
@@ -96,44 +106,44 @@ let t_neq_s_trans_data_correct =
 
 let wf_cs =
   String.join ~sep:"\n"
-    [ "%source_type application/pdf"
-    ; "%target_type text/plain"
-    ; "%target_ext q"
-    ; "%shell_command c d e"
-    ; "%id id"
-    ; ""
-    ; "%source_type image/tiff"
-    ; "%target_type image/bmp"
-    ; "%target_ext q"
-    ; "%shell_command h"
-    ; "%id id"
+    [ "%source_type application/pdf";
+      "%target_type text/plain";
+      "%target_ext q";
+      "%shell_command c d e";
+      "%id id";
+      "";
+      "%source_type image/tiff";
+      "%target_type image/bmp";
+      "%target_ext q";
+      "%shell_command h";
+      "%id id"
     ]
 
 let extra_cs =
   String.join ~sep:"\n"
-  [ "%source_type application/pdf"
-  ; "%target_type text/plain"
-  ; "%target_ext q"
-  ; "%shell_command c d e"
-  ; "%test test"
-  ; "%id id"
-  ; ""
-  ; "%source_type image/tiff"
-  ; "%target_type image/bmp"
-  ; "%target_ext q"
-  ; "%shell_command h"
-  ; "%test test"
-  ; "%id id"
-  ]
+    [ "%source_type application/pdf";
+      "%target_type text/plain";
+      "%target_ext q";
+      "%shell_command c d e";
+      "%test test";
+      "%id id";
+      "";
+      "%source_type image/tiff";
+      "%target_type image/bmp";
+      "%target_ext q";
+      "%shell_command h";
+      "%test test";
+      "%id id"
+    ]
 
 let missing_cs =
   String.join ~sep:"\n"
-    [ "%source_type application/pdf"
-    ; "%target_type application/pdf"
-    ; ""
-    ; "%source_type application/pdf"
-    ; "%target_type application/pdf"
-    ; "%shell_command h"
+    [ "%source_type application/pdf";
+      "%target_type application/pdf";
+      "";
+      "%source_type application/pdf";
+      "%target_type application/pdf";
+      "%shell_command h"
     ]
 
 let wf_cs_to_data_ok =
@@ -164,15 +174,18 @@ let check_wf_cs_or_extra_cs cs =
   let d = of_string cs in
   let check key value _ =
     let printer option_td =
-    match option_td with
-    | Error e -> "\n" ^ Error_message.debug e ^ "\n"
-    | Ok tds ->
-      "\n" ^ Prelude.String.join ~sep:"\n\n"
-        (List.map
-           Configuration.TransformData.to_string
-           tds) ^ "\n"
+      match option_td with
+      | Error e -> "\n" ^ Error_message.debug e ^ "\n"
+      | Ok tds ->
+        "\n"
+        ^ Prelude.String.join ~sep:"\n\n"
+            (List.map Configuration.TransformData.to_string
+               tds )
+        ^ "\n"
     in
-    assert_equal (Ok value) (map (fun x -> conversions x key) d) ~printer
+    assert_equal (Ok value)
+      (map (fun x -> conversions x key) d)
+      ~printer
   in
   description
   >::: [ "check wf_cs first entry"
@@ -182,25 +195,25 @@ let check_wf_cs_or_extra_cs cs =
        ]
 
 let missing_cs_error_msg =
-  let error = Formats.of_string missing_cs
-  in
+  let error = Formats.of_string missing_cs in
   check_eq_basic "Error not as expected, wanted ConfigData"
-    (Prelude.Result.witherr List.hd error) (Error (`ConfigData 1))
+    (Prelude.Result.witherr List.hd error)
+    (Error (`ConfigData 1))
 
 let bad_refer_cs =
   String.join ~sep:"\n"
-  [ "%source_type a"
-  ; "%target_type b"
-  ; "%shell_command c d e"
-  ; "%id id"
-  ; ""
-  ; "not a real line"
-  ; ""
-  ; "%source_type f"
-  ; "%target_type g"
-  ; "%shell_command h"
-  ; "%id id"
-  ]
+    [ "%source_type a";
+      "%target_type b";
+      "%shell_command c d e";
+      "%id id";
+      "";
+      "not a real line";
+      "";
+      "%source_type f";
+      "%target_type g";
+      "%shell_command h";
+      "%id id"
+    ]
 
 let bad_refer_cs_msg =
   check_eq_basic
@@ -210,18 +223,18 @@ let bad_refer_cs_msg =
 
 let double_entry_cs =
   String.join ~sep:"\n"
-  [ "%source_type application/pdf"
-  ; "%target_type text/plain"
-  ; "%target_ext q"
-  ; "%shell_command c d e"
-  ; "%id id"
-  ; ""
-  ; "%source_type application/pdf"
-  ; "%target_type image/bmp"
-  ; "%target_ext q"
-  ; "%shell_command h"
-  ; "%id id"
-  ]
+    [ "%source_type application/pdf";
+      "%target_type text/plain";
+      "%target_ext q";
+      "%shell_command c d e";
+      "%id id";
+      "";
+      "%source_type application/pdf";
+      "%target_type image/bmp";
+      "%target_ext q";
+      "%shell_command h";
+      "%id id"
+    ]
 
 let check_double_entry_cs =
   let open Formats in
@@ -229,10 +242,11 @@ let check_double_entry_cs =
     match option_td with
     | Error e -> "\n" ^ Error_message.debug e ^ "\n"
     | Ok tds ->
-      "\n" ^ Prelude.String.join ~sep:"\n\n"
-        (List.map
-           Configuration.TransformData.to_string
-           tds) ^ "\n"
+      "\n"
+      ^ Prelude.String.join ~sep:"\n\n"
+          (List.map Configuration.TransformData.to_string
+             tds )
+      ^ "\n"
   in
   let expected = Ok [ e2; e1 ] in
   let real =
