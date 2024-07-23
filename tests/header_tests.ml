@@ -12,11 +12,13 @@ let str1 =
    \ta2=\"v2\"\r\n"
 
 let v1 = V.make ~params:[ P.make "a1" "v1" ] "test1"
-
 let f1 = F.make "Test1" v1
 
-let f2 = F.make "Test2"
-    (V.make ~params:[ P.make ~quotes:true "a2" "v2" ] "test2")
+let f2 =
+  F.make "Test2"
+    (V.make
+       ~params:[ P.make ~quotes:true "a2" "v2" ]
+       "test2" )
 
 let f3 = F.make "Test2" v1
 let hd1 = H.of_list [ f1; f2 ]

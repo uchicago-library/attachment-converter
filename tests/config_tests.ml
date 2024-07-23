@@ -29,7 +29,9 @@ let extra_to_entry_ok =
     "(entry_of_assoc extra)"
 
 let nwf_to_entry_error =
-  check_is_error (Config_entry.of_refer nwf) "entry_of_assoc"
+  check_is_error
+    (Config_entry.of_refer nwf)
+    "entry_of_assoc"
 
 let check_entry l description st tt ss =
   let open Config_entry in
@@ -166,8 +168,7 @@ let missing_cs_error_msg =
     Result.get_error (Formats.of_string missing_cs)
   in
   check_eq_basic "Error not as expected, wanted ConfigData"
-    (List.hd error)
-    (`ConfigData 1)
+    (List.hd error) (`ConfigData 1)
 
 let bad_refer_cs =
   "%source_type a\n\

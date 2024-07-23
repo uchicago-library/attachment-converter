@@ -14,7 +14,7 @@ let of_string_test1 =
   let param1 = P.make "filename*" "utf-8''test.gif" in
   let param2 = P.make ~quotes:true "filename" "test.gif" in
   check_eq_basic "basic of_string of basic_cont_dis test"
-    (Ok (V.make ~params:[param1; param2] "attachment"))
+    (Ok (V.make ~params:[ param1; param2 ] "attachment"))
     (V.of_string basic_cont_dis)
 
 let cd = Result.get_ok (V.of_string basic_cont_dis)
@@ -58,12 +58,21 @@ let update_tests =
   in
   let test5 =
     check_eq_basic "basic add_param test"
-      (V.make ~params: [ param1; param2; param4 ] (V.value cd))
+      (V.make
+         ~params:[ param1; param2; param4 ]
+         (V.value cd) )
       (V.add_param ~quotes:true "whatever" "ok.gif" cd)
   in
   let test6 =
     check_eq_basic "basic add_param with quotes test"
-      (V.make ~params:[ param1; param2; P.make ~quotes:true (P.attr param4) (P.value param4) ] (V.value cd))
+      (V.make
+         ~params:
+           [ param1;
+             param2;
+             P.make ~quotes:true (P.attr param4)
+               (P.value param4)
+           ]
+         (V.value cd) )
       (V.add_param ~quotes:true "whatever" "ok.gif" cd)
   in
   let test7 =

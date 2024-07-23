@@ -78,17 +78,22 @@ let checkExecutables_test2 =
   let test _ =
     assert_equal
       (Error
-         [ (`NotInstalled
-           [ { Package.app = Verapdf;
-               packageName = "dumbthingthatcannotpossiblyexist";
-               executable = Exists "dumbthingthatcannotpossiblyexist"
-             }
-           ] ) ] )
+         [ `NotInstalled
+             [ { Package.app = Verapdf;
+                 packageName =
+                   "dumbthingthatcannotpossiblyexist";
+                 executable =
+                   Exists "dumbthingthatcannotpossiblyexist"
+               }
+             ]
+         ] )
       (checkExecutables
          [ { app = Verapdf;
-             packageName = "dumbthingthatcannotpossiblyexist";
-             executable = Exists "dumbthingthatcannotpossiblyexist"
-           };
+             packageName =
+               "dumbthingthatcannotpossiblyexist";
+             executable =
+               Exists "dumbthingthatcannotpossiblyexist"
+           }
          ] )
   in
   "check that correct error with packages is returned when \
@@ -107,7 +112,7 @@ let tests =
          checkExecutables_test1_Linux;
          checkExecutables_test1_Darwin;
          checkExecutables_test2;
-         checkDependencies_test;
+         checkDependencies_test
        ]
 
 let _ = run_test_tt_main tests

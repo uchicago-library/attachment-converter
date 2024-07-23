@@ -8,7 +8,10 @@ let str1 = "Test: test;\r\n\ta1=v1;\r\n\ta2=\"v2\""
 
 let fld1 =
   F.make "Test"
-    (V.make ~params:[ P.make "a1" "v1"; P.make ~quotes:true "a2" "v2" ]"test")
+    (V.make
+       ~params:
+         [ P.make "a1" "v1"; P.make ~quotes:true "a2" "v2" ]
+       "test" )
 
 let str2 =
   "     Test    :    test   ;     \r\n\
