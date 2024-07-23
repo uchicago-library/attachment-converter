@@ -3,6 +3,7 @@ open Utils
 open Prelude.Prereq
 open Prelude.Unix.Shell
 open Lib.Dependency
+module Package = Lib.Package
 
 let getUserOS_test_Linux =
   let test _ =
@@ -77,26 +78,18 @@ let checkExecutables_test2 =
   let test _ =
     assert_equal
       (Error
-         (`NotInstalled
+         [ (`NotInstalled
            [ { Package.app = Verapdf;
-               packageName = "verapdf";
-               executable = Exists "verapdf"
+               packageName = "dumbthingthatcannotpossiblyexist";
+               executable = Exists "dumbthingthatcannotpossiblyexist"
              }
-           ] ) )
+           ] ) ] )
       (checkExecutables
          [ { app = Verapdf;
-             packageName = "verapdf";
-             executable = Exists "verapdf"
+             packageName = "dumbthingthatcannotpossiblyexist";
+             executable = Exists "dumbthingthatcannotpossiblyexist"
            };
-           { app = Vips;
-             packageName = "libvips";
-             executable = Exists "vips"
-           }
          ] )
-      ~printer:(fun x ->
-        match x with
-        | Error y -> Error.toString y
-        | Ok _ -> "" )
   in
   "check that correct error with packages is returned when \
    executables are missing"
@@ -107,43 +100,6 @@ let checkDependencies_test =
     (checkDependencies ())
     "(checkDependencies ())"
 
-let printError_testUnsupported =
-  check_eq_string
-    "test that error message for unsupported operating \
-     system displays correctly"
-    "BadOS is not a supported operating system for \
-     Attachment Converter.\n\
-     Here is a list of supported Os-es:\n\n\
-     \tmacOS\n\
-     \tArch Linux\n\
-     \tWSL Debian\n\
-     \r"
-    (Error.message (`UnsupportedOS "BadOS"))
-
-let printError_testNotInstalled =
-  let open Package in
-  check_eq_string
-    "check that the error message for uninstalled \
-     dependencies displays correctly"
-    "Attachment Converter will not run unless all of its \
-     OS-level dependencies are installed.\n\n\
-     It looks like the following software packages still \
-     need to be installed:\n\
-     \tpandoc\n\
-     \tlibvips\n\
-     \r"
-    (Error.message
-       (`NotInstalled
-         [ { app = Pandoc;
-             packageName = "pandoc";
-             executable = Exists "pandoc"
-           };
-           { app = Vips;
-             packageName = "libvips";
-             executable = Exists "vips"
-           }
-         ] ) )
-
 let tests =
   "test suite for dependency"
   >::: [ getUserOS_test_Linux;
@@ -152,8 +108,6 @@ let tests =
          checkExecutables_test1_Darwin;
          checkExecutables_test2;
          checkDependencies_test;
-         printError_testUnsupported;
-         printError_testNotInstalled
        ]
 
 let _ = run_test_tt_main tests

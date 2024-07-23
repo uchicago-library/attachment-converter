@@ -14,6 +14,7 @@ module Header = Header
 module Serialize = Serialize
 module Skeleton = Skeleton
 module Dependency = Dependency
+module Package = Package
 module Mime_type = Mime_type
 module Error_message = Error_message
 

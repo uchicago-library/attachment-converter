@@ -20,19 +20,19 @@ let nwf =
 
 let wf_to_entry_ok =
   check_is_ok
-    (ConfigEntry.of_refer wf)
+    (Config_entry.of_refer wf)
     "(entry_of_assoc wf)"
 
 let extra_to_entry_ok =
   check_is_ok
-    (ConfigEntry.of_refer extra)
+    (Config_entry.of_refer extra)
     "(entry_of_assoc extra)"
 
 let nwf_to_entry_error =
-  check_is_error (ConfigEntry.of_refer nwf) "entry_of_assoc"
+  check_is_error (Config_entry.of_refer nwf) "entry_of_assoc"
 
 let check_entry l description st tt ss =
-  let open ConfigEntry in
+  let open Config_entry in
   let l_parsed = Result.get_ok (of_refer l) in
   let st_check _ = assert_equal (source_type l_parsed) st in
   let tt_check _ = assert_equal (target_type l_parsed) tt in
@@ -70,13 +70,13 @@ let check_trans_data e description tt sc =
 
 let wf_trans_data_correct =
   check_trans_data
-    (Result.get_ok (ConfigEntry.of_refer wf))
+    (Result.get_ok (Config_entry.of_refer wf))
     "entry with source = target converts to transform_data"
     Mime_type.pdf "soffice-to-pdfa.sh"
 
 let extra_trans_data_correct =
   check_trans_data
-    (Result.get_ok (ConfigEntry.of_refer extra))
+    (Result.get_ok (Config_entry.of_refer extra))
     "entry with source = target converts to transform_data"
     Mime_type.pdf "soffice-to-pdfa.sh"
 
@@ -89,7 +89,7 @@ let t_neq_s =
 
 let t_neq_s_trans_data_correct =
   check_trans_data
-    (Result.get_ok (ConfigEntry.of_refer t_neq_s))
+    (Result.get_ok (Config_entry.of_refer t_neq_s))
     "entry with source /= target converts to transform data"
     Mime_type.txt "c"
 
@@ -166,8 +166,8 @@ let missing_cs_error_msg =
     Result.get_error (Formats.of_string missing_cs)
   in
   check_eq_basic "Error not as expected, wanted ConfigData"
-    error
-    (`ConfigData (1, `ShellCommand))
+    (List.hd error)
+    (`ConfigData 1)
 
 let bad_refer_cs =
   "%source_type a\n\
@@ -183,7 +183,7 @@ let bad_refer_cs =
 let bad_refer_cs_msg =
   check_eq_basic "Error not as expected, wanted ReferParse"
     (Result.get_error (Formats.of_string bad_refer_cs))
-    (`ReferParse (6, "not a real line"))
+    [ `ReferParse (6, "not a real line") ]
 
 let double_entry_cs =
   "%source_type application/pdf\n\
