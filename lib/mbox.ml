@@ -165,7 +165,6 @@ module Conversion (I : INPUT) (O : OUTPUT) = struct
         with I.End_of_input -> None
       with
       | Some converted ->
-        Printf.eprintf "%s\n%!" converted ;
         O.write output converted ;
         loop () (* TODO: Better output/logging *)
       | None -> ()
@@ -194,16 +193,3 @@ module ToOutput = struct
       Ok (convert_mbox in_chan converter)
   end
 end
-
-(*
- * A simple utility function for reading in emails
- * and replacing newlines
- *)
-let read_email ic =
-  let buf = Buffer.create 50000 in
-  let rec read () =
-    Buffer.add_string buf (readline ic) ;
-    Buffer.add_string buf (eol CRLF) ;
-    read ()
-  in
-  try read () with End_of_file -> Buffer.contents buf

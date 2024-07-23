@@ -77,12 +77,8 @@ end
 module type PARSETREE = sig
   type t
 
-  val of_string : string -> (t, Error.t) result
-
   val of_string_line_feed :
     string -> (t * Line_feed.t, Error.t) result
-
-  val to_string : t -> string
 
   val to_string_line_feed :
     ?line_feed:Line_feed.t -> t -> string
@@ -339,7 +335,8 @@ module Ocamlnet_parsetree = struct
     let* processed = of_string email_str in
     Ok (processed, lf_type)
 
-  let to_string tree =
+  let to_string_line_feed ?(line_feed = Line_feed.Unix) tree
+      =
     let header, _ = tree in
     (* defaulting to a megabyte seems like a nice round
        number *)
@@ -348,19 +345,18 @@ module Ocamlnet_parsetree = struct
         Netmime_header.get_content_length header
     in
     let buf = Stdlib.Buffer.create n in
+    let crlf =
+      match line_feed with
+      | Dos -> Some true
+      | Unix -> Some false
+    in
     let channel_writer ch =
-      Netmime_channels.write_mime_message ?crlf:(Some false)
-        ch tree
+      Netmime_channels.write_mime_message ?crlf ch tree
     in
     Netchannels.with_out_obj_channel
       (new Netchannels.output_buffer buf)
       channel_writer ;
     Stdlib.Buffer.contents buf
-
-  let to_string_line_feed ?(line_feed = Line_feed.Unix)
-      email_str =
-    let _ = line_feed in
-    to_string email_str
 
   let header = fst
 
@@ -689,7 +685,7 @@ module Conversion = struct
             "Nothing to convert...\nProcessing complete."
             pbar
         in
-        Ok (T.to_string_line_feed ~line_feed tree)
+        Ok email
       else
         let () =
           let skel_str =
