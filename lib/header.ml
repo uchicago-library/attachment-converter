@@ -1,15 +1,9 @@
 open Prelude
 open Utils
+module Trace = Error.T
 
 module Field = struct
   module Value = struct
-    module Error = struct
-      type t = [`ParameterParse | `ValueParse]
-
-      let message _ =
-        "Error reading parameters" (* TODO: more data *)
-    end
-
     module Parameter = struct
       type t =
         { attr : string; value : string; quotes : bool }
@@ -51,6 +45,7 @@ module Field = struct
     let make ?(params = []) value = { value; params }
 
     let of_string str =
+      let open Value_error.Smart in
       let vs = String.cuts ~sep:";" str in
       let vs = List.map String.(trim whitespace) vs in
       (* not sure if trimming is necessary or should be
@@ -63,12 +58,12 @@ module Field = struct
           Option.map (fun xs -> p :: xs) (process ps)
       in
       match vs with
-      | [] -> Error `ParameterParse
+      | [] -> Trace.throw param_parse_err
       | value :: params -> (
         match
           process (List.map Parameter.of_string params)
         with
-        | None -> Error `ParameterParse
+        | None -> Trace.throw param_parse_err
         | Some params -> Ok (make ~params value) )
 
     let to_string { value; params } =
@@ -121,6 +116,7 @@ module Field = struct
   let make name value = { name; value }
 
   let of_string str =
+    let open Value_error.Smart in
     let ( let* ) = Result.( >>= ) in
     let name, optValueStr = String.cut ~sep:":" str in
     let name = String.(trim whitespace) name in
@@ -128,7 +124,7 @@ module Field = struct
       Option.(
         to_result
           (map String.(trim whitespace) optValueStr)
-          ~none:`ValueParse )
+          ~none:(Trace.new_list value_parse_err) )
     in
     let* value = Value.of_string valueStr in
     Ok (make name value)
@@ -145,8 +141,7 @@ type t = Field.t list
 let to_list l = l
 let of_list l = l
 
-let of_assoc_list ls :
-    (Field.t list, Field.Value.Error.t) result =
+let of_assoc_list ls =
   let ( let* ) = Result.( >>= ) in
   let f (n, v) curr =
     let* l = Field.of_string (n ^ ": " ^ v) in

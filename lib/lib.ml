@@ -4,17 +4,18 @@
  * Distributed under the ISC license, see terms at the end of the file.
  *)
 
+module Config_key = Config_key
 module Configuration = Configuration
 module Report = Report
 module Mbox = Mbox
 module Convert = Convert
-module ErrorHandling = ErrorHandling
 module Progress_bar = Progress_bar
 module Header = Header
 module Serialize = Serialize
 module Skeleton = Skeleton
 module Dependency = Dependency
 module Mime_type = Mime_type
+module Error_message = Error_message
 
 (*
  * Copyright (c) 2021 Matt Teichman

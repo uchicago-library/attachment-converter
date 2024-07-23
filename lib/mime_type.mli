@@ -25,15 +25,13 @@ module Subtype : sig
   val jpeg : t
 end
 
-module Error : Utils.ERROR with type t = [`MimeType]
-
 type t
 
 val type_of : t -> Type.t
 val subtype : t -> Subtype.t
 val make : Type.t -> Subtype.t -> t
 val to_string : t -> string
-val of_string : string -> (t, [> Error.t]) result
+val of_string : string -> (t, Error.t) result
 val extension : t -> string
 val compare : t -> t -> int
 val pdf : t

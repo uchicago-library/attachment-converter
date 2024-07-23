@@ -1,17 +1,13 @@
 open Prelude
 
-module type ERROR = sig
-  type t
-
-  val message : t -> string
-end
-
 module Constants = struct
   let meta_header_name = "X-Attachment-Converter"
   let meta_header_cont_dist = "base64"
   let suggested_line_length = 78
   let max_line_length = 998
 end
+
+let print_err msg = write stderr msg
 
 let is_quoted str =
   String.prefix "\"" str && String.suffix "\"" str

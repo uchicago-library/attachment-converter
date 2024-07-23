@@ -7,18 +7,28 @@
  (libraries prelude mrmime threads netstring unix re)
  (modules
   lib
+  error
+  error_intf
+  error_message
+  config_key
   configuration
-  errorHandling
+  config_entry_error
+  formats_error
   report
   convert
+  parsetree_error
   mbox
   header
+  value_error
   utils
   serialize
   skeleton
   progress_bar
   mime_type
-  dependency))
+  mime_type_error
+  dependency
+  dependency_error
+  package))
 
 (env
  (dev ; make warnings non-fatal

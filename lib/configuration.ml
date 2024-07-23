@@ -1,41 +1,8 @@
 open Prelude
+module Trace = Error.T
 
-module ConfigKey = struct
-  type t =
-    [ `SourceType
-    | `TargetType
-    | `TargetExt
-    | `ShellCommand
-    | `ConvertID ]
-
-  let to_string k =
-    match k with
-    | `SourceType -> "source_type"
-    | `TargetType -> "target_type"
-    | `TargetExt -> "target_ext"
-    | `ShellCommand -> "shell_command"
-    | `ConvertID -> "id"
-end
-
-module ConfigEntry = struct
-  module Error = struct
-    type t =
-      [ `MissingKey of ConfigKey.t
-      | `BadMimeType of string * ConfigKey.t ]
-
-    let message err =
-      match err with
-      | `MissingKey key ->
-        Printf.sprintf
-          "Config Entry Error: Missing key '%s'"
-          (ConfigKey.to_string key)
-      | `BadMimeType (given_str, key) ->
-        Printf.sprintf
-          "Bad Mime Type Error: Ill-formed mime type '%s' \
-           given for '%s'"
-          given_str
-          (ConfigKey.to_string key)
-  end
+module Config_entry = struct
+  module E = Config_entry_error
 
   type t =
     { source_type : Mime_type.t;
@@ -64,7 +31,7 @@ module ConfigEntry = struct
     }
 
   let to_refer entry =
-    let open ConfigKey in
+    let open Config_key in
     [ ( to_string `SourceType,
         Mime_type.to_string (source_type entry) );
       ( to_string `TargetType,
@@ -75,21 +42,24 @@ module ConfigEntry = struct
     ]
 
   let of_refer rentry =
+    let open Trace in
+    let open E.Smart in
     let check key =
-      Option.to_result ~none:(`MissingKey key)
-        (assoc_opt (ConfigKey.to_string key) rentry)
+      of_option
+        (missing_key_err key)
+        (assoc_opt (Config_key.to_string key) rentry)
     in
     let ( let* ) = Result.( >>= ) in
     let* st_str = check `SourceType in
     let* st =
-      Result.witherr
-        (k (`BadMimeType (st_str, `SourceType)))
+      with_error
+        (bad_mime_err st_str `SourceType)
         (Mime_type.of_string st_str)
     in
     let* tt_str = check `TargetType in
     let* tt =
-      Result.witherr
-        (k (`BadMimeType (tt_str, `TargetType)))
+      with_error
+        (bad_mime_err tt_str `TargetType)
         (Mime_type.of_string tt_str)
     in
     let* sc = check `ShellCommand in
@@ -180,10 +150,10 @@ module TransformData = struct
   let of_config_entry ce =
     let td =
       make
-        ~target_type:(ConfigEntry.target_type ce)
-        ~target_ext:(ConfigEntry.target_ext ce)
-        ~shell_command:(ConfigEntry.shell_command ce)
-        ~convert_id:(ConfigEntry.convert_id ce)
+        ~target_type:(Config_entry.target_type ce)
+        ~target_ext:(Config_entry.target_ext ce)
+        ~shell_command:(Config_entry.shell_command ce)
+        ~convert_id:(Config_entry.convert_id ce)
     in
     Ok td
 
@@ -205,6 +175,7 @@ module TransformData = struct
 end
 
 module Formats = struct
+  module E = Formats_error
   module Dict = Map.Make (Mime_type)
 
   type t = TransformData.t list Dict.t
@@ -214,32 +185,6 @@ module Formats = struct
   let conversions d ct =
     Option.default [] (Dict.find_opt ct d)
 
-  module Error = struct
-    type t =
-      [ `ConfigData of int * ConfigKey.t
-      | `ReferParse of int * string
-      | `BadMimeType of string * ConfigKey.t * int ]
-
-    let message err =
-      match err with
-      | `ConfigData (line_num, key) ->
-        Printf.sprintf
-          "Config Data Error: (entry starting at line %d) \
-           Missing key '%s'"
-          line_num
-          (ConfigKey.to_string key)
-      | `ReferParse (line_num, line) ->
-        Printf.sprintf
-          "Refer Parse Error: (line %d) Cannot parse '%s'"
-          line_num line
-      | `BadMimeType (badmime, key, line_num) ->
-        Printf.sprintf
-          "Bad Mime Type Error: (line %d) Ill-formed mime \
-           type '%s' at given for '%s'"
-          line_num badmime
-          (ConfigKey.to_string key)
-  end
-
   let of_string config_str =
     let ( let* ) = Result.( >>= ) in
     let insert_append k v =
@@ -247,16 +192,11 @@ module Formats = struct
           Some (v :: Option.default [] curr) )
     in
     let on_ok line_num next raccum =
-      let open ConfigEntry in
+      let open Config_entry in
       let* accum = raccum in
-      let convert_error err =
-        match err with
-        | `MissingKey key -> `ConfigData (line_num, key)
-        | `BadMimeType (badmime, key) ->
-          `BadMimeType (badmime, key, line_num)
-      in
       let* entry =
-        Result.witherr convert_error (of_refer next)
+        Trace.with_error (`ConfigData line_num)
+          (of_refer next)
       in
       let* trans_data =
         TransformData.of_config_entry entry
@@ -268,7 +208,7 @@ module Formats = struct
       Ok updated_dict
     in
     let on_error line_num line _ =
-      Error (`ReferParse (line_num, line))
+      Trace.throw (E.Smart.refer_parse_err line_num line)
     in
     Refer.fold
       (Refer.witherr on_error on_ok)

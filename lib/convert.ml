@@ -1,5 +1,6 @@
 open Prelude
 open Utils
+module Trace = Error.T
 
 module Attachment = struct
   type 'a t = { header : 'a; data : string }
@@ -74,8 +75,6 @@ module Line_feed : LINE_FEED = struct
 end
 
 module type PARSETREE = sig
-  module Error : ERROR
-
   type t
 
   val of_string : string -> (t, Error.t) result
@@ -133,13 +132,9 @@ module Parsetree_utils (T : PARSETREE) = struct
 end
 
 module Mrmime_parsetree = struct
+  module E = Parsetree_error
+
   exception HeaderRepresentationError
-
-  module Error = struct
-    type t = [`EmailParse]
-
-    let message _ = "Error parsing email"
-  end
 
   type t = Mrmime.Header.t * string Mrmime.Mail.t option
   type header = Mrmime.Header.t
@@ -149,7 +144,8 @@ module Mrmime_parsetree = struct
     Angstrom.parse_string ~consume:All
       (Mrmime.Mail.mail None)
     >> Result.map (fun (h, b) -> (h, Some b))
-    >> Result.witherr (k `EmailParse)
+    >> flip Result.on_error
+         (k (Trace.throw E.Smart.parse_err))
 
   let of_string_line_feed email_str =
     let ( let* ) = Result.( >>= ) in
@@ -316,11 +312,7 @@ end
 module _ : PARSETREE = Mrmime_parsetree
 
 module Ocamlnet_parsetree = struct
-  module Error = struct
-    type t = [`EmailParse]
-
-    let message _ = "Error parsing email"
-  end
+  module E = Parsetree_error
 
   type t = Netmime.complex_mime_message
   type header = Netmime.mime_header
@@ -334,7 +326,8 @@ module Ocamlnet_parsetree = struct
         ~multipart_style:`Deep ch
     in
     Result.trapc
-      `EmailParse (* TODO: Better Error Handling *)
+      (Trace.new_list E.Smart.parse_err)
+      (* TODO: Better Error Handling *)
       (Netchannels.with_in_obj_channel ch)
       f
 
@@ -683,7 +676,7 @@ module Conversion = struct
         Progress_bar.Printer.print "Parsing email..." pbar
       in
       let* tree, line_feed =
-        Result.witherr (k `EmailParse)
+        Trace.with_error Parsetree_error.Smart.parse_err
           (T.of_string_line_feed email)
       in
       let convs =
@@ -754,7 +747,7 @@ module type CONVERTER = sig
     Configuration.Formats.t ->
     string ->
     out_channel ->
-    (string, [> `EmailParse]) result
+    (string, Error.t) result
 end
 
 module Ocamlnet_Converter =

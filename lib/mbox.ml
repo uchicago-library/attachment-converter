@@ -186,8 +186,7 @@ module ToOutput = struct
         match C.acopy_email ~idem config em pbar with
         | Ok converted -> fromline ^ "\n" ^ converted
         | Error _ ->
-          let open ErrorHandling.Printer in
-          print "conversion failure\n" ;
+          Utils.print_err "conversion failure\n" ;
           fromline ^ "\n" ^ em (* TODO: better logging *)
       in
       Ok (convert_mbox in_chan converter)
