@@ -139,10 +139,11 @@ struct
         if Buffer.length t.buf > 0
         then (fromline, Buffer.contents t.buf)
         else read () )
-      else (
+      else begin
         Buffer.add_string t.buf line ;
-        Buffer.add_string t.buf (eol CRLF) ;
-        read () )
+        Buffer.add_string t.buf (eol LF) ;
+        read ()
+      end
     in
     try read ()
     with I.End_of_input ->
@@ -164,6 +165,7 @@ module Conversion (I : INPUT) (O : OUTPUT) = struct
         with I.End_of_input -> None
       with
       | Some converted ->
+        Printf.eprintf "%s\n%!" converted ;
         O.write output converted ;
         loop () (* TODO: Better output/logging *)
       | None -> ()
