@@ -138,6 +138,13 @@ module TransformData = struct
   let shell_command td = td.shell_command
   let convert_id td = td.convert_id
 
+  let to_string td = String.join ~sep:"\n"
+      [ "target type     " ^ Mime_type.to_string (target_type td)
+      ; "target ext.     " ^ target_ext td
+      ; "shell command   " ^ shell_command td
+      ; "conversion id   " ^ convert_id td
+      ]
+
   let make ~target_type ~target_ext ~shell_command
       ~convert_id =
     { target_type; target_ext; shell_command; convert_id }

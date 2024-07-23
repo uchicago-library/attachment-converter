@@ -1,16 +1,19 @@
 open OUnit2
 open Utils
+open Prelude
 module H = Lib.Header
 module F = H.Field
 module V = F.Value
 module P = V.Parameter
 
 let str1 =
-  "Test1: test1;\r\n\
-  \ \ta1=v1\r\n\
-  \ Test2:\n\
-  \   test2;\r\n\
-  \ \ta2=\"v2\"\r\n"
+  String.join ~sep:"\r\n"
+  [ "Test1: test1;"
+  ; "\ta1=v1"
+  ; "Test2: test2;"
+  ; "\ta2=\"v2\""
+  ; "" (* IS THIS NECESSARY *)
+  ]
 
 let v1 = V.make ~params:[ P.make "a1" "v1" ] "test1"
 let f1 = F.make "Test1" v1
@@ -43,8 +46,11 @@ let to_assoc_list_test1 =
     (H.to_assoc_list hd1)
 
 let to_string_test1 =
-  check_eq_string "basic to_string test" str1
-    (H.to_string hd1)
+  let expected = str1 in
+  let real = H.to_string hd1 in
+  let printer = String.to_string in
+  let test _ = assert_equal expected real ~printer in
+  "basic to_string test" >:: test
 
 let update_test1 =
   check_eq_basic "basic remove test" hd2

@@ -6,3 +6,8 @@ module Smart = struct
   let refer_parse_err line_num not_parsed =
     `ReferParse (line_num, not_parsed)
 end
+
+let debug e =
+  match e with
+  | `ConfigData _ -> "Bad config data"
+  | `ReferParse (_, line) -> "refer parse error at line: " ^ line
