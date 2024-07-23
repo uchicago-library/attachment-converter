@@ -3,27 +3,32 @@ open Utils
 open Lib.Header.Field.Value
 
 let basic_cont_dis =
-"attachment;\r\n\ \tfilename*=utf-8''test.gif;\r\n\ \tfilename=\"test.gif\""
+  "attachment;\r\n\
+  \ \tfilename*=utf-8''test.gif;\r\n\
+  \ \tfilename=\"test.gif\""
 
 let basic_cont_dis_conv_0 =
-"attachment;\r\n\
+  "attachment;\r\n\
    \tfilename*=utf-8''test_CONVERTED.tiff;\r\n\
    \tfilename=\"test.gif\""
 
 let basic_cont_dis_conv_1 =
-"attachment;\r\n\ \tfilename*=utf-8''test.gif;\r\n\ \tfilename=\"test_CONVERTED.tiff\""
+  "attachment;\r\n\
+  \ \tfilename*=utf-8''test.gif;\r\n\
+  \ \tfilename=\"test_CONVERTED.tiff\""
 
 let basic_cont_dis_conv_2 =
-"attachment;\r\n\
+  "attachment;\r\n\
    \tfilename*=utf-8''test_CONVERTED.tiff;\r\n\
    \tfilename=\"test_CONVERTED.tiff\""
 
 let basic_cont_dis_1 =
-"attachment;\r\n\ \tfilename=\"test.gif\";\r\n\
+  "attachment;\r\n\
+  \ \tfilename=\"test.gif\";\r\n\
    \tfilename*=utf-8''test.gif"
 
 let basic_cont_dis_conv_3 =
-"attachment;\r\n\
+  "attachment;\r\n\
    \tfilename=\"test_CONVERTED.tiff\";\r\n\
    \tfilename*=utf-8''test_CONVERTED.tiff"
 
@@ -35,32 +40,30 @@ let of_string_test1 =
     }
   in
   let param2 : Parameter.t =
-{ attr = "filename"; value = "test.gif"; quotes = true
-   }
-in
-check_eq_basic "basic of_string of basic_cont_dis
-   test"
-(Ok
-{ value = "attachment"; params = [ param1; param2 ] }
+    { attr = "filename"; value = "test.gif"; quotes = true }
+  in
+  check_eq_basic
+    "basic of_string of basic_cont_dis\n   test"
+    (Ok
+       { value = "attachment"; params = [ param1; param2 ] }
     )
     (of_string basic_cont_dis)
 
 let cd = Result.get_ok (of_string basic_cont_dis)
 
 let to_string_test1 =
-check_eq_string "basic to_string of basic_cont_dis
-   test"
-basic_cont_dis (to_string cd)
+  check_eq_string
+    "basic to_string of basic_cont_dis\n   test"
+    basic_cont_dis (to_string cd)
 
 let to_string_test2 =
   check_eq_string "basic to_string without params"
     "attachment"
-(to_string (Result.get_ok (of_string "attachment")))
+    (to_string (Result.get_ok (of_string "attachment")))
 
 let lookup_param_test1 =
-check_eq_basic "basic lookup_param test" (Some
-   "test.gif")
-(lookup_param "filename" cd)
+  check_eq_basic "basic lookup_param test" (Some "test.gif")
+    (lookup_param "filename" cd)
 
 let update_tests =
   let param1 : Parameter.t =
@@ -70,16 +73,13 @@ let update_tests =
     }
   in
   let param2 : Parameter.t =
-{ attr = "filename"; value = "test.gif"; quotes = true
-   }
+    { attr = "filename"; value = "test.gif"; quotes = true }
   in
   let param3 : Parameter.t =
-{ attr = "filename"; value = "ok.gif"; quotes = false
-   }
+    { attr = "filename"; value = "ok.gif"; quotes = false }
   in
   let param4 : Parameter.t =
-{ attr = "whatever"; value = "ok.gif"; quotes = false
-   }
+    { attr = "whatever"; value = "ok.gif"; quotes = false }
   in
   let test1 =
     check_eq_basic "basic update_value test"
@@ -89,7 +89,7 @@ let update_tests =
   let test2 =
     check_eq_basic "basic update_param test"
       { cd with params = [ param1; param3 ] }
-(update_param "filename" (fun _ -> Some param3) cd)
+      (update_param "filename" (fun _ -> Some param3) cd)
   in
   let test3 =
     check_eq_basic "basic update_param remove test"
@@ -109,7 +109,7 @@ let update_tests =
     check_eq_basic "basic add_param with quotes test"
       { cd with
         params =
-[ param1; param2; { param4 with quotes = true } ]
+          [ param1; param2; { param4 with quotes = true } ]
       }
       (add_param ~quotes:true "whatever" "ok.gif" cd)
   in
@@ -119,8 +119,7 @@ let update_tests =
       (add_param "filename" "ok.gif" cd)
   in
   "all update tests"
->::: [ test1; test2; test3; test4; test5; test6; test7
-   ]
+  >::: [ test1; test2; test3; test4; test5; test6; test7 ]
 
 let tests =
   "test suite for header field values"

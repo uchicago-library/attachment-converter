@@ -5,8 +5,11 @@ open Lib.Header.Field
 open Lib.Header
 
 let str1 =
-"Test1: test1;\r\n\ \ta1=v1\r\n\ Test2:
-   test2;\r\n\ \ta2=\"v2\"\r\n"
+  "Test1: test1;\r\n\
+  \ \ta1=v1\r\n\
+  \ Test2:\n\
+  \   test2;\r\n\
+  \ \ta2=\"v2\"\r\n"
 
 let v1 =
   { value = "test1";
@@ -21,7 +24,7 @@ let f2 =
     value =
       { value = "test2";
         params =
-[ { attr = "a2"; value = "v2"; quotes = true } ]
+          [ { attr = "a2"; value = "v2"; quotes = true } ]
       }
   }
 
@@ -36,8 +39,9 @@ let asc1 =
   ]
 
 let of_assoc_list_test1 =
-check_is_ok (of_assoc_list asc1) "(of_assoc_list
-   asc1)"
+  check_is_ok
+    (of_assoc_list asc1)
+    "(of_assoc_list\n   asc1)"
 
 let of_assoc_list_test2 =
   check_eq_basic "basic of_assoc_list test" (Ok hd1)

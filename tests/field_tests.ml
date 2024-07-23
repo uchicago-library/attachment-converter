@@ -9,15 +9,13 @@ let fld1 =
     value =
       { value = "test";
         params =
-[ { attr = "a1"; value = "v1"; quotes = false };
-{ attr = "a2"; value = "v2"; quotes = true }
+          [ { attr = "a1"; value = "v1"; quotes = false };
+            { attr = "a2"; value = "v2"; quotes = true }
           ]
       }
   }
 
-let str2 =
-" Test : test ; \r\n\ \ta1=v1; \r\n\
-   \ta2=\"v2\""
+let str2 = " Test : test ; \r\n \ta1=v1; \r\n\ta2=\"v2\""
 
 let of_string_test1 =
   check_eq_basic "basic of_string test" (Ok fld1)

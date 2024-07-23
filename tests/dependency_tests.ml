@@ -7,32 +7,30 @@ open Lib.Dependency
 let getUserOS_test_Linux =
   let test _ =
     skip_if
-( snd (input Prelude.readline @@ cmd [ "uname"; "-s"
-   ])
+      ( snd (input Prelude.readline @@ cmd [ "uname"; "-s" ])
       = "Darwin" )
       "this test won't run with MaCOS" ;
     assert_equal (Ok Package.linux) (getUserOS ())
       ~printer:(fun x ->
         x |> Result.get_ok |> Package.toString )
   in
-"check that correct package is assigned for Linux
-   machine"
->:: test
+  "check that correct package is assigned for Linux\n\
+  \   machine"
+  >:: test
 
 let getUserOS_test_Darwin =
   let test _ =
     skip_if
-( snd (input Prelude.readline @@ cmd [ "uname"; "-s"
-   ])
+      ( snd (input Prelude.readline @@ cmd [ "uname"; "-s" ])
       = "Linux" )
       "this test won't run with Linux" ;
     assert_equal (Ok Package.darwin) (getUserOS ())
       ~printer:(fun x ->
         x |> Result.get_ok |> Package.toString )
   in
-"check that correct package is assigned for Darwin \
+  "check that correct package is assigned for Darwin \
    machine"
->:: test
+  >:: test
 
 let checkExecutables_test1_Linux =
   let description =
@@ -46,8 +44,7 @@ let checkExecutables_test1_Linux =
   let open Prelude.Result in
   let test _ =
     skip_if
-( snd (input Prelude.readline @@ cmd [ "uname"; "-s"
-   ])
+      ( snd (input Prelude.readline @@ cmd [ "uname"; "-s" ])
       = "Darwin" )
       "this test won't run with MaCOS" ;
     checkExecutables Package.linux
@@ -68,8 +65,7 @@ let checkExecutables_test1_Darwin =
   let open Prelude.Result in
   let test _ =
     skip_if
-( snd (input Prelude.readline @@ cmd [ "uname"; "-s"
-   ])
+      ( snd (input Prelude.readline @@ cmd [ "uname"; "-s" ])
       = "Linux" )
       "this test won't run with Linux" ;
     checkExecutables Package.darwin
@@ -103,9 +99,9 @@ let checkExecutables_test2 =
         | Error y -> Error.toString y
         | Ok _ -> "" )
   in
-"check that correct error with packages is returned when
-   \ executables are missing"
->:: test
+  "check that correct error with packages is returned when\n\
+  \    executables are missing"
+  >:: test
 
 let checkDependencies_test =
   check_is_ok
@@ -114,24 +110,32 @@ let checkDependencies_test =
 
 let printError_testUnsupported =
   check_eq_string
-"test that error message for unsupported operating \
-   system displays correctly"
-"BadOS is not a supported operating system for \
-   Attachment Converter.\n\ Here is a list of
-   supported Os-es:\n\n\ \tmacOS\n\ \tArch
-   Linux\n\ \tWSL Debian\n\ \r"
-(Error.message (`UnsupportedOS "BadOS"))
+    "test that error message for unsupported operating \
+     system displays correctly"
+    "BadOS is not a supported operating system for \
+     Attachment Converter.\n\
+    \ Here is a list of\n\
+    \   supported Os-es:\n\n\
+    \ \tmacOS\n\
+    \ \tArch\n\
+    \   Linux\n\
+    \ \tWSL Debian\n\
+    \ \r"
+    (Error.message (`UnsupportedOS "BadOS"))
 
 let printError_testNotInstalled =
   let open Package in
   check_eq_string
-"check that the error message for uninstalled \
-   dependencies displays correctly"
-"Attachment Converter will not run unless all of its \
-   OS-level dependencies are installed.\n\n\ It
-   looks like the following software packages still \
-   need to be installed:\n\ \tpandoc\n\
-   \tlibvips\n\ \r"
+    "check that the error message for uninstalled \
+     dependencies displays correctly"
+    "Attachment Converter will not run unless all of its \
+     OS-level dependencies are installed.\n\n\
+    \ It\n\
+    \   looks like the following software packages still \
+     need to be installed:\n\
+    \ \tpandoc\n\
+     \tlibvips\n\
+    \ \r"
     (Error.message
        (`NotInstalled
          [ { app = Pandoc;
