@@ -179,7 +179,7 @@ let check_wf_cs_or_extra_cs cs =
       | Ok tds ->
         "\n"
         ^ Prelude.String.join ~sep:"\n\n"
-            (List.map Configuration.TransformData.to_string
+            (List.map Configuration.TransformData.debug
                tds )
         ^ "\n"
     in
@@ -244,7 +244,7 @@ let check_double_entry_cs =
     | Ok tds ->
       "\n"
       ^ Prelude.String.join ~sep:"\n\n"
-          (List.map Configuration.TransformData.to_string
+          (List.map Configuration.TransformData.debug
              tds )
       ^ "\n"
   in

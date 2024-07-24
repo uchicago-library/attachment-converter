@@ -138,7 +138,7 @@ module TransformData = struct
   let shell_command td = td.shell_command
   let convert_id td = td.convert_id
 
-  let to_string td =
+  let debug td =
     String.join ~sep:"\n"
       [ "target type     "
         ^ Mime_type.to_string (target_type td);
