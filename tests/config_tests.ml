@@ -2,17 +2,18 @@ open OUnit2
 open Utils
 open Lib
 open Lib.Configuration
+open Prelude
 
-let wf =
+let wf_refer_entry =
   [ ("source_type", "application/pdf");
     ("target_type", "application/pdf");
     ("shell_command", "soffice-to-pdfa.sh");
     ("id", "id")
   ]
 
-let extra = ("extra", "extra") :: wf
+let extra = ("extra", "extra") :: wf_refer_entry
 
-let nwf =
+let nwf_refer_entry =
   [ ("source_type", "application/pdf");
     ("target_type!", "application/pdf");
     ("shell_command", "soffice-to-pdfa.sh")
@@ -20,26 +21,31 @@ let nwf =
 
 let wf_to_entry_ok =
   check_is_ok
-    (Config_entry.of_refer wf)
-    "(entry_of_assoc wf)"
+    (Config_entry.of_refer wf_refer_entry)
+    "(of_refer wf_refer_entry)"
 
 let extra_to_entry_ok =
   check_is_ok
     (Config_entry.of_refer extra)
-    "(entry_of_assoc extra)"
+    "(of_refer extra)"
 
 let nwf_to_entry_error =
   check_is_error
-    (Config_entry.of_refer nwf)
-    "entry_of_assoc"
+    (Config_entry.of_refer nwf_refer_entry)
+    "(of_refer nwf_refer_entry)"
 
 let check_entry l description st tt ss =
   let open Config_entry in
-  let l_parsed = Result.get_ok (of_refer l) in
-  let st_check _ = assert_equal (source_type l_parsed) st in
-  let tt_check _ = assert_equal (target_type l_parsed) tt in
+  let open Result in
+  let l_parsed = of_refer l in
+  let st_check _ =
+    assert_equal (map source_type l_parsed) (Ok st)
+  in
+  let tt_check _ =
+    assert_equal (map target_type l_parsed) (Ok tt)
+  in
   let ss_check _ =
-    assert_equal (shell_command l_parsed) ss
+    assert_equal (map shell_command l_parsed) (Ok ss)
   in
   description
   >::: [ "source type ok" >:: st_check;
@@ -48,7 +54,7 @@ let check_entry l description st tt ss =
        ]
 
 let wf_correct =
-  check_entry wf
+  check_entry wf_refer_entry
     "well-formed associativity list converts to entry"
     Mime_type.pdf Mime_type.pdf "soffice-to-pdfa.sh"
 
@@ -60,11 +66,14 @@ let extra_correct =
 
 let check_trans_data e description tt sc =
   let open TransformData in
-  let td =
-    Result.get_ok (TransformData.of_config_entry e)
+  let open Result in
+  let td = bind e TransformData.of_config_entry in
+  let tt_check _ =
+    assert_equal (map target_type td) (Ok tt)
   in
-  let tt_check _ = assert_equal (target_type td) tt in
-  let ss_check _ = assert_equal (shell_command td) sc in
+  let ss_check _ =
+    assert_equal (map shell_command td) (Ok sc)
+  in
   description
   >::: [ "target type ok" >:: tt_check;
          "script ok" >:: ss_check
@@ -72,13 +81,13 @@ let check_trans_data e description tt sc =
 
 let wf_trans_data_correct =
   check_trans_data
-    (Result.get_ok (Config_entry.of_refer wf))
+    (Config_entry.of_refer wf_refer_entry)
     "entry with source = target converts to transform_data"
     Mime_type.pdf "soffice-to-pdfa.sh"
 
 let extra_trans_data_correct =
   check_trans_data
-    (Result.get_ok (Config_entry.of_refer extra))
+    (Config_entry.of_refer extra)
     "entry with source = target converts to transform_data"
     Mime_type.pdf "soffice-to-pdfa.sh"
 
@@ -91,52 +100,51 @@ let t_neq_s =
 
 let t_neq_s_trans_data_correct =
   check_trans_data
-    (Result.get_ok (Config_entry.of_refer t_neq_s))
+    (Config_entry.of_refer t_neq_s)
     "entry with source /= target converts to transform data"
     Mime_type.txt "c"
 
 let wf_cs =
-  "%source_type application/pdf\n\
-  \ %target_type\n\
-  \   text/plain\n\
-  \ %target_ext q\n\
-  \ %shell_command\n\
-  \   c d e\n\
-  \ %id id\n\n\
-  \ %source_type\n\
-  \   image/tiff\n\
-  \ %target_type image/bmp\n\
-   %target_ext q\n\
-  \ %shell_command h\n\
-  \ %id\n\
-  \   id"
+  String.join ~sep:"\n"
+    [ "%source_type application/pdf";
+      "%target_type text/plain";
+      "%target_ext q";
+      "%shell_command c d e";
+      "%id id";
+      "";
+      "%source_type image/tiff";
+      "%target_type image/bmp";
+      "%target_ext q";
+      "%shell_command h";
+      "%id id"
+    ]
 
 let extra_cs =
-  "%source_type application/pdf\n\
-  \ %target_type\n\
-  \   text/plain\n\
-  \ %target_ext q\n\
-  \ %shell_command\n\
-  \   c d e\n\
-  \ %test test\n\
-  \ %id id\n\n\
-   %source_type image/tiff\n\
-  \ %target_type\n\
-  \   image/bmp\n\
-  \ %target_ext q\n\
-  \ %shell_command\n\
-  \   h\n\
-  \ %test test\n\
-  \ %id id"
+  String.join ~sep:"\n"
+    [ "%source_type application/pdf";
+      "%target_type text/plain";
+      "%target_ext q";
+      "%shell_command c d e";
+      "%test test";
+      "%id id";
+      "";
+      "%source_type image/tiff";
+      "%target_type image/bmp";
+      "%target_ext q";
+      "%shell_command h";
+      "%test test";
+      "%id id"
+    ]
 
 let missing_cs =
-  "%source_type application/pdf\n\
-  \ %target_type\n\
-  \   application/pdf\n\n\
-  \ %source_type\n\
-  \   application/pdf\n\
-  \ %target_type application/pdf\n\
-  \ %shell_command h"
+  String.join ~sep:"\n"
+    [ "%source_type application/pdf";
+      "%target_type application/pdf";
+      "";
+      "%source_type application/pdf";
+      "%target_type application/pdf";
+      "%shell_command h"
+    ]
 
 let wf_cs_to_data_ok =
   check_is_ok (Formats.of_string wf_cs) "(parse wf_cs)"
@@ -162,9 +170,22 @@ let e2 =
 let check_wf_cs_or_extra_cs cs =
   let description = "checking access for wf_cs/extra_cs" in
   let open Formats in
-  let d = Result.get_ok (of_string cs) in
+  let open Result in
+  let d = of_string cs in
   let check key value _ =
-    assert_equal (conversions d key) value
+    let printer option_td =
+      match option_td with
+      | Error e -> "\n" ^ Error_message.debug e ^ "\n"
+      | Ok tds ->
+        "\n"
+        ^ Prelude.String.join ~sep:"\n\n"
+            (List.map Configuration.TransformData.to_string
+               tds )
+        ^ "\n"
+    in
+    assert_equal (Ok value)
+      (map (fun x -> conversions x key) d)
+      ~printer
   in
   description
   >::: [ "check wf_cs first entry"
@@ -174,53 +195,67 @@ let check_wf_cs_or_extra_cs cs =
        ]
 
 let missing_cs_error_msg =
-  let error =
-    Result.get_error (Formats.of_string missing_cs)
-  in
+  let error = Formats.of_string missing_cs in
   check_eq_basic "Error not as expected, wanted ConfigData"
-    (List.hd error) (`ConfigData 1)
+    (Prelude.Result.witherr List.hd error)
+    (Error (`ConfigData 1))
 
 let bad_refer_cs =
-  "%source_type a\n\
-  \ %target_type b\n\
-   %shell_command c d e\n\
-  \ %id id\n\n\
-  \ not a\n\
-  \   real line\n\n\
-  \ %source_type f\n\
-  \ %target_type\n\
-  \   g\n\
-  \ %shell_command h\n\
-  \ %id id"
+  String.join ~sep:"\n"
+    [ "%source_type a";
+      "%target_type b";
+      "%shell_command c d e";
+      "%id id";
+      "";
+      "not a real line";
+      "";
+      "%source_type f";
+      "%target_type g";
+      "%shell_command h";
+      "%id id"
+    ]
 
 let bad_refer_cs_msg =
   check_eq_basic
     "Error not as expected, wanted\n   ReferParse"
-    (Result.get_error (Formats.of_string bad_refer_cs))
-    [ `ReferParse (6, "not a real line") ]
+    (Formats.of_string bad_refer_cs)
+    (Error [ `ReferParse (6, "not a real line") ])
 
 let double_entry_cs =
-  "%source_type application/pdf\n\
-  \ %target_type\n\
-  \   text/plain\n\
-  \ %target_ext q\n\
-  \ %shell_command\n\
-  \   c d e\n\
-  \ %id id\n\n\
-  \ %source_type\n\
-  \   application/pdf\n\
-  \ %target_type image/bmp\n\
-   %target_ext q\n\
-  \ %shell_command h\n\
-  \ %id\n\
-  \   id"
+  String.join ~sep:"\n"
+    [ "%source_type application/pdf";
+      "%target_type text/plain";
+      "%target_ext q";
+      "%shell_command c d e";
+      "%id id";
+      "";
+      "%source_type application/pdf";
+      "%target_type image/bmp";
+      "%target_ext q";
+      "%shell_command h";
+      "%id id"
+    ]
 
 let check_double_entry_cs =
   let open Formats in
-  let d = Result.get_ok (of_string double_entry_cs) in
-  check_eq_basic "check access for double_entry_cs"
-    (conversions d Mime_type.pdf)
-    [ e2; e1 ]
+  let printer option_td =
+    match option_td with
+    | Error e -> "\n" ^ Error_message.debug e ^ "\n"
+    | Ok tds ->
+      "\n"
+      ^ Prelude.String.join ~sep:"\n\n"
+          (List.map Configuration.TransformData.to_string
+             tds )
+      ^ "\n"
+  in
+  let expected = Ok [ e2; e1 ] in
+  let real =
+    let ( let* ) = Result.bind in
+    let* d = of_string double_entry_cs in
+    Ok (conversions d Mime_type.pdf)
+  in
+  let test _ = assert_equal expected real ~printer in
+  "check access for double_entry_cs" >:: test
 
 let tests =
   "test suite for config file parsing"

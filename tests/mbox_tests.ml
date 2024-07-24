@@ -2,7 +2,7 @@ open OUnit2
 open Lib.Mbox
 open Prelude
 
-let test_lines = "line 1\r\nline 2\r\nline 3\r\n"
+let test_lines = "line 1\nline 2\nline 3\n"
 
 let line_iterator_test_1 =
   let description =
@@ -49,15 +49,15 @@ let to_mbox ?(escape = false) ?(eol = "\n")
       ""
 
 let dummy_mbox =
-  to_mbox ~eol:"\r\n" [ "Email 1"; "Email 2"; "Email 3" ]
+  to_mbox ~eol:"\n" [ "Email 1"; "Email 2"; "Email 3" ]
 
 let dummy_mbox_expected =
-  "From BLAH\r\n\
-   Email 1\r\n\
-   From BLAH\r\n\
-   Email 2\r\n\
-   From BLAH\r\n\
-   Email 3\r\n"
+  "From BLAH\n\
+   Email 1\n\
+   From BLAH\n\
+   Email 2\n\
+   From BLAH\n\
+   Email 3\n"
 
 let to_mbox_test_1 =
   let description = "basic to_mbox test" in
@@ -69,11 +69,11 @@ let to_mbox_test_1 =
 let to_mbox_test_2 =
   let description = "test_email to_mbox test" in
   let email = "THIS IS A DUMMY EMAIL" in
-  let mbox = to_mbox ~eol:"\r\n" [ email; email ] in
+  let mbox = to_mbox ~eol:"\n" [ email; email ] in
   let check _ =
     assert_equal
-      ( "From BLAH\r\n" ^ email ^ "\r\nFrom BLAH\r\n"
-      ^ email ^ "\r\n" )
+      ( "From BLAH\n" ^ email ^ "\nFrom BLAH\n" ^ email
+      ^ "\n" )
       mbox ~printer:id
   in
   description >:: check
@@ -88,15 +88,9 @@ let mbox_iter_test_1 =
   let checkf1 _ = assert_equal "From BLAH" f1 ~printer:id in
   let checkf2 _ = assert_equal "From BLAH" f2 ~printer:id in
   let checkf3 _ = assert_equal "From BLAH" f3 ~printer:id in
-  let checkm1 _ =
-    assert_equal "Email 1\r\n" m1 ~printer:id
-  in
-  let checkm2 _ =
-    assert_equal "Email 2\r\n" m2 ~printer:id
-  in
-  let checkm3 _ =
-    assert_equal "Email 3\r\n" m3 ~printer:id
-  in
+  let checkm1 _ = assert_equal "Email 1\n" m1 ~printer:id in
+  let checkm2 _ = assert_equal "Email 2\n" m2 ~printer:id in
+  let checkm3 _ = assert_equal "Email 3\n" m3 ~printer:id in
   description
   >::: [ "fromline check" >:: checkf1;
          "fromline check" >:: checkf2;
@@ -120,7 +114,7 @@ let convert_test_1 =
 
 let convert_test_2 =
   basic_convert_test
-    (fun (x, y) -> x ^ "\r\n" ^ y)
+    (fun (x, y) -> x ^ "\n" ^ y)
     dummy_mbox_expected
     "identity conversion (with trailing newline) on mbox"
 
@@ -131,10 +125,10 @@ let convert_test_3 =
   let module T =
     Conversion (MBoxIterator (StringInput)) (StringOutput)
   in
-  let email = "testing\r\ntesting" in
-  let mbox = to_mbox ~eol:"\r\n" [ email; email ] in
+  let email = "testing\ntesting" in
+  let mbox = to_mbox ~eol:"\n" [ email; email ] in
   let output =
-    T.convert mbox () (fun (x, y) -> x ^ "\r\n" ^ y)
+    T.convert mbox () (fun (x, y) -> x ^ "\n" ^ y)
   in
   let check _ = assert_equal mbox output ~printer:id in
   description >:: check
