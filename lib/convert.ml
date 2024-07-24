@@ -17,7 +17,7 @@ let gen_multi_header =
         (Field.Value.make "multipart/mixed"
            ~params:
              [ Field.Value.Parameter.make "boundary"
-                 "attachment converter generated boundary"
+                 "attachmentconvertergeneratedboundary"
              ] );
       Field.make Constants.meta_header_name
         (Field.Value.make "generated multipart")
