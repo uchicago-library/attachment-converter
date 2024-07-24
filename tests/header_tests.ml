@@ -35,7 +35,8 @@ let asc1 =
   ]
 
 (* let of_assoc_list_test1 = *)
-(*   check_is_ok (H.of_assoc_list asc1) "(of_assoc_list asc1)" *)
+(* check_is_ok (H.of_assoc_list asc1) "(of_assoc_list
+   asc1)" *)
 
 (* let of_assoc_list_test2 = *)
 (*   check_eq_basic "basic of_assoc_list test" (Ok hd1) *)
@@ -65,7 +66,7 @@ let tests =
   >::: [ (* of_assoc_list_test1; *)
          (* of_assoc_list_test2; *)
          to_assoc_list_test1;
-         to_string_test1;
+         to_string_test1
          (* update_test1; *)
          (* update_test2 *)
        ]

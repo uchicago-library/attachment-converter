@@ -375,8 +375,7 @@ module Ocamlnet_parsetree = struct
     match header#field field_name with
     | exception Not_found -> None
     | exception e -> raise e
-    | hv_str ->
-      Some (Header.Field.Value.of_string hv_str)
+    | hv_str -> Some (Header.Field.Value.of_string hv_str)
 
   let meta_val = lookup_value Constants.meta_header_name
 

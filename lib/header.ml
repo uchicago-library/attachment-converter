@@ -1,7 +1,8 @@
-(* Note: This module contains an interface for working with headers
-   that is parsing-backend agnostic.  It is NOT fully functional, and
-   should NOT be used for general computations on headers.  In
-   particular, it does not follow RFC spec.  See the notes below. *)
+(* Note: This module contains an interface for working with
+   headers that is parsing-backend agnostic. It is NOT fully
+   functional, and should NOT be used for general
+   computations on headers. In particular, it does not
+   follow RFC spec. See the notes below. *)
 
 open Prelude
 open Utils
@@ -31,15 +32,17 @@ module Field = struct
       let map_attr f p = { p with attr = f p.attr }
       let map_value f p = { p with value = f p.value }
 
-      (* Note: `of_string` is only called on an header value parameter
-         in an email that has already been parsed, or on a hand-built
-         header value parameter.  Therefore, we assume it never fails.
-         This does NOT correctly fit the specification in RFC 2045. *)
+      (* Note: `of_string` is only called on an header value
+         parameter in an email that has already been parsed,
+         or on a hand-built header value parameter.
+         Therefore, we assume it never fails. This does NOT
+         correctly fit the specification in RFC 2045. *)
       let of_string str =
         let cut str =
           let open String in
           match cut ~sep:"=" str with
-          | left, Some right -> (trim whitespace left, trim whitespace right)
+          | left, Some right ->
+            (trim whitespace left, trim whitespace right)
           | left, None -> (trim whitespace left, "")
         in
         uncurry make (cut str)
@@ -57,16 +60,19 @@ module Field = struct
     (* Note: see the note for `Parameter.of_string` above *)
     let of_string str =
       let vs = String.cuts ~sep:";" str in
-      (* Note: according to RFC 2045, trimming is necessary because
-         whitespace is not allowed in attributes or values. *)
+      (* Note: according to RFC 2045, trimming is necessary
+         because whitespace is not allowed in attributes or
+         values. *)
       let vs = List.map String.(trim whitespace) vs in
       match List.map String.(trim whitespace) vs with
       | [] -> make ""
-      | v :: ps -> make ~params:(List.map Parameter.of_string ps) v
+      | v :: ps ->
+        make ~params:(List.map Parameter.of_string ps) v
 
-    (* Note: we hardcode CRLFs into the output of `to_string` because
-       it is never used in a full serialized email, it is only passed
-       into the email parsing backend. *)
+    (* Note: we hardcode CRLFs into the output of
+       `to_string` because it is never used in a full
+       serialized email, it is only passed into the email
+       parsing backend. *)
     let to_string { value; params } =
       let f curr p =
         curr ^ ";\r\n\t" ^ Parameter.to_string p
@@ -85,7 +91,7 @@ module Field = struct
           else lookup attr ps
       in
       lookup attr (params hv)
-end
+  end
 
   type t = { name : string; value : Value.t }
 
