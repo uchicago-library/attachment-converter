@@ -20,16 +20,14 @@ let of_string_test1 =
     V.make ~params:[ param1; param2 ] "attachment"
   in
   let real = V.of_string basic_cont_dis in
-  let test _ = assert_equal expected real
-  in
+  let test _ = assert_equal expected real in
   "basic of_string of basic_cont_dis test" >:: test
 
 let cd = V.of_string basic_cont_dis
 
 let to_string_test1 =
   check_eq_basic "basic to_string of basic_cont_dis test"
-    basic_cont_dis
-    (V.to_string cd)
+    basic_cont_dis (V.to_string cd)
 
 let to_string_test2 =
   check_eq_basic "basic to_string without params"
