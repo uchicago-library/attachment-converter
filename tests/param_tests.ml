@@ -28,21 +28,15 @@ let map_test2 =
 let p_str1 = "param1=value1"
 let p_str2 = "p=\"v\""
 
-let of_string_test1 =
-  check_is_something (of_string p_str1) "(of_string p_str1)"
-
 let of_string_test2 =
-  let out = Option.get (of_string p_str1) in
+  let out = of_string p_str1 in
   "of string, no quotes"
   >::: [ check_eq_basic "attr check" "param1" (attr out);
          check_eq_basic "value check" "value1" (value out)
        ]
 
-let of_string_test3 =
-  check_is_something (of_string p_str2) "(of_string p_str2)"
-
 let of_string_test4 =
-  let out = Option.get (of_string p_str2) in
+  let out = of_string p_str2 in
   "of string, with quotes"
   >::: [ check_eq_basic "attr check" "p" (attr out);
          check_eq_basic "value check" "v" (value out)
@@ -68,9 +62,7 @@ let tests =
          value_test2;
          map_test1;
          map_test2;
-         of_string_test1;
          of_string_test2;
-         of_string_test3;
          of_string_test4;
          to_string_test1;
          to_string_test2;

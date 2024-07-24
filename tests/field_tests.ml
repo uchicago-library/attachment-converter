@@ -16,14 +16,11 @@ let fld1 =
 let str2 = " Test : test ; \r\n \ta1=v1; \r\n\ta2=\"v2\""
 
 let of_string_test1 =
-  check_eq_basic "basic of_string test" (Ok fld1)
+  check_eq_basic "basic of_string test" fld1
     (F.of_string str1)
 
-let of_string_test2 =
-  check_is_ok (F.of_string str2) "(of_string str2)"
-
 let of_string_test3 =
-  check_eq_basic "of_string with spaces test" (Ok fld1)
+  check_eq_basic "of_string with spaces test" fld1
     (F.of_string str2)
 
 let to_string_test1 =
@@ -38,7 +35,6 @@ let to_assoc_test1 =
 let tests =
   "test suite for fields"
   >::: [ of_string_test1;
-         of_string_test2;
          of_string_test3;
          to_string_test1;
          to_assoc_test1
