@@ -10,9 +10,24 @@ let to_string =
   | `MimeParseError -> "mime parse error"
   | `ConfigData n -> sprintf "config data: %i" n
   | `ReferParse (n, s) -> sprintf "refer parse: %i; %s" n s
-  | `EmailParseError -> "email parse error"
-  | `NotInstalled _ -> "not installed"
-  | `UnsupportedOS os -> sprintf "unsupported os: %s" os
+  | `EmailParseError -> "email parse error\n"
+  | `NotInstalled lis ->
+    "Attachment Converter will not run unless all of its \
+     OS-level dependencies are installed.\n\n\
+     It looks like the following software packages still \
+     need to be installed:\n\
+     \t"
+    ^ String.concat "\n\t" (List.map Package.getName lis)
+    ^ "\n\r"
+  | `UnsupportedOS os ->
+    os
+    ^ " is not a supported operating system for Attachment \
+       Converter.\n\
+       Here is a list of supported Os-es:\n\n\
+       \tmacOS\n\
+       \tArch Linux\n\
+       \tWSL Debian\n\
+       \r"
 
 module T = struct
   let with_error err x =
