@@ -132,7 +132,7 @@ end
 module Mrmime_parsetree = struct
   let backend = Backend.Mrmime
 
-  module E = Parsetree_error
+  module E = Mrmime_parsetree_error
 
   exception HeaderRepresentationError
 
@@ -314,7 +314,7 @@ module _ : PARSETREE = Mrmime_parsetree
 module Ocamlnet_parsetree = struct
   let backend = Backend.Ocamlnet
 
-  module E = Parsetree_error
+  module E = Ocamlnet_parsetree_error
 
   type t = Netmime.complex_mime_message
   type header = Netmime.mime_header
@@ -676,10 +676,7 @@ module Conversion = struct
       let () =
         Progress_bar.Printer.print "Parsing email..." pbar
       in
-      let* tree, line_feed =
-        Trace.with_error Parsetree_error.Smart.parse_err
-          (T.of_string_line_feed email)
-      in
+      let* tree, line_feed = T.of_string_line_feed email in
       let convs =
         attachments_to_convert ~idem config tree
       in
