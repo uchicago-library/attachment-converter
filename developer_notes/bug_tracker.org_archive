@@ -44,3 +44,64 @@ Archived entries from file /home/teichman/github/library/attachment-converter/de
 - instead, it should print some kind of error message saying please
   put something in the config file or delete it
 
+
+* TODO line breaks should be consistent
+:PROPERTIES:
+:ARCHIVE_TIME: 2024-07-24 Wed 11:38
+:ARCHIVE_FILE: ~/Code/GitHub/attachment-converter/developer_notes/bug_tracker.org
+:ARCHIVE_CATEGORY: bug_tracker
+:ARCHIVE_TODO: TODO
+:END:
+
++ we found during iPres that =attc= is sometimes mixing CRLF-s and
+  straight LFs
++ we'll need to look at both the OCamlnet and Mr. Mime backends to see
+  what's going on with that
++ we should aim to make the line breaks =attc= outputs consistent
+
+
+* TODO pdf to txt conversion failure
+:PROPERTIES:
+:ARCHIVE_TIME: 2024-07-24 Wed 11:38
+:ARCHIVE_FILE: ~/Code/GitHub/attachment-converter/developer_notes/bug_tracker.org
+:ARCHIVE_CATEGORY: bug_tracker
+:ARCHIVE_TODO: TODO
+:END:
+
++ Conversion Failure: Could not run pdftotext-pdf-to-text script, 
+  produced message "exit 1" with all pdfs 
+
+
+* TODO attc won't convert certain xlsx files
+:PROPERTIES:
+:ARCHIVE_TIME: 2024-07-24 Wed 11:38
+:ARCHIVE_FILE: ~/Code/GitHub/attachment-converter/developer_notes/bug_tracker.org
+:ARCHIVE_CATEGORY: bug_tracker
+:ARCHIVE_TODO: TODO
+:END:
+
++ wouldn't convert an attachment with content-type 
+  application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, which is a 
+  registered MIME type 
+
+
+* TODO closing " is missing when converted attachment names are printed
+:PROPERTIES:
+:ARCHIVE_TIME: 2024-07-24 Wed 11:38
+:ARCHIVE_FILE: ~/Code/GitHub/attachment-converter/developer_notes/bug_tracker.org
+:ARCHIVE_CATEGORY: bug_tracker
+:ARCHIVE_TODO: TODO
+:END:
+
++ the unconverted attachment names have closing " but the converted ones do not
+
+
+* TODO 706 email produces empty output with Mr. Mime
+:PROPERTIES:
+:ARCHIVE_TIME: 2024-07-24 Wed 11:38
+:ARCHIVE_FILE: ~/Code/GitHub/attachment-converter/developer_notes/bug_tracker.org
+:ARCHIVE_CATEGORY: bug_tracker
+:ARCHIVE_TODO: TODO
+:END:
+
++ /path/to/Email/Saller Archive/In-1-06/706/path/to/Email/Saller Archive/In-1-06/706
