@@ -1,6 +1,8 @@
 type error = Error_intf.error
 type t = Error_intf.t
 
+val to_string : error -> string
+
 module T : sig
   include Error_intf.TRACE
 
