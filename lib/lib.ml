@@ -4,6 +4,7 @@
  * Distributed under the ISC license, see terms at the end of the file.
  *)
 
+module Backend = Backend
 module Config_key = Config_key
 module Configuration = Configuration
 module Report = Report
