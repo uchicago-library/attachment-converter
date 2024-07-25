@@ -46,11 +46,10 @@ let report ?(params = false) ic =
     (fun k v -> print ("  " ^ k ^ " : " ^ Int.to_string v))
     types
 
-type backend = Mrmime | Ocamlnet
-
 let convert config_files ?(single_email = false) ic pbar
     backend =
   let b =
+    let open Lib.Backend in
     match backend with
     | Mrmime ->
       ( module Lib.Convert.Mrmime_Converter
@@ -103,6 +102,7 @@ let convert_wrapper config_files sem rpt rpt_p inp backend =
   | `Stdin -> report_or_convert stdin
 
 let backend_t =
+  let open Lib.Backend in
   let doc =
     "Choose between 'ocamlnet' and 'mrmime' as the two \
      possible email parsing backends."
