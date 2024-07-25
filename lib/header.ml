@@ -1,3 +1,9 @@
+(* Note: This module contains an interface for working with
+   headers that is parsing-backend agnostic. It is NOT fully
+   functional, and should NOT be used for general
+   computations on headers. In particular, it does not
+   follow RFC spec. See the notes below. *)
+
 open Prelude
 open Utils
 module Trace = Error.T
@@ -26,13 +32,20 @@ module Field = struct
       let map_attr f p = { p with attr = f p.attr }
       let map_value f p = { p with value = f p.value }
 
+      (* Note: `of_string` is only called on an header value
+         parameter in an email that has already been parsed,
+         or on a hand-built header value parameter.
+         Therefore, we assume it never fails. This does NOT
+         correctly fit the specification in RFC 2045. *)
       let of_string str =
-        let cut_or_none str =
-          match String.cut ~sep:"=" str with
-          | left, Some right -> Some (left, right)
-          | _, None -> None
+        let cut str =
+          let open String in
+          match cut ~sep:"=" str with
+          | left, Some right ->
+            (trim whitespace left, trim whitespace right)
+          | left, None -> (trim whitespace left, "")
         in
-        Option.map (uncurry make) (cut_or_none str)
+        uncurry make (cut str)
 
       let to_string { attr; value; quotes } =
         attr ^ "=" ^ if quotes then quoted value else value
@@ -44,28 +57,22 @@ module Field = struct
     let params hv = hv.params
     let make ?(params = []) value = { value; params }
 
+    (* Note: see the note for `Parameter.of_string` above *)
     let of_string str =
-      let open Value_error.Smart in
       let vs = String.cuts ~sep:";" str in
+      (* Note: according to RFC 2045, trimming is necessary
+         because whitespace is not allowed in attributes or
+         values. *)
       let vs = List.map String.(trim whitespace) vs in
-      (* not sure if trimming is necessary or should be
-         done *)
-      let rec process ls =
-        match ls with
-        | [] -> Some []
-        | None :: _ -> None
-        | Some p :: ps ->
-          Option.map (fun xs -> p :: xs) (process ps)
-      in
-      match vs with
-      | [] -> Trace.throw param_parse_err
-      | value :: params -> (
-        match
-          process (List.map Parameter.of_string params)
-        with
-        | None -> Trace.throw param_parse_err
-        | Some params -> Ok (make ~params value) )
+      match List.map String.(trim whitespace) vs with
+      | [] -> make ""
+      | v :: ps ->
+        make ~params:(List.map Parameter.of_string ps) v
 
+    (* Note: we hardcode CRLFs into the output of
+       `to_string` because it is never used in a full
+       serialized email, it is only passed into the email
+       parsing backend. *)
     let to_string { value; params } =
       let f curr p =
         curr ^ ";\r\n\t" ^ Parameter.to_string p
@@ -84,29 +91,6 @@ module Field = struct
           else lookup attr ps
       in
       lookup attr (params hv)
-
-    let update_value new_value hv =
-      { hv with value = new_value }
-
-    let update_param attr f hv =
-      let cons_op x ls =
-        Option.either (List.snoc ls) ls x
-      in
-      let rec update ls =
-        match ls with
-        | [] -> cons_op (f None) []
-        | p :: ps ->
-          if Parameter.attr p = attr
-          then cons_op (f (Some p)) ps
-          else p :: update ps
-      in
-      { hv with params = update hv.params }
-
-    (* Note: updates in the case that the attribute already
-       appears as a paramater. *)
-    let add_param ?(quotes = false) attr value =
-      update_param attr
-        (k (Some (Parameter.make ~quotes attr value)))
   end
 
   type t = { name : string; value : Value.t }
@@ -115,19 +99,13 @@ module Field = struct
   let value fld = fld.value
   let make name value = { name; value }
 
+  (* Note: See the note for `Parameter.of_string` above *)
   let of_string str =
-    let open Value_error.Smart in
-    let ( let* ) = Result.( >>= ) in
     let name, optValueStr = String.cut ~sep:":" str in
     let name = String.(trim whitespace) name in
-    let* valueStr =
-      Option.(
-        to_result
-          (map String.(trim whitespace) optValueStr)
-          ~none:(Trace.new_list value_parse_err) )
-    in
-    let* value = Value.of_string valueStr in
-    Ok (make name value)
+    let valueStr = Option.default "" optValueStr in
+    let value = Value.of_string valueStr in
+    make name value
 
   let to_string fld =
     name fld ^ ": " ^ Value.to_string (value fld)
@@ -138,38 +116,12 @@ end
 
 type t = Field.t list
 
-let to_list l = l
 let of_list l = l
-
-let of_assoc_list ls =
-  let ( let* ) = Result.( >>= ) in
-  let f (n, v) curr =
-    let* l = Field.of_string (n ^ ": " ^ v) in
-    let* r = curr in
-    Ok (l :: r)
-  in
-  List.foldr f (Ok []) ls
 
 let to_assoc_list ls : (string * string) list =
   List.map Field.to_assoc ls
 
+(* Note: See the note for `Value.to_string` above. *)
 let to_string fld =
   String.join ~sep:"\r\n" (List.map Field.to_string fld)
   ^ "\r\n"
-
-let update g name hd =
-  let cons_op key x ls =
-    Option.either (fun y -> Field.make key y :: ls) ls x
-  in
-  let rec process ls =
-    match ls with
-    | [] -> cons_op name (g None) []
-    | fld :: fs ->
-      if Field.name fld = name
-      then
-        cons_op (Field.name fld)
-          (g (Some (Field.value fld)))
-          fs
-      else fld :: process fs
-  in
-  process hd

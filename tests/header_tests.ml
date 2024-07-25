@@ -24,22 +24,23 @@ let f2 =
        ~params:[ P.make ~quotes:true "a2" "v2" ]
        "test2" )
 
-let f3 = F.make "Test2" v1
+(* let f3 = F.make "Test2" v1 *)
 let hd1 = H.of_list [ f1; f2 ]
-let hd2 = H.of_list [ f1 ]
-let hd3 = H.of_list [ f1; f3 ]
+(* let hd2 = H.of_list [ f1 ] *)
+(* let hd3 = H.of_list [ f1; f3 ] *)
 
 let asc1 =
   [ ("Test1", "test1;\r\n\ta1=v1");
     ("Test2", "test2;\r\n\ta2=\"v2\"")
   ]
 
-let of_assoc_list_test1 =
-  check_is_ok (H.of_assoc_list asc1) "(of_assoc_list asc1)"
+(* let of_assoc_list_test1 = *)
+(* check_is_ok (H.of_assoc_list asc1) "(of_assoc_list
+   asc1)" *)
 
-let of_assoc_list_test2 =
-  check_eq_basic "basic of_assoc_list test" (Ok hd1)
-    (H.of_assoc_list asc1)
+(* let of_assoc_list_test2 = *)
+(*   check_eq_basic "basic of_assoc_list test" (Ok hd1) *)
+(*     (H.of_assoc_list asc1) *)
 
 let to_assoc_list_test1 =
   check_eq_basic "basic to_assoc_list test" asc1
@@ -52,22 +53,22 @@ let to_string_test1 =
   let test _ = assert_equal expected real ~printer in
   "basic to_string test" >:: test
 
-let update_test1 =
-  check_eq_basic "basic remove test" hd2
-    (H.update (fun _ -> None) "Test2" hd1)
+(* let update_test1 = *)
+(*   check_eq_basic "basic remove test" hd2 *)
+(*     (H.update (fun _ -> None) "Test2" hd1) *)
 
-let update_test2 =
-  check_eq_basic "basic update test" hd3
-    (H.update (fun _ -> Some v1) "Test2" hd1)
+(* let update_test2 = *)
+(*   check_eq_basic "basic update test" hd3 *)
+(*     (H.update (fun _ -> Some v1) "Test2" hd1) *)
 
 let tests =
   "test suite for fields"
-  >::: [ of_assoc_list_test1;
-         of_assoc_list_test2;
+  >::: [ (* of_assoc_list_test1; *)
+         (* of_assoc_list_test2; *)
          to_assoc_list_test1;
-         to_string_test1;
-         update_test1;
-         update_test2
+         to_string_test1
+         (* update_test1; *)
+         (* update_test2 *)
        ]
 
 let _ = run_test_tt_main tests

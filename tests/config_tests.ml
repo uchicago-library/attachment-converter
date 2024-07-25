@@ -179,8 +179,7 @@ let check_wf_cs_or_extra_cs cs =
       | Ok tds ->
         "\n"
         ^ Prelude.String.join ~sep:"\n\n"
-            (List.map Configuration.TransformData.to_string
-               tds )
+            (List.map Configuration.TransformData.debug tds)
         ^ "\n"
     in
     assert_equal (Ok value)
@@ -244,8 +243,7 @@ let check_double_entry_cs =
     | Ok tds ->
       "\n"
       ^ Prelude.String.join ~sep:"\n\n"
-          (List.map Configuration.TransformData.to_string
-             tds )
+          (List.map Configuration.TransformData.debug tds)
       ^ "\n"
   in
   let expected = Ok [ e2; e1 ] in

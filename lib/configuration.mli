@@ -35,7 +35,7 @@ module TransformData : sig
   val target_ext : t -> string
   val shell_command : t -> string
   val convert_id : t -> string
-  val to_string : t -> string
+  val debug : t -> string
 
   val make :
     target_type:Mime_type.t ->

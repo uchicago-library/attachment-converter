@@ -192,7 +192,7 @@ module Mrmime_parsetree = struct
       ( Prettym.to_string ~margin:Constants.max_line_length
           Mrmime.Unstructured.Encoder.unstructured
       >> Header.Field.Value.of_string
-      >> Result.to_option )
+      >> fun x -> Some x )
         data
     | _ -> None
 
@@ -375,8 +375,7 @@ module Ocamlnet_parsetree = struct
     match header#field field_name with
     | exception Not_found -> None
     | exception e -> raise e
-    | hv_str ->
-      Result.to_option (Header.Field.Value.of_string hv_str)
+    | hv_str -> Some (Header.Field.Value.of_string hv_str)
 
   let meta_val = lookup_value Constants.meta_header_name
 
