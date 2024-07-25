@@ -77,6 +77,8 @@ end
 module type PARSETREE = sig
   type t
 
+  val backend : Backend.t
+
   val of_string_line_feed :
     string -> (t * Line_feed.t, Error.t) result
 
@@ -128,6 +130,8 @@ module Parsetree_utils (T : PARSETREE) = struct
 end
 
 module Mrmime_parsetree = struct
+  let backend = Backend.Mrmime
+
   module E = Parsetree_error
 
   exception HeaderRepresentationError
@@ -308,6 +312,8 @@ end
 module _ : PARSETREE = Mrmime_parsetree
 
 module Ocamlnet_parsetree = struct
+  let backend = Backend.Ocamlnet
+
   module E = Parsetree_error
 
   type t = Netmime.complex_mime_message
