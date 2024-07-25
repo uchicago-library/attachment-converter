@@ -17,7 +17,8 @@ module Subtype : sig
   val plain : t
   val msword : t
   val docx_subty : t
-  val excel : t
+  val xls : t
+  val xlsx : t
   val tsv : t
   val gif : t
   val bmp : t
@@ -40,6 +41,7 @@ val txt : t
 val doc : t
 val docx : t
 val xls : t
+val xlsx : t
 val tsv : t
 val gif : t
 val tiff : t

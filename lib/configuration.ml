@@ -237,6 +237,7 @@ let default_assoc_list () =
     conv doc [ into soffice pdfa; into soffice txt ];
     conv docx [ into soffice pdfa; into pandoc txt ];
     conv xls [ into soffice tsv ];
+    conv xlsx [ into soffice tsv ];
     conv gif [ into vips tiff ];
     conv bmp [ into vips tiff ];
     conv jpeg [ into vips tiff ]

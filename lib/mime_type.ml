@@ -53,7 +53,8 @@ module Subtype = struct
     of_string
       "vnd.openxmlformats-officedocument.wordprocessingml.document"
 
-  let excel = of_string "vnd.ms-excel"
+  let xls = of_string "vnd.ms-excel"
+  let xlsx = of_string "vnd.openxmlformats-officedocument.spreadsheetml.sheet"
   let tsv = of_string "tab-separated-values"
   let gif = of_string "gif"
   let bmp = of_string "bmp"
@@ -97,6 +98,7 @@ let extension mt =
   | "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     -> ".docx"
   | "application/vnd.ms-excel" -> ".xls"
+  | "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" -> ".xlsx"
   | _ -> ".unknown"
 (* TODO: default to no extension should be logged *)
 
@@ -108,7 +110,8 @@ let pdfa = make Type.application Subtype.pdf
 let txt = make Type.text Subtype.plain
 let doc = make Type.application Subtype.msword
 let docx = make Type.application Subtype.docx_subty
-let xls = make Type.application Subtype.excel
+let xls = make Type.application Subtype.xls
+let xlsx = make Type.application Subtype.xlsx
 let tsv = make Type.text Subtype.tsv
 let gif = make Type.image Subtype.gif
 let bmp = make Type.image Subtype.bmp
