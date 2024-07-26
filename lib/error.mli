@@ -7,5 +7,7 @@ module T : sig
   val new_list : [< error] -> t
   val throw : [< error] -> ('a, t) result
   val of_option : [< error] -> 'a option -> ('a, t) result
-  val of_result : [< error] -> ('a, 'e) result -> ('a, t) result
+
+  val of_result :
+    [< error] -> ('a, 'e) result -> ('a, t) result
 end
