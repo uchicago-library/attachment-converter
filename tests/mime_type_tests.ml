@@ -22,6 +22,11 @@ let test2 () =
 let () =
   let open Alcotest in
   run "mime-types"
-    [ ("type" , [ test_case "type case insensitivity" `Quick test1 ])
-    ; ("subtype", [ test_case "subtype case insensitivity" `Quick test2 ])
+    [ ( "type",
+        [ test_case "type case insensitivity" `Quick test1 ]
+      );
+      ( "subtype",
+        [ test_case "subtype case insensitivity" `Quick
+            test2
+        ] )
     ]

@@ -38,7 +38,6 @@ module Type = struct
   let application = Application
   let text = Text
   let image = Image
-
   let pp = Fmt.using to_string Fmt.string
 end
 
@@ -66,7 +65,6 @@ module Subtype = struct
   let bmp = of_string "bmp"
   let tiff = of_string "tiff"
   let jpeg = of_string "jpeg"
-
   let pp = Fmt.using to_string Fmt.string
 end
 
