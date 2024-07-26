@@ -357,11 +357,13 @@ module Ocamlnet_parsetree = struct
       Netmime_channels.read_mime_message
         ~multipart_style:`Deep ch
     in
-    Result.trapc
-      (Trace.new_list
-         (E.Smart.ocamlnet_parse_error "STUB MESSAGE") )
-      (Netchannels.with_in_obj_channel ch)
-      f
+    let open E.Smart in
+    match f ch with
+    | exception Failure msg ->
+      let err = ocamlnet_parse_error msg in
+      Trace.throw err
+    | exception e -> raise e
+    | success -> Ok success
 
   let of_string_line_feed email_str =
     let ( let* ) = Result.( >>= ) in
