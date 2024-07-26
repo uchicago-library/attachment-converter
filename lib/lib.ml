@@ -18,6 +18,7 @@ module Dependency = Dependency
 module Package = Package
 module Mime_type = Mime_type
 module Error_message = Error_message
+module Utils = Utils
 
 (*
  * Copyright (c) 2021 Matt Teichman

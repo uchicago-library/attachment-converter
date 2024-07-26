@@ -97,6 +97,8 @@ module type PARSETREE = sig
     header -> Header.Field.Value.t option
 
   val content_type : header -> Header.Field.Value.t option
+  val date : t -> string option
+  val from : t -> string option
 
   type attachment = header Attachment.t
 
@@ -223,6 +225,35 @@ module Mrmime_parsetree = struct
       List.map form (parameters ct)
     in
     Some (Header.Field.Value.make ~params mime_ty)
+
+  let date parsetree =
+    let open Mrmime.Header in
+    let open Mrmime.Field in
+    let open Mrmime.Date.Encoder in
+    parsetree
+    |> header
+    |> assoc Mrmime.Field_name.date
+    |> List.hd
+    |> function
+    | Field (_, Date, poly) ->
+      let str = Prettym.to_string date poly in
+      Some (Stdlib.String.trim str)
+    | _ -> None
+
+  let from parsetree =
+    let open Mrmime.Header in
+    let open Mrmime.Field in
+    let open Mrmime.Mailbox.Encoder in
+    parsetree
+    |> header
+    |> assoc Mrmime.Field_name.from
+    |> List.hd
+    |> function
+    | Field (_, Mailboxes, poly) ->
+      let open Stdlib.String in
+      let str = Prettym.to_string mailboxes poly in
+      Some (Stdlib.String.trim str)
+    | _ -> None
 
   let is_attachment =
     header
@@ -389,7 +420,20 @@ module Ocamlnet_parsetree = struct
     lookup_value "Content-Disposition"
 
   let content_type = lookup_value "Content-Type"
-  (* TODO: make not case sensitive *)
+
+  let date parsetree =
+    let h = header parsetree in
+    match h#field "date" with
+    | exception Not_found -> None
+    | exception e -> raise e
+    | success -> Some success
+
+  let from parsetree =
+    let h = header parsetree in
+    match h#field "from" with
+    | exception Not_found -> None
+    | exception e -> raise e
+    | success -> Some success
 
   let is_attachment =
     header
