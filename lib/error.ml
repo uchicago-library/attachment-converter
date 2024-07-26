@@ -10,7 +10,8 @@ let to_string =
   | `MimeParseError -> "mime parse error"
   | `ConfigData n -> sprintf "config data: %i" n
   | `ReferParse (n, s) -> sprintf "refer parse: %i; %s" n s
-  | `EmailParseError -> "email parse error\n"
+  | `OcamlnetParseError _ -> "email parse error\n"
+  | `MrmimeParseError _ -> "email parse error\n"
   | `NotInstalled lis ->
     "Attachment Converter will not run unless all of its \
      OS-level dependencies are installed.\n\n\

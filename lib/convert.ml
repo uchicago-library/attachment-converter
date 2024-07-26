@@ -134,7 +134,7 @@ end
 module Mrmime_parsetree = struct
   let backend = Backend.Mrmime
 
-  module E = Mrmime_parsetree_error
+  module E = Convert_error
 
   exception HeaderRepresentationError
 
@@ -147,7 +147,7 @@ module Mrmime_parsetree = struct
       (Mrmime.Mail.mail None)
     >> Result.map (fun (h, b) -> (h, Some b))
     >> flip Result.on_error
-         (k (Trace.throw E.Smart.parse_err))
+         (k (Trace.throw (E.Smart.mrmime_parse_error ())))
 
   let of_string_line_feed email_str =
     let ( let* ) = Result.( >>= ) in
@@ -250,7 +250,6 @@ module Mrmime_parsetree = struct
     |> List.hd
     |> function
     | Field (_, Mailboxes, poly) ->
-      let open Stdlib.String in
       let str = Prettym.to_string mailboxes poly in
       Some (Stdlib.String.trim str)
     | _ -> None
@@ -345,7 +344,7 @@ module _ : PARSETREE = Mrmime_parsetree
 module Ocamlnet_parsetree = struct
   let backend = Backend.Ocamlnet
 
-  module E = Ocamlnet_parsetree_error
+  module E = Convert_error
 
   type t = Netmime.complex_mime_message
   type header = Netmime.mime_header
@@ -359,8 +358,8 @@ module Ocamlnet_parsetree = struct
         ~multipart_style:`Deep ch
     in
     Result.trapc
-      (Trace.new_list E.Smart.parse_err)
-      (* TODO: Better Error Handling *)
+      (Trace.new_list
+         (E.Smart.ocamlnet_parse_error "STUB MESSAGE") )
       (Netchannels.with_in_obj_channel ch)
       f
 

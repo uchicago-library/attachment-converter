@@ -10,6 +10,7 @@ module Configuration = Configuration
 module Report = Report
 module Mbox = Mbox
 module Convert = Convert
+module Convert_error = Convert_error
 module Progress_bar = Progress_bar
 module Header = Header
 module Serialize = Serialize
@@ -18,6 +19,7 @@ module Dependency = Dependency
 module Package = Package
 module Mime_type = Mime_type
 module Error_message = Error_message
+module Error_intf = Error_intf
 module Utils = Utils
 
 (*
