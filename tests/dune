@@ -1,5 +1,6 @@
 (tests
  (names
+  mime_type_tests
   config_tests
   mbox_tests
   param_tests
@@ -8,4 +9,4 @@
   header_tests
   serialize_tests
   dependency_tests)
- (libraries lib ounit2))
+ (libraries lib ounit2 alcotest))

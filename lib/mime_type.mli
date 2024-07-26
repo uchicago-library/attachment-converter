@@ -6,6 +6,7 @@ module Type : sig
   val application : t
   val text : t
   val image : t
+  val pp : t Fmt.t
 end
 
 module Subtype : sig
@@ -24,6 +25,7 @@ module Subtype : sig
   val bmp : t
   val tiff : t
   val jpeg : t
+  val pp : t Fmt.t
 end
 
 type t

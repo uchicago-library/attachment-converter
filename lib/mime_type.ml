@@ -38,13 +38,15 @@ module Type = struct
   let application = Application
   let text = Text
   let image = Image
+
+  let pp = Fmt.using to_string Fmt.string
 end
 
 module Subtype = struct
   type t = { name : string }
 
   let to_string st = st.name
-  let of_string name = { name }
+  let of_string nm = { name = String.lowercase_ascii nm }
   let pdf = of_string "pdf"
   let plain = of_string "plain"
   let msword = of_string "msword"
@@ -64,6 +66,8 @@ module Subtype = struct
   let bmp = of_string "bmp"
   let tiff = of_string "tiff"
   let jpeg = of_string "jpeg"
+
+  let pp = Fmt.using to_string Fmt.string
 end
 
 type t = { typ : Type.t; subtype : Subtype.t }
