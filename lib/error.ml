@@ -19,4 +19,9 @@ module T = struct
     match x with
     | Some x -> Ok x
     | None -> throw err
+
+  let of_result err x =
+    match x with
+    | Ok x -> Ok x
+    | Error _ -> throw err
 end
