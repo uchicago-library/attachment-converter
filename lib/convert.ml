@@ -106,7 +106,7 @@ module type PARSETREE = sig
   val replace_attachments :
     (attachment -> attachment list) -> t -> t
 
-  val to_skeleton : t -> Skeleton.t option
+  val to_skeleton : t -> Skeleton.t
 end
 
 module Parsetree_utils (T : PARSETREE) = struct
@@ -132,14 +132,13 @@ module Mrmime_parsetree = struct
 
   exception HeaderRepresentationError
 
-  type t = Mrmime.Header.t * string Mrmime.Mail.t option
+  type t = Mrmime.Header.t * string Mrmime.Mail.t
   type header = Mrmime.Header.t
   type attachment = header Attachment.t
 
   let of_string =
     Angstrom.parse_string ~consume:All
       (Mrmime.Mail.mail None)
-    >> Result.map (fun (h, b) -> (h, Some b))
     >> flip Result.on_error
          (k (Trace.throw E.Smart.parse_err))
 
@@ -176,11 +175,16 @@ module Mrmime_parsetree = struct
     | Ok h -> h
     | Error _ -> raise HeaderRepresentationError
 
+  let header_only h = (h, Mrmime.Mail.Leaf "")
+  let with_some_body (a, b) = (a, Some b)
+
   let of_list (l : t list) =
     match len l with
-    | 0 -> (Mrmime.Header.empty, None)
+    | 0 -> header_only Mrmime.Header.empty
     | 1 -> List.hd l
-    | _ -> (make_header gen_multi_header, Some (Multipart l))
+    | _ ->
+      ( make_header gen_multi_header,
+        Multipart (List.map with_some_body l) )
 
   let lookup_unstructured name hd =
     (* TODO: Make it not case-senitive *)
@@ -234,47 +238,53 @@ module Mrmime_parsetree = struct
     if is_attachment tree
     then
       match tree with
-      | header, Some (Leaf data) ->
+      | header, Leaf data ->
         Some (Attachment.make header data)
       | _ -> None
     else None
 
   let of_attachment att =
     let open Mrmime.Mail in
-    ( Attachment.header att,
-      Some (Leaf (Attachment.data att)) )
+    (Attachment.header att, Leaf (Attachment.data att))
 
   let rec attachments tree =
     let open Mrmime.Mail in
     match tree with
-    | header, Some (Leaf data) ->
-      Option.to_list
-        (to_attachment (header, Some (Leaf data)))
-    | _, Some (Multipart parts) ->
-      List.flatmap attachments parts
-    | _, Some (Message (h, b)) -> attachments (h, Some b)
-    | _ -> []
+    | header, Leaf data ->
+      Option.to_list (to_attachment (header, Leaf data))
+    | _, Multipart parts ->
+      let with_data ats (h, d) =
+        match d with
+        | None -> ats
+        | Some d -> (h, d) :: ats
+      in
+      List.flatmap attachments
+        (List.foldl with_data [] parts)
+    | _, Message (h, b) -> attachments (h, b)
 
   let rec replace_attachments f tree =
     let open Mrmime.Mail in
     match tree with
-    | _, Some (Leaf _) -> (
-      match to_attachment tree with
-      | None -> tree
-      | Some att -> of_list (List.map of_attachment (f att))
-      )
-    | header, Some (Message (h, b)) ->
-      let nh, nb = replace_attachments f (h, Some b) in
-      (header, Some (Message (nh, Option.get nb)))
-      (* TODO *)
-    | header, Some (Multipart parts) ->
-      let g t =
-        match to_attachment t with
-        | Some att -> List.map of_attachment (f att)
-        | None -> [ replace_attachments f t ]
+    | _, Leaf _ ->
+      Option.either
+        (f >> List.map of_attachment >> of_list)
+        tree
+        (to_attachment tree)
+    | header, Message (h, b) ->
+      let nh, nb = replace_attachments f (h, b) in
+      (header, Message (nh, nb))
+    | header, Multipart parts ->
+      let walk_replace (h, b) =
+        match b with
+        | None -> [ (h, None) ]
+        | Some b ->
+          Option.either
+            (f >> List.map (of_attachment >> with_some_body))
+            [ with_some_body (replace_attachments f (h, b))
+            ]
+            (to_attachment (h, b))
       in
-      (header, Some (Multipart (List.flatmap g parts)))
-    | _ -> tree
+      (header, Multipart (List.flatmap walk_replace parts))
 
   let is_converted =
     Attachment.header >> meta_val >> Option.something
@@ -287,22 +297,24 @@ module Mrmime_parsetree = struct
   let rec to_skeleton tree =
     let open Mrmime.Mail in
     let open Skeleton in
-    let _, opt_t = tree in
-    match opt_t with
-    | Some (Leaf _) ->
-      if is_attachment tree
-      then
-        let att = Option.get (to_attachment tree) in
-        Some
-          (Attachment
-             ( is_converted att,
-               Option.get (attachment_name att) ) )
-      else Some Body
-    | Some (Message (h, b)) ->
-      Some (Message (Option.get (to_skeleton (h, Some b))))
-    | Some (Multipart parts) ->
-      Some (Multipart (List.map to_skeleton parts))
-    | None -> None
+    let _, t = tree in
+    match t with
+    | Leaf _ -> (
+      match to_attachment tree with
+      | None -> Body
+      | Some att ->
+        Attachment
+          ( is_converted att,
+            Option.default "NONAME" (attachment_name att) )
+      )
+    | Message (h, b) -> Message (to_skeleton (h, b))
+    | Multipart parts ->
+      let walk (h, b) =
+        match b with
+        | None -> None
+        | Some b -> Some (to_skeleton (h, b))
+      in
+      Multipart (List.map walk parts)
 end
 
 module _ : PARSETREE = Mrmime_parsetree
@@ -437,7 +449,7 @@ module Ocamlnet_parsetree = struct
     content_disposition (Attachment.header att)
     >>= Header.Field.Value.lookup_param "filename"
 
-  let rec to_skeleton tree =
+  let rec to_skeleton_opt tree =
     let open Skeleton in
     let _, tr = tree in
     match tr with
@@ -451,7 +463,9 @@ module Ocamlnet_parsetree = struct
                Option.get (attachment_name att) ) )
       else Some Body
     | `Parts parts ->
-      Some (Multipart (List.map to_skeleton parts))
+      Some (Multipart (List.map to_skeleton_opt parts))
+
+  let to_skeleton tree = Option.get (to_skeleton_opt tree)
 end
 
 module _ : PARSETREE = Ocamlnet_parsetree

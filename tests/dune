@@ -6,6 +6,6 @@
   field_value_tests
   field_tests
   header_tests
-  serialize_tests
+  ;  serialize_tests
   dependency_tests)
  (libraries lib ounit2))

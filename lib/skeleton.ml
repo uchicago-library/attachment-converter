@@ -119,8 +119,8 @@ let body =
    your imminent response bear any weight in on the \
    current state\n\
    of affairs.\n\n\
-   yours truely and eternally,\n\
-   noboby important"
+   yours truly and eternally,\n\
+   nobody important"
 
 let attachment_data =
   "THISISNOTACTUALLYDATABUTWECANPRETENTTHATITISFORTHESAKEOFARGUMENT"
@@ -138,24 +138,28 @@ let to_mrmime_tree opt_s =
   let open Mrmime.Header in
   let rec go f s =
     match s with
-    | Some Body -> (f body_header, Some (Leaf body))
-    | Some (Attachment (_, name)) ->
-      ( f (attachment_header name),
-        Some (Leaf attachment_data) )
-    | Some (Message msg) ->
-      let h, b = go id (Some msg) in
-      (f message_header, Some (Message (h, Option.get b)))
-    | Some (Multipart parts) ->
-      ( f multipart_header,
-        Some (Multipart (List.map (go id) parts)) )
-    | None -> (f empty, None)
+    | Body -> (f body_header, Leaf body)
+    | Attachment (_, name) ->
+      (f (attachment_header name), Leaf attachment_data)
+    | Message msg ->
+      let h, b = go id msg in
+      (f message_header, Message (h, b))
+    | Multipart parts ->
+      let g b =
+        match b with
+        | None -> (empty, None)
+        | Some b ->
+          let h, b = go id b in
+          (h, Some b)
+      in
+      (f multipart_header, Multipart (List.map g parts))
   in
   go (concat header) opt_s
 
 let to_email =
   Serialize.(to_mrmime_tree >> make >> to_string)
 
-let to_string =
+let to_string skel =
   let rec go pre top extend skel =
     let head_pre = pre ^ if top then "" else "|-- " in
     let rest_pre =
@@ -179,4 +183,4 @@ let to_string =
           (List.map (rest_go true) parts)
     | None -> head_pre ^ "Header Only"
   in
-  go "" true false
+  go "" true false (Some skel)

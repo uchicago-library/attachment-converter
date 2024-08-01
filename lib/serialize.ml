@@ -8,7 +8,7 @@
 open Mrmime
 open Prelude
 
-type t = { header : Header.t; body : string Mail.t option }
+type t = { header : Header.t; body : string Mail.t }
 type stream = Mt.buffer Mt.stream
 
 let make (header, body) : t = { header; body }
@@ -209,9 +209,9 @@ let rec stream_of_multipart header parts =
   let closer = stream_of_lines [ ""; boundary ^ "--" ] in
   let rec go stream = function
     | [] -> assert false
-    | [ x ] -> stream @ to_stream (make x) @ closer
+    | [ x ] -> stream @ stream_of_part x @ closer
     | x :: r ->
-      let stream = stream @ to_stream (make x) @ inner () in
+      let stream = stream @ stream_of_part x @ inner () in
       go stream r
   in
   stream_of_header_and_encoded_body header
@@ -219,7 +219,7 @@ let rec stream_of_multipart header parts =
 
 and stream_of_message header msg_header msg_body =
   stream_of_header_and_encoded_body header
-    (to_stream (make (msg_header, Some msg_body)))
+    (stream_of_header_and_body msg_header msg_body)
 
 and stream_of_header_and_body header (body : string Mail.t)
     =
@@ -229,11 +229,14 @@ and stream_of_header_and_body header (body : string Mail.t)
   | Message (msg_header, msg_body) ->
     stream_of_message header msg_header msg_body
 
-and to_stream part =
-  match part.body with
+and stream_of_part (header, body) =
+  match body with
   | None ->
-    stream_of_header part.header (* TODO: Is this right?? *)
-  | Some body -> stream_of_header_and_body part.header body
+    stream_of_header header (* TODO: Is this right?? *)
+  | Some body -> stream_of_header_and_body header body
+
+let to_stream email =
+  stream_of_header_and_body email.header email.body
 
 let to_string part =
   let stream = to_stream part in
