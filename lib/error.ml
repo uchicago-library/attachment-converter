@@ -11,22 +11,24 @@ let to_string =
   | `MimeParseError -> "mime parse error"
   | `ConfigData n -> sprintf "config data: %i" n
   | `ReferParse (n, s) -> sprintf "refer parse: %i; %s" n s
-  | `OcamlnetParseError ({ date; from }, onet_error) ->
-    let unoption = function
+  | `OcamlnetParseError
+      ({ date; from; message_id }, onet_error) ->
+    let unoption header_name = function
       | None -> ""
-      | Some s -> s
+      | Some s -> sprintf "\t%s: %s\n" header_name s
     in
     sprintf
-      "Email parse error:\n\
-       \tDate: %s\n\
-       \tFrom: %s\n\
-       \tMessage:%s\n"
-      (unoption date) (unoption from) onet_error
-  | `MrmimeParseError { date; from } ->
+      "Email parse error!\n%s%s%s\tError Message: %s\n"
+      (unoption "Date" date)
+      (unoption "From" from)
+      (unoption "Message-ID" message_id)
+      onet_error
+  | `MrmimeParseError { date; from; message_id } ->
     let unoption = function
       | None -> ""
       | Some s -> s
     in
+    let _ = message_id in
     sprintf "Email parse error:\n\tDate: %s\n\tFrom: %s\n"
       (unoption date) (unoption from)
   | `NotInstalled lis ->

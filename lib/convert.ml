@@ -74,31 +74,38 @@ module Line_feed : LINE_FEED = struct
     Buffer.contents b
 end
 
-module Grovel = struct
-  module Regexp = struct
+module GrovelErrorInfo = struct
+  module Patterns = struct
     open Re
 
-    let date =
+    let header h =
       seq
-        [ alt [ start; str "\n"; str "\r\n" ];
-          no_case (str "Date: ");
-          rep1 any;
-          alt [ eol; str "\n"; str "\r\n" ]
+        [ bol;
+          no_case (seq [ str h; char ':'; rep (set "\t ") ]);
+          group (non_greedy (rep1 any));
+          eol
         ]
+
+    let date = header "Date"
+    let from = header "From"
+    let message_id = header "Message-ID"
   end
 
   let first_match ast raw_email =
-    let unseq =
-      let open Stdlib.Seq in
-      function
-      | Cons (header, _) -> Some header
-      | Nil -> None
-    in
-    let compiled =
-      let open Re in
-      ast |> rep1 |> group |> compile |> Seq.matches
-    in
-    unseq (compiled raw_email ())
+    let open Re in
+    let compiled = ast |> group |> compile in
+    let execed = exec compiled raw_email in
+    let grouped = Group.get execed in
+    match grouped 2 with
+    | exception Not_found -> None
+    | exception e -> raise e
+    | str -> Some str
+
+  let date email = first_match Patterns.date email
+  let from email = first_match Patterns.from email
+
+  let message_id email =
+    first_match Patterns.message_id email
 end
 
 module type PARSETREE = sig
@@ -176,8 +183,10 @@ module Mrmime_parsetree = struct
     >> flip Result.on_error
          (k
             (Trace.throw
-               (E.Smart.mrmime_parse_error ~date:"a date"
-                  ~from:"somebody" () ) ) )
+               (E.Smart.mrmime_parse_error
+                  ~date:(Some "a date")
+                  ~from:(Some "somebody")
+                  ~message_id:(Some "an id") ) ) )
 
   let of_string_line_feed email_str =
     let ( let* ) = Result.( >>= ) in
@@ -390,9 +399,10 @@ module Ocamlnet_parsetree = struct
     let open E.Smart in
     match f ch with
     | exception Failure msg ->
+      let open GrovelErrorInfo in
       let err =
-        ocamlnet_parse_error ~date:"a date"
-          ~from:"somebody or other" msg
+        ocamlnet_parse_error ~date:(date s) ~from:(from s)
+          ~message_id:(message_id s) msg
       in
       Trace.throw err
     | exception e -> raise e
