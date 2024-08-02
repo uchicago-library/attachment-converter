@@ -6,9 +6,15 @@ let to_string =
   let open Convert_error in
   function
   (* TODO: enhance these stub error messages *)
-  | `MissingKey _ -> "missing key"
-  | `BadMimeType (_, _) -> "bad mime type"
-  | `MimeParseError -> "mime parse error"
+  | `MissingKey k ->
+    sprintf "Missing key: %s\n" (Config_key.to_string k)
+  | `BadMimeType (mime_string, k) ->
+    sprintf
+      "Bad mime type string: '%s', in configuration field \
+       '%s'\n"
+      mime_string
+      (Config_key.to_string k)
+  | `MimeParseError -> "Mime parse error!"
   | `ConfigData n -> sprintf "config data: %i" n
   | `ReferParse (n, s) -> sprintf "refer parse: %i; %s" n s
   | `OcamlnetParseError
@@ -47,7 +53,7 @@ let to_string =
        Here is a list of supported Os-es:\n\n\
        \tmacOS\n\
        \tArch Linux\n\
-       \tWSL Debian\n\
+       \tWSL Ubuntu\n\
        \r"
 
 module T = struct
