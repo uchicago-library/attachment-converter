@@ -3,6 +3,7 @@ type t = Error_intf.t
 
 let to_string =
   let open Printf in
+  let open Convert_error in
   function
   (* TODO: enhance these stub error messages *)
   | `MissingKey _ -> "missing key"
@@ -10,8 +11,24 @@ let to_string =
   | `MimeParseError -> "mime parse error"
   | `ConfigData n -> sprintf "config data: %i" n
   | `ReferParse (n, s) -> sprintf "refer parse: %i; %s" n s
-  | `OcamlnetParseError _ -> "email parse error\n"
-  | `MrmimeParseError _ -> "email parse error\n"
+  | `OcamlnetParseError ({ date; from }, onet_error) ->
+    let unoption = function
+      | None -> ""
+      | Some s -> s
+    in
+    sprintf
+      "Email parse error:\n\
+       \tDate: %s\n\
+       \tFrom: %s\n\
+       \tMessage:%s\n"
+      (unoption date) (unoption from) onet_error
+  | `MrmimeParseError { date; from } ->
+    let unoption = function
+      | None -> ""
+      | Some s -> s
+    in
+    sprintf "Email parse error:\n\tDate: %s\n\tFrom: %s\n"
+      (unoption date) (unoption from)
   | `NotInstalled lis ->
     "Attachment Converter will not run unless all of its \
      OS-level dependencies are installed.\n\n\

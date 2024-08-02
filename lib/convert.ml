@@ -74,6 +74,33 @@ module Line_feed : LINE_FEED = struct
     Buffer.contents b
 end
 
+module Grovel = struct
+  module Regexp = struct
+    open Re
+
+    let date =
+      seq
+        [ alt [ start; str "\n"; str "\r\n" ];
+          no_case (str "Date: ");
+          rep1 any;
+          alt [ eol; str "\n"; str "\r\n" ]
+        ]
+  end
+
+  let first_match ast raw_email =
+    let unseq =
+      let open Stdlib.Seq in
+      function
+      | Cons (header, _) -> Some header
+      | Nil -> None
+    in
+    let compiled =
+      let open Re in
+      ast |> rep1 |> group |> compile |> Seq.matches
+    in
+    unseq (compiled raw_email ())
+end
+
 module type PARSETREE = sig
   type t
 
@@ -147,7 +174,10 @@ module Mrmime_parsetree = struct
       (Mrmime.Mail.mail None)
     >> Result.map (fun (h, b) -> (h, Some b))
     >> flip Result.on_error
-         (k (Trace.throw (E.Smart.mrmime_parse_error ())))
+         (k
+            (Trace.throw
+               (E.Smart.mrmime_parse_error ~date:"a date"
+                  ~from:"somebody" () ) ) )
 
   let of_string_line_feed email_str =
     let ( let* ) = Result.( >>= ) in
@@ -360,7 +390,10 @@ module Ocamlnet_parsetree = struct
     let open E.Smart in
     match f ch with
     | exception Failure msg ->
-      let err = ocamlnet_parse_error msg in
+      let err =
+        ocamlnet_parse_error ~date:"a date"
+          ~from:"somebody or other" msg
+      in
       Trace.throw err
     | exception e -> raise e
     | success -> Ok success
