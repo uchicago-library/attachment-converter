@@ -188,7 +188,6 @@ module ToOutput = struct
         | Ok converted -> fromline ^ "\n" ^ converted
         | Error errlist ->
           Utils.print_err (Error_message.message errlist) ;
-          (* Utils.print_err "conversion failure\n" ; *)
           fromline ^ "\n" ^ em (* TODO: better logging *)
       in
       Ok (convert_mbox in_chan converter)

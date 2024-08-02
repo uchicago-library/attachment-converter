@@ -24,13 +24,14 @@ let to_string =
       (unoption "Message-ID" message_id)
       onet_error
   | `MrmimeParseError { date; from; message_id } ->
-    let unoption = function
+    let unoption header_name = function
       | None -> ""
-      | Some s -> s
+      | Some s -> sprintf "\t%s: %s\n" header_name s
     in
-    let _ = message_id in
-    sprintf "Email parse error:\n\tDate: %s\n\tFrom: %s\n"
-      (unoption date) (unoption from)
+    sprintf "Email parse error!\n%s%s%s"
+      (unoption "Date" date)
+      (unoption "From" from)
+      (unoption "Message-ID" message_id)
   | `NotInstalled lis ->
     "Attachment Converter will not run unless all of its \
      OS-level dependencies are installed.\n\n\

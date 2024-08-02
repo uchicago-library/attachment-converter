@@ -176,17 +176,19 @@ module Mrmime_parsetree = struct
   type header = Mrmime.Header.t
   type attachment = header Attachment.t
 
-  let of_string =
-    Angstrom.parse_string ~consume:All
-      (Mrmime.Mail.mail None)
-    >> Result.map (fun (h, b) -> (h, Some b))
-    >> flip Result.on_error
+  let of_string email_string =
+    let open GrovelErrorInfo in
+    email_string
+    |> Angstrom.parse_string ~consume:All
+         (Mrmime.Mail.mail None)
+    |> Result.map (fun (h, b) -> (h, Some b))
+    |> flip Result.on_error
          (k
             (Trace.throw
                (E.Smart.mrmime_parse_error
-                  ~date:(Some "a date")
-                  ~from:(Some "somebody")
-                  ~message_id:(Some "an id") ) ) )
+                  ~date:(date email_string)
+                  ~from:(from email_string)
+                  ~message_id:(message_id email_string) ) ) )
 
   let of_string_line_feed email_str =
     let ( let* ) = Result.( >>= ) in
