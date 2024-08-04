@@ -15,8 +15,8 @@ let basic_skel2 =
           (Message
              (Message
                 (Multipart
-                   [ Some Body; Some dummy_attachment ]
-                ) ) );
+                   [ Some Body; Some dummy_attachment ] ) )
+          );
         Some dummy_attachment
       ] )
 
