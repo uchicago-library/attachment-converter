@@ -3,24 +3,22 @@ open Utils
 open Lib
 
 let basic_skel1 =
-  Skeleton.(
-    Some (Multipart [ Some Body; Some dummy_attachment ]) )
+  Skeleton.(Multipart [ Some Body; Some dummy_attachment ])
 
 let basic_skel2 =
   Skeleton.(
-    Some
-      (Multipart
-         [ Some Body;
-           Some Body;
-           Some dummy_attachment;
-           Some
+    Multipart
+      [ Some Body;
+        Some Body;
+        Some dummy_attachment;
+        Some
+          (Message
              (Message
-                (Message
-                   (Multipart
-                      [ Some Body; Some dummy_attachment ]
-                   ) ) );
-           Some dummy_attachment
-         ] ) )
+                (Multipart
+                   [ Some Body; Some dummy_attachment ]
+                ) ) );
+        Some dummy_attachment
+      ] )
 
 let tests =
   "test suite for serialization"
