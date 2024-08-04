@@ -462,7 +462,8 @@ module Ocamlnet_parsetree = struct
             Option.default "NONAME" (attachment_name att) )
       )
     | `Parts parts ->
-      Multipart (List.map (Option.some << to_skeleton) parts)
+      Multipart
+        (List.map (Option.some << to_skeleton) parts)
 end
 
 module _ : PARSETREE = Ocamlnet_parsetree
