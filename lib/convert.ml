@@ -449,23 +449,20 @@ module Ocamlnet_parsetree = struct
     content_disposition (Attachment.header att)
     >>= Header.Field.Value.lookup_param "filename"
 
-  let rec to_skeleton_opt tree =
+  let rec to_skeleton tree =
     let open Skeleton in
     let _, tr = tree in
     match tr with
-    | `Body _ ->
-      if is_attachment tree
-      then
-        let att = Option.get (to_attachment tree) in
-        Some
-          (Attachment
-             ( is_converted att,
-               Option.get (attachment_name att) ) )
-      else Some Body
+    | `Body _ -> (
+      match to_attachment tree with
+      | None -> Body
+      | Some att ->
+        Attachment
+          ( is_converted att,
+            Option.default "NONAME" (attachment_name att) )
+      )
     | `Parts parts ->
-      Some (Multipart (List.map to_skeleton_opt parts))
-
-  let to_skeleton tree = Option.get (to_skeleton_opt tree)
+      Multipart (List.map (Option.some << to_skeleton) parts)
 end
 
 module _ : PARSETREE = Ocamlnet_parsetree
