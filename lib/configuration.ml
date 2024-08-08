@@ -202,9 +202,11 @@ module Formats = struct
     in
     let on_ok line_num next raccum =
       let open Config_entry in
+      let open Formats_error.Smart in
       let* accum = raccum in
       let* entry =
-        Trace.with_error (`ConfigData line_num)
+        Trace.with_error
+          (config_data_err line_num)
           (of_refer next)
       in
       let* trans_data =
