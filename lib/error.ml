@@ -15,8 +15,12 @@ let to_string =
       mime_string
       (Config_key.to_string k)
   | `MimeParseError -> "Mime parse error!"
-  | `ConfigData n -> sprintf "config data: %i" n
-  | `ReferParse (n, s) -> sprintf "refer parse: %i; %s" n s
+  | `ConfigData n ->
+    sprintf "Config file error: line %i\n" n
+  | `ReferParse (n, s) ->
+    sprintf
+      "Refer parse error in config file, line %i\n\
+       Content of line: %s" n s
   | `OcamlnetParseError
       ({ date; from; message_id }, onet_error) ->
     let unoption header_name = function

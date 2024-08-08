@@ -77,9 +77,7 @@ let convert config_files ?(single_email = false) ic pbar
     else acopy_mbox config ic pbar
   in
   match processed with
-  | Error err ->
-    write stderr (message err)
-    (* TODO: better error handling *)
+  | Error err -> write stderr (message err)
   | Ok _ -> ()
 
 let convert_wrapper config_files sem rpt rpt_p inp backend =

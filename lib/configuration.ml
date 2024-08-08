@@ -252,7 +252,9 @@ let get_config config_files =
     config_files
     @ Option.to_list (Sys.getenv_opt "AC_CONFIG")
     @ [ ~~"~/.config/attachment-converter/acrc";
-        ~~"~/.acrc"
+        ~~"~/.acrc";
+        "/etc/.acrc";
+        "/opt/homebrew/etc/.acrc"
       ]
   in
   let config_opt =
