@@ -1,6 +1,7 @@
 open Prelude
 
-let message _ = "TODO"
+let message msgs =
+  String.join ~sep:"" (map Error.to_string msgs)
 
 let debug es =
   let to_string e =

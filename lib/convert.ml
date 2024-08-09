@@ -74,8 +74,44 @@ module Line_feed : LINE_FEED = struct
     Buffer.contents b
 end
 
+module GrovelErrorInfo = struct
+  module Patterns = struct
+    open Re
+
+    let header h =
+      seq
+        [ bol;
+          no_case (seq [ str h; char ':'; rep (set "\t ") ]);
+          group (non_greedy (rep1 any));
+          eol
+        ]
+
+    let date = header "Date"
+    let from = header "From"
+    let message_id = header "Message-ID"
+  end
+
+  let first_match ast raw_email =
+    let open Re in
+    let compiled = ast |> group |> compile in
+    let execed = exec compiled raw_email in
+    let grouped = Group.get execed in
+    match grouped 2 with
+    | exception Not_found -> None
+    | exception e -> raise e
+    | str -> Some str
+
+  let date email = first_match Patterns.date email
+  let from email = first_match Patterns.from email
+
+  let message_id email =
+    first_match Patterns.message_id email
+end
+
 module type PARSETREE = sig
   type t
+
+  val backend : Backend.t
 
   val of_string_line_feed :
     string -> (t * Line_feed.t, Error.t) result
@@ -95,6 +131,8 @@ module type PARSETREE = sig
     header -> Header.Field.Value.t option
 
   val content_type : header -> Header.Field.Value.t option
+  val date : t -> string option
+  val from : t -> string option
 
   type attachment = header Attachment.t
 
@@ -128,7 +166,9 @@ module Parsetree_utils (T : PARSETREE) = struct
 end
 
 module Mrmime_parsetree = struct
-  module E = Parsetree_error
+  let backend = Backend.Mrmime
+
+  module E = Convert_error
 
   exception HeaderRepresentationError
 
@@ -136,11 +176,19 @@ module Mrmime_parsetree = struct
   type header = Mrmime.Header.t
   type attachment = header Attachment.t
 
-  let of_string =
-    Angstrom.parse_string ~consume:All
-      (Mrmime.Mail.mail None)
-    >> flip Result.on_error
-         (k (Trace.throw E.Smart.parse_err))
+  let of_string email_string =
+    let open GrovelErrorInfo in
+    email_string
+    |> Angstrom.parse_string ~consume:All
+         (Mrmime.Mail.mail None)
+    |> Result.map (fun (h, b) -> (h, Some b))
+    |> flip Result.on_error
+         (k
+            (Trace.throw
+               (E.Smart.mrmime_parse_error
+                  ~date:(date email_string)
+                  ~from:(from email_string)
+                  ~message_id:(message_id email_string) ) ) )
 
   let of_string_line_feed email_str =
     let ( let* ) = Result.( >>= ) in
@@ -223,6 +271,34 @@ module Mrmime_parsetree = struct
       List.map form (parameters ct)
     in
     Some (Header.Field.Value.make ~params mime_ty)
+
+  let date parsetree =
+    let open Mrmime.Header in
+    let open Mrmime.Field in
+    let open Mrmime.Date.Encoder in
+    parsetree
+    |> header
+    |> assoc Mrmime.Field_name.date
+    |> List.hd
+    |> function
+    | Field (_, Date, poly) ->
+      let str = Prettym.to_string date poly in
+      Some (Stdlib.String.trim str)
+    | _ -> None
+
+  let from parsetree =
+    let open Mrmime.Header in
+    let open Mrmime.Field in
+    let open Mrmime.Mailbox.Encoder in
+    parsetree
+    |> header
+    |> assoc Mrmime.Field_name.from
+    |> List.hd
+    |> function
+    | Field (_, Mailboxes, poly) ->
+      let str = Prettym.to_string mailboxes poly in
+      Some (Stdlib.String.trim str)
+    | _ -> None
 
   let is_attachment =
     header
@@ -320,7 +396,9 @@ end
 module _ : PARSETREE = Mrmime_parsetree
 
 module Ocamlnet_parsetree = struct
-  module E = Parsetree_error
+  let backend = Backend.Ocamlnet
+
+  module E = Convert_error
 
   type t = Netmime.complex_mime_message
   type header = Netmime.mime_header
@@ -333,11 +411,17 @@ module Ocamlnet_parsetree = struct
       Netmime_channels.read_mime_message
         ~multipart_style:`Deep ch
     in
-    Result.trapc
-      (Trace.new_list E.Smart.parse_err)
-      (* TODO: Better Error Handling *)
-      (Netchannels.with_in_obj_channel ch)
-      f
+    let open E.Smart in
+    match f ch with
+    | exception Failure msg ->
+      let open GrovelErrorInfo in
+      let err =
+        ocamlnet_parse_error ~date:(date s) ~from:(from s)
+          ~message_id:(message_id s) msg
+      in
+      Trace.throw err
+    | exception e -> raise e
+    | success -> Ok success
 
   let of_string_line_feed email_str =
     let ( let* ) = Result.( >>= ) in
@@ -395,7 +479,20 @@ module Ocamlnet_parsetree = struct
     lookup_value "Content-Disposition"
 
   let content_type = lookup_value "Content-Type"
-  (* TODO: make not case sensitive *)
+
+  let date parsetree =
+    let h = header parsetree in
+    match h#field "date" with
+    | exception Not_found -> None
+    | exception e -> raise e
+    | success -> Some success
+
+  let from parsetree =
+    let h = header parsetree in
+    match h#field "from" with
+    | exception Not_found -> None
+    | exception e -> raise e
+    | success -> Some success
 
   let is_attachment =
     header
@@ -682,10 +779,7 @@ module Conversion = struct
       let () =
         Progress_bar.Printer.print "Parsing email..." pbar
       in
-      let* tree, line_feed =
-        Trace.with_error Parsetree_error.Smart.parse_err
-          (T.of_string_line_feed email)
-      in
+      let* tree, line_feed = T.of_string_line_feed email in
       let convs =
         attachments_to_convert ~idem config tree
       in

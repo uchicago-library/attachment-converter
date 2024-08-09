@@ -23,6 +23,7 @@
   utop
   ocamlformat-rpc
   ocaml-lsp-server
+  re
   (qtest :dev)
   (ocamlformat :dev)
   (ocp-index :dev)

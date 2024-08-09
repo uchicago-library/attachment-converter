@@ -2,7 +2,7 @@ type error =
   [ Config_entry_error.t
   | Mime_type_error.t
   | Formats_error.t
-  | Parsetree_error.t
+  | Convert_error.t
   | Dependency_error.t ]
 
 type t = error list

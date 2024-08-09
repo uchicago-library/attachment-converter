@@ -4,30 +4,7 @@
 
 (library
  (name lib)
- (libraries prelude mrmime threads netstring unix re)
- (modules
-  lib
-  error
-  error_intf
-  error_message
-  config_key
-  configuration
-  config_entry_error
-  formats_error
-  report
-  convert
-  parsetree_error
-  mbox
-  header
-  utils
-  serialize
-  skeleton
-  progress_bar
-  mime_type
-  mime_type_error
-  dependency
-  dependency_error
-  package))
+ (libraries prelude mrmime threads netstring unix re))
 
 (env
  (dev ; make warnings non-fatal

@@ -7,7 +7,9 @@ module Constants = struct
   let max_line_length = 998
 end
 
-let print_err msg = write stderr msg
+let print_err msg =
+  write stderr msg ;
+  flush stderr
 
 let is_quoted str =
   String.prefix "\"" str && String.suffix "\"" str
