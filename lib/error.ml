@@ -5,7 +5,6 @@ let to_string =
   let open Printf in
   let open Convert_error in
   function
-  (* TODO: enhance these stub error messages *)
   | `MissingKey k ->
     sprintf "Missing key: %s\n" (Config_key.to_string k)
   | `BadMimeType (mime_string, k) ->
