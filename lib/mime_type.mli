@@ -1,22 +1,16 @@
 module Type : sig
   type t
 
-  val to_string : t -> string
-  val of_string : string -> t
-  val application : t
-  val text : t
-  val image : t
+  val of_string : string -> (t, Error.t) result
 end
 
 module Subtype : sig
   type t
 
-  val to_string : t -> string
-  val of_string : string -> t
   val pdf : t
   val plain : t
   val msword : t
-  val docx_subty : t
+  val docx : t
   val xls : t
   val xlsx : t
   val tsv : t
@@ -28,8 +22,8 @@ end
 
 type t
 
-val type_of : t -> Type.t
-val subtype : t -> Subtype.t
+val ty : t -> Type.t
+val subty : t -> Subtype.t
 val make : Type.t -> Subtype.t -> t
 val to_string : t -> string
 val of_string : string -> (t, Error.t) result

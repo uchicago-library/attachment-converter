@@ -1,94 +1,57 @@
-open Prelude
+open Mrmime
 module E = Mime_type_error
 module Trace = Error.T
 
 module Type = struct
-  type t =
-    | Text
-    | Image
-    | Audio
-    | Video
-    | Application
-    | Message
-    | Multipart
-    | Other of string
+  include Content_type.Type
 
-  let to_string ty =
-    match ty with
-    | Text -> "text"
-    | Image -> "image"
-    | Audio -> "audio"
-    | Video -> "video"
-    | Application -> "application"
-    | Message -> "message"
-    | Multipart -> "multipart"
-    | Other name -> name
-
-  let of_string str =
-    match String.lowercase_ascii str with
-    | "text" -> Text
-    | "image" -> Image
-    | "audio" -> Audio
-    | "video" -> Video
-    | "application" -> Application
-    | "message" -> Message
-    | "multipart" -> Multipart
-    | other -> Other other
-
-  let application = Application
-  let text = Text
-  let image = Image
+  let of_string s =
+    Trace.of_result E.Smart.parse_err (of_string s)
 end
 
 module Subtype = struct
-  type t = { name : string }
+  include Content_type.Subtype
 
-  let to_string st = st.name
-  let of_string name = { name }
-  let pdf = of_string "pdf"
-  let plain = of_string "plain"
-  let msword = of_string "msword"
+  let pdf = iana_exn Type.application "pdf"
+  let plain = iana_exn Type.text "plain"
+  let msword = iana_exn Type.application "msword"
 
-  let docx_subty =
-    of_string
+  let docx =
+    iana_exn Type.application
       "vnd.openxmlformats-officedocument.wordprocessingml.document"
 
-  let xls = of_string "vnd.ms-excel"
+  let xls = iana_exn Type.application "vnd.ms-excel"
 
   let xlsx =
-    of_string
+    iana_exn Type.application
       "vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
-  let tsv = of_string "tab-separated-values"
-  let gif = of_string "gif"
-  let bmp = of_string "bmp"
-  let tiff = of_string "tiff"
-  let jpeg = of_string "jpeg"
+  let tsv = iana_exn Type.text "tab-separated-values"
+  let gif = iana_exn Type.image "gif"
+  let bmp = iana_exn Type.image "bmp"
+  let tiff = iana_exn Type.image "tiff"
+  let jpeg = iana_exn Type.image "jpeg"
 end
 
-type t = { typ : Type.t; subtype : Subtype.t }
+type t = { ty : Type.t; subty : Subtype.t }
 
-let type_of mt = mt.typ
-let subtype mt = mt.subtype
-let make typ subty = { typ; subtype = subty }
+let ty mt = mt.ty
+let subty mt = mt.subty
+let make ty subty = { ty; subty }
 
 let to_string mt =
-  Type.to_string (type_of mt)
+  Type.to_string (ty mt)
   ^ "/"
-  ^ Subtype.to_string (subtype mt)
+  ^ Subtype.to_string (subty mt)
 
 let of_string s =
-  let open Trace in
-  let open E.Smart in
-  let ( let* ) = Result.( >>= ) in
-  let ty_str, opt_subty_str = String.cut ~sep:"/" s in
-  let* subty_str = of_option parse_err opt_subty_str in
-  let mt =
-    make
-      (Type.of_string ty_str)
-      (Subtype.of_string subty_str)
+  let out =
+    Angstrom.parse_string ~consume:All
+      Content_type.Decoder.content s
   in
-  Ok mt
+  match out with
+  | Ok { ty; subty; parameters = [] } -> Ok { ty; subty }
+  | _ -> Trace.throw E.Smart.parse_err
 
 let extension mt =
   match to_string mt with
@@ -114,7 +77,7 @@ let pdf = make Type.application Subtype.pdf
 let pdfa = make Type.application Subtype.pdf
 let txt = make Type.text Subtype.plain
 let doc = make Type.application Subtype.msword
-let docx = make Type.application Subtype.docx_subty
+let docx = make Type.application Subtype.docx
 let xls = make Type.application Subtype.xls
 let xlsx = make Type.application Subtype.xlsx
 let tsv = make Type.text Subtype.tsv
