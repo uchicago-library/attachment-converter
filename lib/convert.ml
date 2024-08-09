@@ -181,7 +181,6 @@ module Mrmime_parsetree = struct
     email_string
     |> Angstrom.parse_string ~consume:All
          (Mrmime.Mail.mail None)
-    |> Result.map (fun (h, b) -> (h, Some b))
     |> flip Result.on_error
          (k
             (Trace.throw
