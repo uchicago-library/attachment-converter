@@ -134,3 +134,14 @@ install: shell-copy opam-install
 	cd $(PROJECT_ROOT)
 	mv _build/default/main.exe $(DESTDIR)/bin/attc
 .PHONY: install
+
+# Homebrew and ARCH specific Targets
+pkg-opam:
+	opam init --yes --yes --disable-sandboxing
+.PHONY: pkg-opam
+
+pkg-build: pkg-opam cd-home deps
+	eval $$(opam env)
+	$(call DUNE,build)
+	cd $(PROJECT_ROOT)
+.PHONY: pkg-build
