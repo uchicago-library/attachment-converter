@@ -10,3 +10,9 @@ git push origin tag_name
 Once the tag arrives on the remote branch, github will automatically create a tarball of the whole project
 
 The Formula should be hosted in github repository named homebrew-attc
+
+TODO:
+
+- make the path to the conversion scripts in attc configurable
+- somehow or other, I know not how, make the Mac version use the homebrew path
+- have attc read the path to the conversion scripts outta the config
