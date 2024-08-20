@@ -134,6 +134,8 @@ module type PARSETREE = sig
   val date : t -> string option
   val from : t -> string option
 
+  (* TODO add message id getter here *)
+
   type attachment = header Attachment.t
 
   val is_attachment : t -> bool
@@ -176,18 +178,25 @@ module Mrmime_parsetree = struct
   type header = Mrmime.Header.t
   type attachment = header Attachment.t
 
-  let of_string email_string =
+  let of_string_error email_string =
     let open GrovelErrorInfo in
+    Trace.throw
+      (E.Smart.mrmime_parse_error ~date:(date email_string)
+         ~from:(from email_string)
+         ~message_id:(message_id email_string) )
+
+  let of_string_exn email_string =
     email_string
     |> Angstrom.parse_string ~consume:All
          (Mrmime.Mail.mail None)
     |> flip Result.on_error
-         (k
-            (Trace.throw
-               (E.Smart.mrmime_parse_error
-                  ~date:(date email_string)
-                  ~from:(from email_string)
-                  ~message_id:(message_id email_string) ) ) )
+         (k @@ of_string_error email_string)
+
+  let of_string email_string =
+    match of_string_exn email_string with
+    | exception Assert_failure _ ->
+      of_string_error email_string
+    | no_exn -> no_exn
 
   let of_string_line_feed email_str =
     let ( let* ) = Result.( >>= ) in

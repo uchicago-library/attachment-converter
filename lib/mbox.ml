@@ -185,6 +185,10 @@ module ToOutput = struct
       let module C = Convert.Conversion.Make (T) in
       let converter (fromline, em) =
         match C.acopy_email ~idem config em pbar with
+        (* | exception Assert_failure _ ->  *)
+        (*    write stderr "BAD CONTENT TYPE!" ; *)
+        (*    write stderr em ; *)
+        (*    assert false *)
         | Ok converted -> fromline ^ "\n" ^ converted
         | Error errlist ->
           Utils.print_err (Error_message.message errlist) ;
