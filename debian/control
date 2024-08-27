@@ -1,0 +1,19 @@
+Source: attachment-converter
+Maintainer: Ben Kim <benkim@uchicago.edu>
+Section: misc
+Priority: optional
+Standards-Version: 4.6.2
+Build-Depends: debhelper-compat (=13), opam,  mercurial, pkg-config
+
+Package: attc
+Architecture: amd64 arm64
+Depends: ${shlibs:Depends}, ${misc:Depends}, pandoc, libreoffice, libvips-tools, ghostscript
+Description: Tool for converting email mailboxes to preservation formats
+ Attachment Converter is an open-source command-line tool for
+ digital archivists. Given an email mailbox in MBOX format, it will
+ go through that mailbox and batch convert all the attachments it
+ can into preservation formats, putting a converted copy of each
+ attachment back into the email from which it originated. The
+ user can then re-open the new mailbox in a mail user agent,
+ such as Apple Mail, and browse through the mailbox the normal
+ way.
