@@ -26,12 +26,12 @@ To contribute to the DLDC Launchpad Team, have an admin add you with permission 
 The `debian` directory is necessary for debian packages. It contains the following files:
 - `attc.dirs` specifies directories necessary for installation like `/usr/bin` and `/usr/lib/attachment-converter/scripts`
 - `attc.manpages` specifies which directory the man page is located in the project
-- `changelog` contains the **version number** and **distribution type**. This file must be updated for each new release.
+- `changelog` contains the **version number** and **distribution type**. This file *must* be updated for each new release.
 - `control` contains build time and run time dependencies. Should conversion utilities change, this file must be changed
 - `copyright` contains copyright information
-- `rules` is debian's makefile which contains build, install, and clean targets.
+- `rules` is debian's makefile which contains build, install, and clean targets. Rules has been configured to override some debian specific targets that fail when running `debuild`. It will likely be unecessary to modify this file often.
 - `source` contains the `format` file which specifies which patch utility to use. This can largely be ignored
-More information can be found [here](https://www.debian.org/doc/manuals/maint-guide/dreq.en.html)
+More information about all of these files can be found [here](https://www.debian.org/doc/manuals/maint-guide/dreq.en.html)
 
 ## FAQ:
 #### Why does the opampack process exist?
@@ -44,8 +44,11 @@ The `opam` file for Prelude is included in this directory and is moved into the 
 Launchpad will often send an email explaining why a package was accepted or rejected with an error. It may be that the version number has already been used or the distribution type may be invalid. If no email was received, it was silently rejected likely due to GPG reasons. Confirm that the correct GPG key is being used to upload, that same GPG key was uploaded to Launchpad, and that the user agreement was signed.
 If fixing a release for the same version, change the package version by incrementing the package version in the `changelog` file i.e. if the version number was `1.0.0-1` change it to `1.0.0-2` where `1.0.0` is the source package version and `-1` and `-2` indicate the version for the packaging process
 
+#### Why does the version number look like that?
+The version number will contain the source version number, the package release number, and then the ubuntu distribution. For example, `0.1.1-2~jammy` indicates project version `0.1.1`, the second package release for that project version, and the ubuntu distribution jammy jellyfish.
+
 #### Why not package for debian?
-Submitting a package to the official `apt` repositories requires a lengthy vetting process and subsequent version releases also need to undergo such vetting. The alternative, a third-party `apt` repository, requires finicky and needlessly complicated GPG key configuration for the user. PPA's present a smoother end user experience by removing the need to deal with tricky GPG configuration and add an `apt` repository through a simple command. 
+uent version releases also need to undergo such vetting. The alternative, a third-party `apt` repository, requires finicky and needlessly complicated GPG key configuration for the user. PPA's present a smoother end user experience by removing the need to deal with tricky GPG configuration and add an `apt` repository through a simple command. 
 
 #### Why is this directory specificed as a `data_only_dirs`?
 The `opam` switch being hosted within this directory means that during the build process, binaries and executables are built and placed within subdirectories of this directory to be executed by `opam`. This includes a `dune` executable that is mistaken for a `dune` file. Specifying this directory as a `data_only_dirs` avoids that error.
