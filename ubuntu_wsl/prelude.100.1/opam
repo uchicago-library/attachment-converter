@@ -1,0 +1,25 @@
+# -*- mode: tuareg-opam -*-
+opam-version: "2.0"
+version: "100.1"
+synopsis: "OCaml standard library additions and renamings"
+authors: "Keith WACLENA <keith@lib.uchicago.edu>"
+license: "GPL-3.0"
+maintainer: "Keith WACLENA <keith@lib.uchicago.edu>"
+bug-reports: "Keith WACLENA <keith@lib.uchicago.edu>"
+homepage: "https://www.lib.uchicago.edu/keith/software/prelude/"
+build: [make "all"]
+install: [make "install"]
+remove: [make "uninstall"]
+url { archive: "https://www.lib.uchicago.edu/keith/hg/prelude.tar.gz" checksum: "sha256=daa0a16dfa86f4feb1d74c9afbdf2bf99ec13b833f6cb244c732928e77ca3fed" }
+dev-repo: "hg+file:///home/keith/src/prelude"
+# NB we need to maintain the depends manually here so erg doesn't add a build dep on itself!
+depends: [
+  "camlp-streams"
+  "ctypes" {with-test}
+  "ctypes-foreign" {with-test}
+  "ocamlbuild" {with-test}
+  "ounit2" {with-test}
+  "qcheck" {with-test}
+  "ocamlfind" {build}
+  "ocaml-makefile" {build}
+]

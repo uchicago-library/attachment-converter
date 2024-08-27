@@ -8,6 +8,8 @@
  (promote (until-clean))
  (libraries prelude lib mrmime threads netstring unix cmdliner))
 
+(data_only_dirs ubuntu_wsl)
+
 (env
  (dev ; make warnings non-fatal
   (flags

@@ -50,3 +50,9 @@ lib/application.pdf
 
 # executables built by dune
 *.exe
+
+# Debian Packaging Artifacts
+opampack.tar.gz
+ubuntu_wsl/opam-repository
+ubuntu_wsl/install.switch
+ubuntu_wsl/opamroot

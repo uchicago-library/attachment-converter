@@ -1,0 +1,33 @@
+#!/usr/bin/make -f
+PROJECT_ROOT = $(shell pwd)
+DUNE = opam exec -- dune $1 --display short
+
+%:
+	dh $@
+
+override_dh_auto_clean:
+	if [ -f ~/.opam/config ]; then \
+		eval $$(opam env) && opam exec -- dune clean; \
+	fi
+	rm -f $(wildcard *.maketrack)
+
+override_dh_auto_test:
+
+opam-installs:
+	cd $(PROJECT_ROOT)
+	tar -zxf opampack.tar.gz
+	./ubuntu_wsl/install.sh
+	export OPAMROOT=$(PROJECT_ROOT)/ubuntu_wsl/opamroot
+	eval $$(opam env --root=$(PROJECT_ROOT)/ubuntu_wsl/opamroot)
+
+pkg-opam-install::
+	eval $$(opam env --switch=opampack --root=$(PROJECT_ROOT)/ubuntu_wsl/opamroot --set-switch --set-root)
+	opam exec --verbose --switch=opampack --root=$(PROJECT_ROOT)/ubuntu_wsl/opamroot -- dune build --root=$(PROJECT_ROOT) --no-config
+.PHONY: pkg-opam-install
+
+override_dh_auto_build: opam-installs pkg-opam-install
+	cd $(PROJECT_ROOT)
+
+override_dh_auto_install:
+	cp $(wildcard conversion-scripts/*.sh) $$(pwd)/debian/attc/usr/lib/attachment-converter/scripts
+	mv $$(pwd)/_build/default/main.exe $$(pwd)/debian/attc/usr/bin/attc

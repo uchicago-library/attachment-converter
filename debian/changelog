@@ -1,0 +1,5 @@
+attachment-converter (0.1.33-1~jammy) jammy; urgency=medium
+
+  * Initial release. (Closes: #XXXX)
+
+ -- Ben Kim <benkim@uchicago.edu>  Mon, 22 Jul 2024 15:37:44 -0500
