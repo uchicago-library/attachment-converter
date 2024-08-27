@@ -1,0 +1,25 @@
+# Maintainer: Matt Teichman <teichman@uchicago.edu>
+# Maintainer: Ben Kim <benkim@uchicago.edu>
+pkgname=attc
+pkgver=PKG_VER
+pkgrel=1
+pkgdesc="Tool for batch-converting email attachments to preservation formats for archival purposes"
+arch=(x86_64)
+url="https://dldc.lib.uchicago.edu/open/attachment-converter/index.html"
+license=(GPL-2.0-or-later)
+depends=( 'libreoffice-fresh' 'pandoc' 'ghostscript' 'libvips' )
+makedepends=( 'opam' 'mercurial' )
+source=("https://github.com/uchicago-library/attachment-converter/archive/${pkgver}/attachment-converter-${pkgver}.tar.gz")
+sha256sums=('')
+
+build() {
+	cd ${srcdir}/attachment-converter-${pkgver}
+	make brew-install
+}
+
+package() {
+	mkdir -p ${pkgdir}/usr/bin
+	mkdir -p ${pkgdir}/usr/lib/attachment-converter/scripts
+	cp ${srcdir}/attachment-converter-${pkgver}/conversion-scripts/*.sh ${pkgdir}/usr/lib/attachment-converter/scripts
+	mv ${srcdir}/attachment-converter-${pkgver}/_build/default/main.exe ${pkgdir}/usr/bin/attc
+}
