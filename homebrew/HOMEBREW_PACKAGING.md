@@ -2,7 +2,7 @@
 1. As always, create a tag for the new version by running the commands `git tag VER_NUM` and `git push origin VER_NUM`. Once the tag is pushed to github, github will automatically create a tarball of the whole project that can be obtained from a link. Ensure that `lib/version.ml` is updated with the correct **version number**.
 2. Fetch the SHA sum for the new tag by performing the following command:
 `curl -sL "https://github.com/uchicago-library/attachment-converter/archive/refs/tags/VER_NUM.tar.gz" | shasum -a 256 | cut -d " " -f 1`
-3. Within this directory lies the example Formula. Fill in the field for `sha256` and modify the `VER_NUM` in the `url` field to fetch the correct tag.
+3. Within this directory lies the example Formula. Fill in the field for `sha256` on line 5 and modify the `VER_NUM` in the `url` field on line 4 to fetch the correct tag.
 4. Update `Formula/attc.rb` in the uchicago-library repository named `homebrew-attc`.
 5. Users can then download `attc` by performing following:
 `brew install benkim04/attc/attc`
