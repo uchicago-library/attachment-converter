@@ -9,7 +9,7 @@ Ensure that the `debian/changelog` file is properly updated with the **correct u
     3. `cd` into the directory above the root of the project (`cd ../..`)
     4. Run `tar czf attachment-converter_VER_NUM.orig.tar.gz` (The underscore must precede the `VER_NUM` and the `.orig.tar.gz` is necessary)
     5. `cd` back into the project directory
-5. Run `debuild -S` or `debuild -S -k"GPG_KEY"` to generate necessary files for uploading to the PPA as well as signing the files with the correct GPG Key.
+5. Run `debuild -S` or `debuild -S -k"GPG_KEY"` (There is no space between `-k` and the specified key) to generate necessary files for uploading to the PPA as well as signing the files with the correct GPG Key.
 6. `cd` back out of the project to locate the `source.changes` file and run `dput ppa:uchicago-dldc/attc <source.changes>`
 7. Ensure the package has been uploaded to Launchpad. Allow approximately one hour for Laucnhpad to build the package and upload the package for download.
     You can monitor the build progress by selecting `View Package Details`, selecting the newly uploaded package and pressing on the current Build. 
