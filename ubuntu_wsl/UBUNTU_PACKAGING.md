@@ -48,7 +48,7 @@ If fixing a release for the same version, change the package version by incremen
 The version number will contain the source version number, the package release number, and then the ubuntu distribution. For example, `0.1.1-2~jammy` indicates project version `0.1.1`, the second package release for that project version, and the ubuntu distribution jammy jellyfish.
 
 #### Why not package for debian?
-uent version releases also need to undergo such vetting. The alternative, a third-party `apt` repository, requires finicky and needlessly complicated GPG key configuration for the user. PPA's present a smoother end user experience by removing the need to deal with tricky GPG configuration and add an `apt` repository through a simple command. 
+Submitting a package to the official `apt` repositories requires a lengthy vetting process and subsequent version releases also need to undergo such vetting. The alternative, a third-party `apt` repository, requires finicky and needlessly complicated GPG key configuration for the user. PPA's present a smoother end user experience by removing the need to deal with tricky GPG configuration and add an `apt` repository through a simple command. 
 
 #### Why is this directory specificed as a `data_only_dirs`?
 The `opam` switch being hosted within this directory means that during the build process, binaries and executables are built and placed within subdirectories of this directory to be executed by `opam`. This includes a `dune` executable that is mistaken for a `dune` file. Specifying this directory as a `data_only_dirs` avoids that error.
