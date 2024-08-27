@@ -145,3 +145,6 @@ pkg-build: pkg-opam cd-home deps
 	$(call DUNE,build)
 	cd $(PROJECT_ROOT)
 .PHONY: pkg-build
+
+gen-man-page: opam-install
+	./main.exe --help=groff > doc/attc.1

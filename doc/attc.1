@@ -1,0 +1,51 @@
+.\" Pipe this output to groff -m man -K utf8 -T utf8 | less -R
+.\"
+.mso an.tmac
+.TH "ATTC" 1 "" "Attc 0.1.19" "Attc Manual"
+.\" Disable hyphenation and ragged-right
+.nh
+.ad l
+.SH NAME
+.P
+attc \N'45' Converts email attachments\N'46'
+.SH SYNOPSIS
+.P
+\fBattc\fR [\fIOPTION\fR]… [\fIARG\fR]
+.SH OPTIONS
+.TP 4
+\fB\N'45'\N'45'backend\fR=\fIBACKEND\fR (absent=\fBocamlnet\fR)
+Choose between \N'39'ocamlnet\N'39' and \N'39'mrmime\N'39' as the two possible email parsing backends\N'46'
+.TP 4
+\fB\N'45'\N'45'config\fR=\fIPATH\fR
+Sets the absolute path \fIPATH\fR to be checked for a configuration file\N'46'
+.TP 4
+\fB\N'45'r\fR, \fB\N'45'\N'45'report\fR
+Provides a list of all attachment types in a given mailbox\N'46'
+.TP 4
+\fB\N'45'\N'45'report\N'45'params\fR
+Prints a list of all MIME types in the input along with all header and field parameters that go with it\N'46'
+.TP 4
+\fB\N'45'\N'45'single\N'45'email\fR
+Converts email attachments assuming the input is a single plain text email\N'46'
+.SH COMMON OPTIONS
+.TP 4
+\fB\N'45'\N'45'help\fR[=\fIFMT\fR] (default=\fBauto\fR)
+Show this help in format \fIFMT\fR\N'46' The value \fIFMT\fR must be one of \fBauto\fR, \fBpager\fR, \fBgroff\fR or \fBplain\fR\N'46' With \fBauto\fR, the format is \fBpager\fR or \fBplain\fR whenever the \fBTERM\fR env var is \fBdumb\fR or undefined\N'46'
+.TP 4
+\fB\N'45'\N'45'version\fR
+Show version information\N'46'
+.SH EXIT STATUS
+.P
+\fBattc\fR exits with:
+.TP 4
+0
+on success\N'46'
+.TP 4
+123
+on indiscriminate errors reported on standard error\N'46'
+.TP 4
+124
+on command line parsing errors\N'46'
+.TP 4
+125
+on unexpected internal errors (bugs)\N'46'

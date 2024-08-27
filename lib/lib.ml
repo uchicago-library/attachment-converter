@@ -21,6 +21,7 @@ module Mime_type = Mime_type
 module Error_message = Error_message
 module Error_intf = Error_intf
 module Utils = Utils
+module Version = Version
 
 (*
  * Copyright (c) 2021 Matt Teichman

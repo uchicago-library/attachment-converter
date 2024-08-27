@@ -161,7 +161,8 @@ let convert_t =
 
 let cmd =
   let doc = "Converts email attachments." in
-  let info = Cmd.info "attc" ~doc in
+  let open Lib.Version in 
+  let info = Cmd.info "attc" ~version: ver_num ~doc in
   Cmd.v info convert_t
 
 let main () = exit (Cmd.eval cmd)
