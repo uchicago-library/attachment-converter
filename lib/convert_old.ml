@@ -133,7 +133,8 @@ module type PARSETREE = sig
   val content_type : header -> Header.Field.Value.t option
   val date : t -> string option
   val from : t -> string option
-  val message_id : t -> string option
+
+  (* TODO add message id getter here *)
 
   type attachment = header Attachment.t
 
@@ -304,20 +305,6 @@ module Mrmime_parsetree = struct
     |> function
     | Field (_, Mailboxes, poly) ->
       let str = Prettym.to_string mailboxes poly in
-      Some (Stdlib.String.trim str)
-    | _ -> None
-
-  let message_id parsetree =
-    let open Mrmime.Header in
-    let open Mrmime.Field in
-    let open Mrmime.MessageID.Encoder in
-    parsetree
-    |> header
-    |> assoc Mrmime.Field_name.message_id
-    |> List.hd
-    |> function
-    | Field (_, MessageID, poly) ->
-      let str = Prettym.to_string message_id poly in
       Some (Stdlib.String.trim str)
     | _ -> None
 
@@ -511,13 +498,6 @@ module Ocamlnet_parsetree = struct
   let from parsetree =
     let h = header parsetree in
     match h#field "from" with
-    | exception Not_found -> None
-    | exception e -> raise e
-    | success -> Some success
-
-  let message_id parsetree =
-    let h = header parsetree in
-    match h#field "message-id" with
     | exception Not_found -> None
     | exception e -> raise e
     | success -> Some success
