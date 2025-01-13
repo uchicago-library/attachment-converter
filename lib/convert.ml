@@ -647,19 +647,29 @@ module Conversion = struct
             meta_header_val
         ]
 
-    let convert_attachment att pbar md =
+    let convert_attachment tree att pbar md =
       let convert_data str =
         let args = split md.script in
         match Unix.Proc.rw args str with
         | exception Failure msg ->
-          write stderr
-            (* include: message id, date, from w/ the
-               formatting of the error *)
-            ( "Conversion Failure: Could not run "
-            ^ md.conversion_id
-            ^ " script, produced message \"" ^ msg ^ "\"\n"
-            ) ;
-          None (* TODO: Better logging *)
+          let unoption = function
+            | None -> ""
+            | Some s -> s
+          in
+          let d = unoption @@ date tree in
+          let f = unoption @@ from tree in
+          let m = unoption @@ message_id tree in
+          let error_msg =
+            sprintf
+              "Conversion Failure: Could not run %s \
+               script, produced message \"%s\"\n\n\
+               \tDate: %s\n\n\
+              \                \tFrom: %s\n\n\
+              \                \tMessage-ID: %s\n"
+              md.conversion_id msg d f m
+          in
+          write stderr error_msg ;
+          None
         | exception e -> raise e
         | converted -> Some converted
       in
@@ -771,7 +781,7 @@ module Conversion = struct
             in
             att
             :: ( List.map
-                   ( convert_attachment att pbar
+                   ( convert_attachment tree att pbar
                    << create_params )
                    trans_lst
                |> Option.reduce )
