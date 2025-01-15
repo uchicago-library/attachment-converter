@@ -652,21 +652,24 @@ module Conversion = struct
         let args = split md.script in
         match Unix.Proc.rw args str with
         | exception Failure msg ->
-          let unoption = function
+          let unoption name = function
             | None -> ""
-            | Some s -> s
+            | Some s -> sprintf "\t%s: %s\n" name s
           in
-          let d = unoption @@ date tree in
-          let f = unoption @@ from tree in
-          let m = unoption @@ message_id tree in
+          let open Parsetree_utils (T) in
+          let filename = attachment_name att in
+          let d = unoption "Date" @@ date tree in
+          let f = unoption "From" @@ from tree in
+          let m =
+            unoption "Message-ID" @@ message_id tree
+          in
+          let fn = unoption "Filename" @@ filename in
           let error_msg =
             sprintf
               "Conversion Failure: Could not run %s \
                script, produced message \"%s\"\n\n\
-               \tDate: %s\n\n\
-              \                \tFrom: %s\n\n\
-              \                \tMessage-ID: %s\n"
-              md.conversion_id msg d f m
+               %s%s%s%s"
+              md.conversion_id msg d f m fn
           in
           write stderr error_msg ;
           None
