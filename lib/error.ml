@@ -24,10 +24,11 @@ let to_string =
       ({ date; from; message_id }, onet_error) ->
     let unoption header_name = function
       | None -> ""
-      | Some s -> sprintf "\t%s: %s\n" header_name s
+      | Some s -> sprintf "%s: %s\n" header_name s
     in
     sprintf
-      "Email parse error!\n%s%s%s\tError Message: %s\n"
+      "Error-Type: Email parse error\n\
+       %s%s%sError-Message: %s\n\n"
       (unoption "Date" date)
       (unoption "From" from)
       (unoption "Message-ID" message_id)
@@ -35,9 +36,9 @@ let to_string =
   | `MrmimeParseError { date; from; message_id } ->
     let unoption header_name = function
       | None -> ""
-      | Some s -> sprintf "\t%s: %s\n" header_name s
+      | Some s -> sprintf "%s: %s\n" header_name s
     in
-    sprintf "Email parse error!\n%s%s%s"
+    sprintf "Error-Type: Email parse error!\n%s%s%s\n\n"
       (unoption "Date" date)
       (unoption "From" from)
       (unoption "Message-ID" message_id)

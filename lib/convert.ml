@@ -654,7 +654,7 @@ module Conversion = struct
         | exception Failure msg ->
           let unoption name = function
             | None -> ""
-            | Some s -> sprintf "\t%s: %s\n" name s
+            | Some s -> sprintf "%s: %s\n" name s
           in
           let open Parsetree_utils (T) in
           let filename = attachment_name att in
@@ -666,9 +666,9 @@ module Conversion = struct
           let fn = unoption "Filename" @@ filename in
           let error_msg =
             sprintf
-              "Conversion Failure: Could not run %s \
-               script, produced message \"%s\"\n\n\
-               %s%s%s%s"
+              "Error-Type: Conversion Failure: Could not \
+               run %s script, produced message \"%s\"\n\
+               %s%s%s%s\n"
               md.conversion_id msg d f m fn
           in
           write stderr error_msg ;
