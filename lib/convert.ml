@@ -650,8 +650,15 @@ module Conversion = struct
     let convert_attachment tree att pbar md =
       let convert_data str =
         let args = split md.script in
-        match Unix.Proc.rw args str with
-        | exception Failure msg ->
+        let write_email output_chan =
+          Prelude.write output_chan str
+        in
+        match
+          Unix.Proc.runfull ~reader:Prelude.read
+            ~writer:write_email ~err:Prelude.read args
+        with
+        | Prelude.Unix.WEXITED 0, output, _ -> output
+        | Prelude.Unix.WEXITED estatus, _, Some msg ->
           let unoption name = function
             | None -> ""
             | Some s -> sprintf "%s: %s\n" name s
@@ -664,17 +671,29 @@ module Conversion = struct
             unoption "Message-ID" @@ message_id tree
           in
           let fn = unoption "Filename" @@ filename in
+          let prep_error s =
+            s
+            |> String.(trim whitespace)
+            |> String.replace "\n" "\n  "
+          in
           let error_msg =
             sprintf
-              "Error-Type: Conversion Failure: Could not \
-               run %s script, produced message \"%s\"\n\
+              "Error-Type: attachment skipped; conversion \
+               %s exited with status %d and error output:\n\
+              \  %s\n\
                %s%s%s%s\n"
-              md.conversion_id msg d f m fn
+              md.conversion_id estatus (prep_error msg) d f
+              m fn
           in
           write stderr error_msg ;
           None
+        | (WSIGNALED _ | WSTOPPED _), _, Some msg ->
+          let _ = msg in
+          (* TODO: fill this error message in *)
+          assert false
+        | _, _, None -> assert false
         | exception e -> raise e
-        | converted -> Some converted
+        (* | converted -> Some converted *)
       in
       let ts = timestamp () in
       let md =
