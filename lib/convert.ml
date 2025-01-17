@@ -179,10 +179,14 @@ module Mrmime_parsetree = struct
 
   let of_string_error email_string =
     let open GrovelErrorInfo in
+    let ( >>| ) = Option.( >>| ) in
+    let open Stdlib.String in
+    let d = date email_string >>| trim in
+    let f = from email_string >>| trim in
+    let m = message_id email_string >>| trim in
     Trace.throw
-      (E.Smart.mrmime_parse_error ~date:(date email_string)
-         ~from:(from email_string)
-         ~message_id:(message_id email_string) )
+      (E.Smart.mrmime_parse_error ~date:d ~from:f
+         ~message_id:m )
 
   let of_string_exn email_string =
     email_string
@@ -647,6 +651,19 @@ module Conversion = struct
             meta_header_val
         ]
 
+    let grab_failure_info tree att =
+      let unoption name = function
+        | None -> ""
+        | Some s -> sprintf "%s: %s\n" name s
+      in
+      let open Parsetree_utils (T) in
+      let filename = attachment_name att in
+      let d = unoption "Date" @@ date tree in
+      let f = unoption "From" @@ from tree in
+      let m = unoption "Message-ID" @@ message_id tree in
+      let fn = unoption "Filename" @@ filename in
+      (d, f, m, fn)
+
     let convert_attachment tree att pbar md =
       let convert_data str =
         let args = split md.script in
@@ -659,23 +676,12 @@ module Conversion = struct
         with
         | Prelude.Unix.WEXITED 0, output, _ -> output
         | Prelude.Unix.WEXITED estatus, _, Some msg ->
-          let unoption name = function
-            | None -> ""
-            | Some s -> sprintf "%s: %s\n" name s
-          in
-          let open Parsetree_utils (T) in
-          let filename = attachment_name att in
-          let d = unoption "Date" @@ date tree in
-          let f = unoption "From" @@ from tree in
-          let m =
-            unoption "Message-ID" @@ message_id tree
-          in
-          let fn = unoption "Filename" @@ filename in
           let prep_error s =
             s
             |> String.(trim whitespace)
             |> String.replace "\n" "\n  "
           in
+          let d, f, m, fn = grab_failure_info tree att in
           let error_msg =
             sprintf
               "Error-Type: attachment skipped; conversion \
@@ -687,13 +693,19 @@ module Conversion = struct
           in
           write stderr error_msg ;
           None
-        | (WSIGNALED _ | WSTOPPED _), _, Some msg ->
-          let _ = msg in
-          (* TODO: fill this error message in *)
-          assert false
+        | (WSIGNALED _ | WSTOPPED _), _, Some _ ->
+          let d, f, m, fn = grab_failure_info tree att in
+          let error_msg =
+            sprintf
+              "Error-Type: attachment skipped; conversion \
+               %s was interrupted\n\
+               %s%s%s%s\n"
+              md.conversion_id d f m fn
+          in
+          write stderr error_msg ;
+          None
         | _, _, None -> assert false
         | exception e -> raise e
-        (* | converted -> Some converted *)
       in
       let ts = timestamp () in
       let md =

@@ -19,7 +19,8 @@ let to_string =
   | `ReferParse (n, s) ->
     sprintf
       "Refer parse error in config file, line %i\n\
-       Content of line: %s" n s
+       Content of line: %s"
+      n s
   | `OcamlnetParseError
       ({ date; from; message_id }, onet_error) ->
     let unoption header_name = function
@@ -27,7 +28,8 @@ let to_string =
       | Some s -> sprintf "%s: %s\n" header_name s
     in
     sprintf
-      "Error-Type: Email parse error\n\
+      "Error-Type: email skipped; email parse error\n\
+       Backend: OCamlnet\n\
        %s%s%sError-Message: %s\n\n"
       (unoption "Date" date)
       (unoption "From" from)
@@ -38,7 +40,10 @@ let to_string =
       | None -> ""
       | Some s -> sprintf "%s: %s\n" header_name s
     in
-    sprintf "Error-Type: Email parse error!\n%s%s%s\n\n"
+    sprintf
+      "Error-Type: email skipped; email parse error\n\
+       Backend: Mr. Mime\n\
+       %s%s%s\n\n"
       (unoption "Date" date)
       (unoption "From" from)
       (unoption "Message-ID" message_id)
