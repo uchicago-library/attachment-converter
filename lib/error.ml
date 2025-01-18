@@ -43,7 +43,7 @@ let to_string =
     sprintf
       "Error-Type: email skipped; email parse error\n\
        Backend: Mr. Mime\n\
-       %s%s%s\n\n"
+       %s%s%s\n"
       (unoption "Date" date)
       (unoption "From" from)
       (unoption "Message-ID" message_id)
