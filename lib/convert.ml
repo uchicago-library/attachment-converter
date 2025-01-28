@@ -81,8 +81,8 @@ module GrovelErrorInfo = struct
     let header h =
       seq
         [ bol;
-          no_case (seq [ str h; char ':'; rep (set "\t ") ]);
-          group (non_greedy (rep1 any));
+          no_case (seq [ str h; char ':'; rep1 space ]);
+          group (non_greedy (rep1 any)) ;
           eol
         ]
 
@@ -184,6 +184,7 @@ module Mrmime_parsetree = struct
     let d = date email_string >>| trim in
     let f = from email_string >>| trim in
     let m = message_id email_string >>| trim in
+    (* Prelude.writefile ~fn:"dude.eml" email_string ; *)
     Trace.throw
       (E.Smart.mrmime_parse_error ~date:d ~from:f
          ~message_id:m )
@@ -654,7 +655,11 @@ module Conversion = struct
     let grab_failure_info tree att =
       let unoption name = function
         | None -> ""
-        | Some s -> sprintf "%s: %s\n" name s
+        | Some s ->
+           let open String in
+           let pred c = not (mem c "\r\n\t") in
+           let processed = filter pred s in
+           sprintf "%s: %s\n" name processed
       in
       let open Parsetree_utils (T) in
       let filename = attachment_name att in

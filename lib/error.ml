@@ -38,7 +38,8 @@ let to_string =
   | `MrmimeParseError { date; from; message_id } ->
     let unoption header_name = function
       | None -> ""
-      | Some s -> sprintf "%s: %s\n" header_name s
+      | Some s ->
+         sprintf "%s: %s\n" header_name s
     in
     sprintf
       "Error-Type: email skipped; email parse error\n\
