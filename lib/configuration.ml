@@ -82,17 +82,22 @@ module ConvUtil = struct
   let envoke ut = ut.envoke
 
   let default_script_dir () =
-    let paths = [
-      "/opt/homebrew/Cellar/attc/" ^ Version.ver_num ^ "/lib/";
-      "/usr/local/Cellar/attc/" ^ Version.ver_num ^ "/lib/";
-      "/usr/lib/attachment-converter/scripts/"
-    ] in
+    let paths =
+      [ "/opt/homebrew/Cellar/attc/" ^ Version.ver_num
+        ^ "/lib/";
+        "/usr/local/Cellar/attc/" ^ Version.ver_num
+        ^ "/lib/";
+        "/usr/lib/attachment-converter/scripts/"
+      ]
+    in
     let rec find_path = function
-    (* TODO: Integrate existing error handling functionality *)
+      (* TODO: Integrate existing error handling
+         functionality *)
       | [] -> failwith "No valid script directory found."
       | path :: rest ->
-          if Sys.file_exists path then path
-          else find_path rest
+        if Sys.file_exists path
+        then path
+        else find_path rest
     in
     find_path paths
 

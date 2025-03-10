@@ -22,7 +22,7 @@ let content_types ?(params = false) channel =
           | None -> 1
           | Some x -> x + 1 ) )
   in
-  let add_to_set curr line =
+  let add_to_set _ curr line =
     let mime =
       if params
       then mime_type line

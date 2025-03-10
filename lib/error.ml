@@ -19,7 +19,8 @@ let to_string =
   | `ReferParse (n, s) ->
     sprintf
       "Refer parse error in config file, line %i\n\
-       Content of line: %s" n s
+       Content of line: %s"
+      n s
   | `OcamlnetParseError
       ({ date; from; message_id }, onet_error) ->
     let unoption header_name = function
