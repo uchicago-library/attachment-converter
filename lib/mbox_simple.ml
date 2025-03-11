@@ -1,5 +1,9 @@
 open Prelude
-open Result.Ops
+(* open Result.Ops *)
+
+let preview str =
+  let msg = String.take 50 str in
+  printf "Preview: %s..." msg
 
 let mbox chan =
   let open Result.Ops in
@@ -19,6 +23,8 @@ let mbox chan =
         end
     in
     let () = Buffer.clear buf in
+    (* read the first line to see whether it's a From
+       line *)
     let* fromline =
       match from with
       | Some line -> Ok line
@@ -37,8 +43,11 @@ let mbox chan =
     | Error e ->
       prerr_endline e ;
       rev acc
-    | Ok (None, msg) -> rev ((fromline, msg) :: acc)
+    | Ok (None, msg) ->
+      preview msg ;
+      rev ((fromline, msg) :: acc)
     | Ok (fromline, msg) ->
+      preview msg ;
       loop fromline ((fromline, msg) :: acc)
   in
-  loop None [] |> map snd
+  loop None [] |> ignore
