@@ -51,8 +51,7 @@ Our illustrious team of developers currently includes:
 
 + [[https://github.com/nmmull][Nathan Mull]]
 + [[https://elucidations.vercel.app/][Matt Teichman]]
-+ [[https://www.lib.uchicago.edu/about/directory/staff/emily-schartz/][Emily Schartz]]
-+ Ben Kim
++ Charles Njoroge
 
 Previous developers include:
 
@@ -60,10 +59,13 @@ Previous developers include:
 + [[https://github.com/cormacd9818][Cormac Duhamel]]
 + [[https://www.linkedin.com/in/nk45/][Nishchay Karle]]
 + [[https://theworldofobi.github.io/][Obi Obetta]]
++ [[https://www.lib.uchicago.edu/about/directory/staff/emily-schartz/][Emily Schartz]]
++ Ben Kim
 
-[[https://elucidations.vercel.app/][Matt Teichman]], [[https://github.com/nmmull][Nathan Mull]], [[https://www.lib.uchicago.edu/about/directory/staff/emily-schartz/][Emily Schartz]], and [[https://www2.lib.uchicago.edu/keith/][Keith Waclena]] will be
-contributing to and maintaining the project on an longterm basis.
-Matt is currently in charge of managing the project.
+
+[[https://elucidations.vercel.app/][Matt Teichman]] and [[https://github.com/nmmull][Nathan Mull]] will be contributing to and maintaining
+the project on an longterm basis.  Matt is currently in charge of
+managing the project.
 
 * Background on the email format
     
