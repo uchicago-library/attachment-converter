@@ -3,9 +3,9 @@ open Prelude
 
 let preview str =
   let msg = String.take 50 str in
-  printf "Preview: %s..." msg
+  printf "Preview:\n%s...\n" msg
 
-let mbox chan =
+let mbox f chan =
   let open Result.Ops in
   let buf = Buffer.create 1000 in
   let message from chan =
@@ -38,16 +38,12 @@ let mbox chan =
     in
     Ok (loop fromline)
   in
-  let rec loop fromline acc =
+  let rec loop fromline =
     match message fromline chan with
-    | Error e ->
-      prerr_endline e ;
-      rev acc
-    | Ok (None, msg) ->
-      preview msg ;
-      rev ((fromline, msg) :: acc)
+    | Error e -> prerr_endline e
+    | Ok (None, msg) -> f msg
     | Ok (fromline, msg) ->
-      preview msg ;
-      loop fromline ((fromline, msg) :: acc)
+      f msg ;
+      loop fromline
   in
-  loop None [] |> ignore
+  loop None
