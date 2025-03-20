@@ -22,7 +22,7 @@ let content_types ?(params = false) channel =
           | None -> 1
           | Some x -> x + 1 ) )
   in
-  let add_to_set _ curr line =
+  let add_to_set curr line =
     let mime =
       if params
       then mime_type line
@@ -30,4 +30,4 @@ let content_types ?(params = false) channel =
     in
     if is_ct_line line then inc_or_zero mime curr else curr
   in
-  foldlines add_to_set M.empty channel
+  Prelude.foldlines add_to_set M.empty channel
