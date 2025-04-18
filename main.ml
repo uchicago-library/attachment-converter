@@ -5,14 +5,15 @@
  * %%NAME%% %%VERSION%%
  *)
 
-let main () =
-  match Prelude.argv with
-  | [ fp ] ->
-    let open Lib.Mbox_simple in
-    Prelude.within (mbox preview) fp
-  | _ -> ()
+(* let main () = *)
+(*   match Prelude.argv with *)
+(*   | [ fp ] -> *)
+(*     let open Lib.Mbox_simple in *)
+(*     Prelude.within (mbox preview) fp *)
+(*   | _ -> () *)
 
-let () = main ()
+(* let () = main () *)
+let () = ()
 
 (*
  * Copyright (c) 2021 Matt Teichman
