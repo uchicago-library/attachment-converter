@@ -1,5 +1,9 @@
 open Prelude
 
+module FileChannel = FileChannel
+module FileMBoxChannel = FileMBoxChannel
+module FileMBoxReader = FileMBoxReader
+
 let preview str =
   let msg = String.take 50 str in
   printf "Preview:\n%s...\n" msg
@@ -21,8 +25,10 @@ module type MBoxChannel = sig
 end
 
 module MBoxChannel (C : Channel) : MBoxChannel with type source = C.t = struct
+  (* the original channel *)
   type source = C.t
 
+  (* an mbox channel that converts a standard channel into a peekable channel *)
   type mchan = {
     chan: source;
     buffer: Buffer.t;
@@ -92,7 +98,7 @@ module MboxReader (MBoxChannel : MBoxChannel) = struct
     let rec _read_all_mbox _chan _f =
       let mbox_channel = MBoxChannel.create chan in
       match read_email mbox_channel true with
-      | Error _ -> []
+      | Error _ -> ()
       | Ok email ->
         f email;
         _read_all_mbox _chan _f

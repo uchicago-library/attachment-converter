@@ -4,7 +4,8 @@
 
 (library
  (name lib)
- (libraries prelude mrmime threads netstring unix re))
+ (libraries prelude mrmime threads netstring unix re)
+ (modules mbox_simple))
 
 (env
  (dev ; make warnings non-fatal
