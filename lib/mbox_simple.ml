@@ -109,7 +109,7 @@ module MboxReader (MBoxChannel : MBoxChannel) = struct
     loop acc
 end
 
-module FileChannel : Channel = struct
+module FileChannel : Channel with type t = in_channel =  struct
   type t = in_channel
   let input_line = input_line
 end
