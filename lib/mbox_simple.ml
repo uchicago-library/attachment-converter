@@ -1,8 +1,22 @@
 (* open Prelude *)
 
+<<<<<<< HEAD
 
 module type Parser = sig
   (* an internal channel *)
+=======
+let preview str =
+  let msg = String.take 50 str in
+  printf "Preview:\n%s...\n" msg
+
+(* Define a channel type *)
+module type Channel = sig
+  type t
+  val input_line : t -> string
+end
+
+module type MBoxChannel = sig
+>>>>>>> 54f3c37 (Adding conversion module)
   type mchan
   
   (* create an internal channel *)
