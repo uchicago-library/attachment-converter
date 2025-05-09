@@ -6,8 +6,7 @@
  (name main)
  (public_name attc)
  (promote (until-clean))
- (libraries prelude lib mrmime threads netstring unix cmdliner)
- (modules mbox_simple))
+ (libraries prelude lib mrmime threads netstring unix cmdliner))
 
 (data_only_dirs ubuntu_wsl)
 

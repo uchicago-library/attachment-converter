@@ -1,9 +1,5 @@
 open Prelude
 
-module FileChannel = FileChannel
-module FileMBoxChannel = FileMBoxChannel
-module FileMBoxReader = FileMBoxReader
-
 let preview str =
   let msg = String.take 50 str in
   printf "Preview:\n%s...\n" msg
@@ -122,6 +118,48 @@ end
 
 module FileMBoxChannel = MBoxChannel(FileChannel)
 module FileMBoxReader = MboxReader(FileMBoxChannel)
+
+
+(* module MakeConversion (MBC : MBoxChannel) = struct
+  (* make a reader out of the channel*)
+  module Reader = MboxReader(MBC)
+
+  (* create a convert that loops through the email will be transitioned into a loop afterwards *)
+  let convert chan (f : string -> string) : unit =
+    let mbox = MBC.create chan in
+    let rec loop () =
+      match Reader.read_email mbox true with
+      | Ok msg ->
+          let transformed = f msg in
+          output_string stdout transformed;
+          flush stdout;
+          loop ()
+      | Error _ | exception End_of_file -> ()
+    in
+    loop ()
+end *)
+
+
+module MakeConversion (MBC : MBoxChannel) = struct
+  module Reader = MboxReader(MBC)
+
+  let convert chan (f : string -> string) : unit =
+    let _acc = Reader.mbox_file_fold
+      (fun () msg ->
+         match msg with
+         | Ok s ->
+             let transformed = f s in
+             output_string stdout transformed;
+             flush stdout;
+             ()
+         | Error err ->
+             prerr_endline ("Error reading message: " ^ err);
+             ()
+      ) chan ()
+    in
+    ()
+end
+
 
 let () =
   let ic = open_in "mailbox.txt" in
