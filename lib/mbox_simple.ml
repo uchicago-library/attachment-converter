@@ -1,169 +1,134 @@
-open Prelude
+(* open Prelude *)
 
-let preview str =
-  let msg = String.take 50 str in
-  printf "Preview:\n%s...\n" msg
 
-(* Define a channel type *)
-module type Channel = sig
-  type t
-  val input_line : t -> string
-end
-
-module type MBoxChannel = sig
+module type Parser = sig
+  (* an internal channel *)
   type mchan
-  type source
-  val peek_line : mchan -> string option * mchan
-  val read_line : mchan -> unit
-  val get_contents : mchan -> (string, string) result
-  val create : source -> mchan
-  val current_line_number : mchan -> int
+  
+  (* create an internal channel *)
+  val create_mchan : in_channel -> mchan
+
+  val fold : ('a -> (string, string) result -> 'a) -> in_channel -> 'a -> 'a
+
+  (* read a single entity *)
+  val read : mchan -> bool -> (string, string) result
+
+  (* convert messages in channel by applying f*)
+  val convert : in_channel -> (string -> string) -> unit
 end
 
-module MBoxChannel (C : Channel) : MBoxChannel with type source = C.t = struct
-  (* the original channel *)
-  type source = C.t
-
-  (* an mbox channel that converts a standard channel into a peekable channel *)
+(*
+  Creates an mbox parser
+*)
+module MBoxParser : Parser = struct
+  
+  (* a channel wrapper for an mbox *)
   type mchan = {
-    chan: source;
+    (* channel that contains the data *)
+    chan: in_channel;
+
+    (* buffer to hold the contents of the channel *)
     buffer: Buffer.t;
-    mutable peeked: string option;
+
+    (* next line in the channel *)
+    mutable next: string option;
+
+    (* current line number *)
     mutable line_num: int;
   }
 
-  let create chan = {chan; buffer = Buffer.create 1000; peeked = None; line_num = 0}
+  (* create an mbox channel with a buffer, an empty peek option, and initial line number *)
+  let create_mchan chan = 
+    { chan; buffer = Buffer.create 1000; next = None; line_num = 0 }
 
+  (* return the current line number *)
+  let current_line_number m = m.line_num
+
+  (* get the contents of the buffer *)
   let get_contents m =
-    let data = Buffer.contents m.buffer in
-    Buffer.clear m.buffer;
-    Ok data
+    let contents = Buffer.contents m.buffer in Buffer.clear m.buffer;
+    Ok contents
 
+  (* look and store the next line *)
   let peek_line m =
-    match m.peeked with
+    match m.next with
     | Some line -> Some line, m
     | None ->
-      (match C.input_line m.chan with
-       | line ->
-         m.peeked <- Some line;
-         m.line_num <- m.line_num + 1;
-         Some line, m
-       | exception End_of_file -> None, m)
+      let result =
+        try
+          let line = input_line m.chan in
+          m.next <- Some line;
+          m.line_num <- m.line_num + 1;
+          Some line
+        with End_of_file -> None
+      in result, m
 
   let read_line m =
-    let read line =
+    let record line =
       Buffer.add_string m.buffer line;
       Buffer.add_char m.buffer '\n'
     in
-    match m.peeked with
+    match m.next with
     | Some line ->
-      m.peeked <- None;
-      read line
+        m.next <- None;
+        record line
     | None ->
-      (match C.input_line m.chan with
-       | line ->
-         m.line_num <- m.line_num + 1;
-         read line
-       | exception End_of_file -> raise End_of_file)
+        let line = input_line m.chan in
+        m.line_num <- m.line_num + 1;
+        record line
 
-  let current_line_number m = m.line_num
-end
+  let is_from_line line = String.length line >= 5 && String.sub line 0 5 = "From "
+  
+  let rec read mbox start_of_email =
+  match peek_line mbox with
+  | None, _ ->
+      if Buffer.length mbox.buffer > 0 then
+        get_contents mbox
+      else
+        Error "End of file"
+  | Some line, m ->
+      if start_of_email && not (is_from_line line) then
+        Error (Printf.sprintf "Malformed start of email at line %d: %s" (current_line_number m) line)
+      else if is_from_line line && not start_of_email then
+        get_contents m
+      else (
+        read_line m;
+        read m false
+      )
 
-module MboxReader (MBoxChannel : MBoxChannel) = struct
-  let rec read_email (input_chan : MBoxChannel.mchan) start_of_email =
-    let is_from_line line =
-      String.length line >= 5 && String.sub line 0 5 = "From "
-    in
-    let rec read_line input_chan start_of_email =
-      match MBoxChannel.peek_line input_chan with
-      | None, m -> MBoxChannel.get_contents m
-      | Some line, m ->
-        if start_of_email && not (is_from_line line) then
-          Error (Printf.sprintf "Malformed start of email at line %d: %s"
-                   (MBoxChannel.current_line_number m) line)
-        else if is_from_line line && not start_of_email then
-          MBoxChannel.get_contents input_chan
-        else (
-          MBoxChannel.read_line m;
-          read_line m false
-        )
-    in
-    read_line input_chan start_of_email
 
-  let read_all_mbox chan f =
-    let rec _read_all_mbox _chan _f =
-      let mbox_channel = MBoxChannel.create chan in
-      match read_email mbox_channel true with
-      | Error _ -> ()
-      | Ok email ->
-        f email;
-        _read_all_mbox _chan _f
-    in
-    _read_all_mbox chan f
 
-  let mbox_file_fold fn inchan acc =
-    let ic = MBoxChannel.create inchan in
+  let fold fn chan acc =
+    let mbox = create_mchan chan in
     let rec loop acc =
-      match read_email ic true with
-      | exception End_of_file -> acc
-      | msg -> loop (fn acc msg)
+      match read mbox true with
+      | Ok msg -> loop (fn acc (Ok msg))
+      | Error "End of file" -> acc
+      | Error err -> loop (fn acc (Error err))
     in
     loop acc
+
+    let convert chan (f : string -> string) : unit =
+      fold
+        (fun () msg ->
+           match msg with
+           | Ok s ->
+               let transformed = f s in
+               output_string stdout transformed;
+               flush stdout
+           | Error err ->
+               prerr_endline ("Error reading message: " ^ err))
+        chan ()
 end
-
-module FileChannel : Channel with type t = in_channel =  struct
-  type t = in_channel
-  let input_line = input_line
-end
-
-module FileMBoxChannel = MBoxChannel(FileChannel)
-module FileMBoxReader = MboxReader(FileMBoxChannel)
-
-
-(* module MakeConversion (MBC : MBoxChannel) = struct
-  (* make a reader out of the channel*)
-  module Reader = MboxReader(MBC)
-
-  (* create a convert that loops through the email will be transitioned into a loop afterwards *)
-  let convert chan (f : string -> string) : unit =
-    let mbox = MBC.create chan in
-    let rec loop () =
-      match Reader.read_email mbox true with
-      | Ok msg ->
-          let transformed = f msg in
-          output_string stdout transformed;
-          flush stdout;
-          loop ()
-      | Error _ | exception End_of_file -> ()
-    in
-    loop ()
-end *)
-
-
-module MakeConversion (MBC : MBoxChannel) = struct
-  module Reader = MboxReader(MBC)
-
-  let convert chan (f : string -> string) : unit =
-    let _acc = Reader.mbox_file_fold
-      (fun () msg ->
-         match msg with
-         | Ok s ->
-             let transformed = f s in
-             output_string stdout transformed;
-             flush stdout;
-             ()
-         | Error err ->
-             prerr_endline ("Error reading message: " ^ err);
-             ()
-      ) chan ()
-    in
-    ()
-end
-
 
 let () =
-  let ic = open_in "mailbox.txt" in
-  let mbox_channel = FileMBoxChannel.create ic in
-  match FileMBoxReader.read_email mbox_channel true with
-  | Ok email -> preview ("Email:\n" ^ email)
-  | Error err -> preview ("Error: " ^ err)
+  let input_file =
+    if Array.length Sys.argv > 1 then Sys.argv.(1)
+    else "-"
+  in
+  let ic =
+    if input_file = "-" then stdin
+    else open_in input_file
+  in
+
+  MBoxParser.convert ic (fun msg -> "--- EMAIL START ---\n" ^ msg ^ "--- EMAIL END ---\n\n")

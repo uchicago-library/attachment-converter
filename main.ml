@@ -75,14 +75,12 @@
        let print_both = DP.print converted in
        Ok print_both
      else (
-      let module MC = Lib.Mbox_simple.MakeConversion(Lib.Mbox_simple.FileMBoxChannel) in 
-      let handler msg = 
+      let handler msg =
         match acopy_email config msg pbar with
-        | Ok converted -> converted
-        | Error error -> message error
-      in MC.convert ic handler;
-      Ok ()
-     )
+          | Ok converted -> converted
+          | Error error -> message error
+      in Lib.Mbox_simple.MBoxParser.convert ic handler; 
+        Ok ())
    in
    match processed with
    | Error err -> write stderr (message err)

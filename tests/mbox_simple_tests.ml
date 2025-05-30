@@ -1,76 +1,101 @@
 open OUnit2
-open Prelude
 open Lib.Mbox_simple
 
-let string_input_channel str =
-  let tmp_file = Filename.temp_file "mbox_test" ".txt" in
-  let oc = open_out tmp_file in
-  output_string oc str;
+(* Utility: Create an input channel from a string *)
+let string_input_channel (s : string) : in_channel =
+  let fname = Filename.temp_file "mbox_test" ".txt" in
+  let oc = open_out fname in
+  output_string oc s;
   close_out oc;
-  open_in tmp_file
+  open_in fname
 
-  module FileChannel : Channel with type t = in_channel =  struct
-    type t = in_channel
-    let input_line = input_line
-  end
-  
-  module FileMBoxChannel = MBoxChannel(FileChannel)
-  module FileMBoxReader = MboxReader(FileMBoxChannel)
-
-  let test_peek_line _ =
-    let ic = string_input_channel "From alice@example.com\nBody line 1\n" in
-    let mchan = FileMBoxChannel.create ic in
-    let line1, _ = FileMBoxChannel.peek_line mchan in
-    let line2, _ = FileMBoxChannel.peek_line mchan in
-    assert_equal line1 line2;
-    close_in ic
-  
-
-let test_read_line_and_buffer _ =
-  let ic = string_input_channel "From bob@example.com\nLine 1\nLine 2\n" in
-  let mchan = FileMBoxChannel.create ic in
-  ignore (FileMBoxChannel.read_line mchan); 
-  ignore (FileMBoxChannel.read_line mchan); 
-  let _, _ = FileMBoxChannel.peek_line mchan in
-  ignore (FileMBoxChannel.read_line mchan);
-  match FileMBoxChannel.get_contents mchan with
-  | Ok contents ->
-      assert_equal "From bob@example.com\nLine 1\nLine 2\n" contents
-  | Error _ -> ();
+(* Test 1: Reading a valid single message *)
+let test_read_valid_message _ =
+  let ic = string_input_channel "From alice@example.com\nHello Alice\nBye\n" in
+  let mchan = MBoxParser.create_mchan ic in
+  match MBoxParser.read mchan true with
+  | Ok msg ->
+      let expected = "From alice@example.com\nHello Alice\nBye\n" in
+      assert_equal ~printer:(fun x -> x) expected msg
+  | Error e -> assert_failure ("Unexpected error: " ^ e);
   close_in ic
 
-let test_malformed_from_line _ =
-  let ic = string_input_channel "Invalid start\nFrom bob@example.com\nLine\n" in
-  let mchan = FileMBoxChannel.create ic in
-  match FileMBoxReader.read_email mchan true with
-  | Error msg -> assert_bool "should contain malformed error" (String.contains msg 'm')
-  | Ok _ -> assert_failure "Expected error due to malformed from line"
-
-let test_valid_single_email _ =
-  let ic = string_input_channel "From charlie@example.com\nHello\nWorld\nFrom delta@example.com\n" in
-  let mchan = FileMBoxChannel.create ic in
-  match FileMBoxReader.read_email mchan true with
-  | Ok email -> assert_equal "From charlie@example.com\nHello\nWorld\n" email
-  | Error _ -> ();
+(* Test 2: Malformed input without leading "From " line *)
+let test_malformed_start _ =
+  let ic = string_input_channel "Hello\nFrom bob@example.com\nHey\n" in
+  let mchan = MBoxParser.create_mchan ic in
+  match MBoxParser.read mchan true with
+  | Error msg ->
+      assert_bool "Error should describe malformed start" (String.contains msg 'm')
+  | Ok _ -> assert_failure "Expected failure due to malformed input";
   close_in ic
 
-let test_mbox_file_fold _ =
+(* Test 3: Fold accumulates all valid messages *)
+let test_fold_multiple_messages _ =
   let ic = string_input_channel
-    "From one@example.com\nFirst message\nFrom two@example.com\nSecond message\n" in
-  let acc = FileMBoxReader.mbox_file_fold (fun acc -> function
-    | Ok msg -> msg :: acc
-    | Error _ -> acc) ic [] in
-  assert_equal 2 (List.length acc);
-  assert_bool "should include 'First message'" (List.exists (fun m -> String.contains m 'F') acc);
+    "From a@example.com\nOne\nFrom b@example.com\nTwo\nFrom c@example.com\nThree\n" in
+  let messages =
+    MBoxParser.fold
+      (fun acc -> function
+        | Ok msg -> msg :: acc
+        | Error _ -> acc)
+      ic []
+    |> List.rev
+  in
+  let expected = [
+    "From a@example.com\nOne\n";
+    "From b@example.com\nTwo\n";
+    "From c@example.com\nThree\n"
+  ] in
+  assert_equal ~printer:(String.concat "\n---\n") expected messages;
   close_in ic
 
+(* Test 4: Convert applies transformation to each message *)
+let test_convert_applies_function _ =
+  let ic = string_input_channel
+    "From user@example.com\nhello\nFrom another@example.com\nworld\n" in
+
+  let tmp_out = Filename.temp_file "mbox_out" ".txt" in
+  let orig_stdout = Unix.dup Unix.stdout in
+  let fd_out = Unix.openfile tmp_out [Unix.O_WRONLY; Unix.O_TRUNC] 0o600 in
+  Unix.dup2 fd_out Unix.stdout;
+
+  MBoxParser.convert ic (String.uppercase_ascii);
+
+  flush stdout;
+  Unix.dup2 orig_stdout Unix.stdout;
+  Unix.close fd_out;
+
+  let oc = open_in tmp_out in
+  let output = really_input_string oc (in_channel_length oc) in
+  close_in oc;
+
+  assert_bool "Output should contain uppercase FROM" (String.contains output 'F');
+  assert_bool "Output should contain uppercase HELLO" (String.contains output 'H');
+  close_in ic
+
+(* Test 5: Fold handles errors gracefully *)
+let test_fold_handles_errors _ =
+  let ic = string_input_channel
+    "From x@example.com\nok\nOops\nFrom y@example.com\nmsg\n" in
+  let results =
+    MBoxParser.fold
+      (fun acc r -> r :: acc)
+      ic []
+    |> List.rev
+  in
+  let oks = List.filter (function Ok _ -> true | _ -> false) results in
+  assert_equal ~printer:string_of_int 2 (List.length oks);
+  close_in ic
+
+(* Assembling test suite *)
 let suite =
-  "MBoxChannel Tests" >::: [
-    "peek_line" >:: test_peek_line;
-    "read_line_and_buffer" >:: test_read_line_and_buffer;
-    "malformed_from_line" >:: test_malformed_from_line;
-    "valid_single_email" >:: test_valid_single_email;
-    "mbox_file_fold" >:: test_mbox_file_fold;
+  "MBoxParser Test Suite" >::: [
+    "read_valid_message" >:: test_read_valid_message;
+    "malformed_start" >:: test_malformed_start;
+    "fold_multiple_messages" >:: test_fold_multiple_messages;
+    "convert_applies_function" >:: test_convert_applies_function;
+    "fold_handles_errors" >:: test_fold_handles_errors;
   ]
 
 let () = run_test_tt_main suite
