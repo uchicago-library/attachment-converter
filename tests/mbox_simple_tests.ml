@@ -39,7 +39,8 @@ let test_fold_multiple_messages _ =
       (fun acc -> function
         | Ok msg -> msg :: acc
         | Error _ -> acc)
-      ic []
+      []
+      ic
     |> List.rev
   in
   let expected = [
@@ -81,7 +82,8 @@ let test_fold_handles_errors _ =
   let results =
     MBoxParser.fold
       (fun acc r -> r :: acc)
-      ic []
+      []
+      ic
     |> List.rev
   in
   let oks = List.filter (function Ok _ -> true | _ -> false) results in

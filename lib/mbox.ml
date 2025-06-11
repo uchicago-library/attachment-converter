@@ -192,5 +192,18 @@ module ToOutput = struct
           fromline ^ "\n" ^ em (* TODO: better logging *)
       in
       Ok (convert_mbox in_chan converter)
+
+    (* let acopy_mbox' ?(idem = true) config in_chan pbar = *)
+    (*   let module C = Convert.Conversion.Make (T) in *)
+    (*   let transform eml = *)
+    (*     C.acopy_email ~idem config eml pbar *)
+    (*   in *)
+    (*   let reducer () = function *)
+    (*     | Ok eml -> transform eml *)
+    (*     | e -> e *)
+    (*       (\* Error errlist -> e *\) *)
+    (*        (\* Utils.print_err (Error_message.message errlist) *\) *)
+    (*   in *)
+    (*   Mbox_simple.MBoxParser.fold reducer () in_chan *)
   end
 end

@@ -46,7 +46,25 @@
      (fun k v -> print ("  " ^ k ^ " : " ^ Int.to_string v))
      types
  
- let convert config_files ?(single_email = false) ic pbar
+ let deal_with_result =
+   let module DP = Data.Printer in
+   let open Lib.Error_message in
+   function
+   | Ok converted -> DP.print converted
+   | Error err -> write stderr (message err)
+
+ let convert_single_email config_files channel pbar acopy_email =
+   let ( let* ) = Result.( >>= ) in
+   let open Lib.Dependency in
+   let open Lib.Configuration in
+   let converted_res =
+     let* () = checkDependencies () in
+     let* config = get_config config_files in
+     acopy_email config (read channel) pbar
+   in
+   deal_with_result converted_res
+
+ let convert config_files ?(single_email = false) channel pbar
      backend =
    let b =
      let open Lib.Backend in
@@ -60,32 +78,45 @@
    in
    let module B = (val b) in
    let open B in
-   let open Lib.Configuration in
-   let open Lib.Mbox.ToOutput.Make (B) in
-   let open Lib.Error_message in
-   let ( let* ) = Result.( >>= ) in
-   let processed =
-     let open Lib.Dependency in
-     let* _ = checkDependencies () in
-     let* config = get_config config_files in
-     if single_email
-     then
-       let module DP = Data.Printer in
-       let* converted = acopy_email config (read ic) pbar in
-       let print_both = DP.print converted in
-       Ok print_both
-     else (
-      let handler msg =
-        match acopy_email config msg pbar with
-          | Ok converted -> converted
-          | Error error -> message error
-      in Lib.Mbox_simple.MBoxParser.convert ic handler; 
-        Ok ())
-   in
-   match processed with
-   | Error err -> write stderr (message err)
-   | Ok _ -> ()
+   let open Lib.Mbox_simple in
+   if single_email
+   then convert_single_email
+          config_files
+          channel
+          pbar
+          acopy_email
+   else assert false
+
+ (* MBoxParser.convert *)
+ (*          channel *)
+ (*          deal_with_result *)
+
+ (*   (\* () *\) *)
+
+   (* let processed = *)
+   (*   let open Lib.Dependency in *)
+   (*   let* _ = checkDependencies () in *)
+   (*   let* config = get_config config_files in *)
+   (*   if single_email *)
+   (*   then *)
+   (*     let module DP = Data.Printer in *)
+   (*     let* converted = acopy_email config (read ic) pbar in *)
+   (*     let print_both = DP.print converted in *)
+   (*     Ok print_both *)
+   (*   else *)
+   (*     let handler msg = *)
+   (*       match acopy_email config msg pbar with *)
+   (*       | Ok converted -> converted *)
+   (*       | Error error -> message error *)
+   (*     in Lib.Mbox_simple.MBoxParser.convert ic handler; *)
+   (*        Ok () *)
+   (* in *)
+   (* match processed with *)
+   (* | Error err -> write stderr (message err) *)
+   (* | Ok _ -> () *)
  
+
+
  let convert_wrapper config_files sem rpt rpt_p inp backend =
    let pbar =
      match open_out "/dev/tty" with

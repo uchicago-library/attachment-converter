@@ -87,7 +87,10 @@ module ConvUtil = struct
         ^ "/lib/";
         "/usr/local/Cellar/attc/" ^ Version.ver_num
         ^ "/lib/";
-        "/usr/lib/attachment-converter/scripts/"
+        "/usr/lib/attachment-converter/scripts/" ;
+        (* TODO: note that this code requires a terminating slash on
+           directories *)
+        Prelude.File.squiggle "~/.config/attachment-converter/scripts/" ;
       ]
     in
     let rec find_path = function
