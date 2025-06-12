@@ -836,6 +836,8 @@ module Conversion = struct
           Progress_bar.Printer.print msg pbar
         in
         Ok (T.to_string_line_feed ~line_feed converted_tree)
+
+    (* let convert_single_email = PUT IT HERE *)
   end
 end
 
@@ -848,6 +850,9 @@ module type CONVERTER = sig
     string ->
     out_channel ->
     (string, Error.t) result
+
+  (* val convert_single_email : *)
+  (*   put that here too *)
 end
 
 module Ocamlnet_Converter =
