@@ -64,6 +64,12 @@
    in
    deal_with_result converted_res
 
+
+ let iter f mbox = Lib.Mbox_simple.MBoxParser.fold (Fun.const f) mbox
+
+ (* let convert_mbox config_files config_files channel pbar acopy_email = *)
+ (*   iter (convert_single_email config_files pbar acopy_email) channel *)
+
  let convert config_files ?(single_email = false) channel pbar
      backend =
    let b =
@@ -87,36 +93,12 @@
           acopy_email
    else assert false
 
- (* MBoxParser.convert *)
- (*          channel *)
- (*          deal_with_result *)
-
- (*   (\* () *\) *)
-
-   (* let processed = *)
-   (*   let open Lib.Dependency in *)
-   (*   let* _ = checkDependencies () in *)
-   (*   let* config = get_config config_files in *)
-   (*   if single_email *)
-   (*   then *)
-   (*     let module DP = Data.Printer in *)
-   (*     let* converted = acopy_email config (read ic) pbar in *)
-   (*     let print_both = DP.print converted in *)
-   (*     Ok print_both *)
-   (*   else *)
-   (*     let handler msg = *)
-   (*       match acopy_email config msg pbar with *)
-   (*       | Ok converted -> converted *)
-   (*       | Error error -> message error *)
-   (*     in Lib.Mbox_simple.MBoxParser.convert ic handler; *)
-   (*        Ok () *)
-   (* in *)
-   (* match processed with *)
-   (* | Error err -> write stderr (message err) *)
-   (* | Ok _ -> () *)
+   (* Mbox_simple.MBoxParser.acopy_mbox *)
+   (*   config_files *)
+   (*   channel *)
+   (*   pbar *)
+   (*   acopy_email *)
  
-
-
  let convert_wrapper config_files sem rpt rpt_p inp backend =
    let pbar =
      match open_out "/dev/tty" with

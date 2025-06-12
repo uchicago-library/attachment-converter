@@ -78,11 +78,13 @@ module MBoxParser : Parser = struct
        record line
 
   let is_from_line line = String.length line >= 5 && String.sub line 0 5 = "From "
-  
+
   (* TODO: look at this error string type, see whether it can be fit
      into the application's error type *)
   let rec read mbox start_of_email =
     match peek_line mbox with
+    (* TODO: check up on the fact that this is state monad-y *)
+    (* TODO: make this tail recursive *)
     | None, _ ->
        if Buffer.length mbox.buffer > 0 then
          get_contents mbox
@@ -123,8 +125,33 @@ module MBoxParser : Parser = struct
         | Error err ->
            prerr_endline ("Error reading message: " ^ err))
       ()
-      chan 
+      chan
+
+  let iter f mbox = fold (Fun.const f) mbox
+
+  (* TODO: this also doesn't live here; figure out where it lives *)
+  module Data = struct
+    module Printer = struct
+      let print msg = Prelude.write stdout msg
+    end
+  end
+
+  (* TODO: this doesn't live here; figure out where it lives *)
+  let deal_with_result =
+    let module DP = Data.Printer in
+    let open Error_message in
+    function
+    | Ok converted -> DP.print converted
+    | Error err -> Prelude.write stderr (message err)
+
+  (* let each_email config pbar acopy_email eml = *)
+  (*   acopy_email config eml pbar |> deal_with_result  *)
+
+  (* let convert_mbox config_files config_files channel pbar acopy_email = *)
+  (*   iter (convert_single_email config_files pbar acopy_email) channel *)
 end
+
+
 
 (* let () = *)
 (*   let input_file = *)
