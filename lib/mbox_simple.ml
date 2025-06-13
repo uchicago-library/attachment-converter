@@ -14,7 +14,8 @@ module type Parser = sig
   val read : mchan -> bool -> (string, string) result
 
   (* convert messages in channel by applying f*)
-  val convert : in_channel -> (string -> string) -> unit
+  val convert : in_channel -> (string -> (string, 'err) result) -> (unit, 'err) result
+
 end
 
 (*
@@ -107,18 +108,28 @@ module MBoxParser : Parser = struct
       | Error err -> loop (fn acc (Error err))
     in
     loop acc
+    
+    let convert chan (f : string -> (string, 'err) result) : (unit, 'err) result =
+  fold
+    (fun acc msg ->
+      match acc with
+      | Error e -> Error e
+      | Ok () ->
+        match msg with
+        | Error parse_err ->
+            prerr_endline ("Parse error: " ^ parse_err);
+            Ok () 
+        | Ok s -> (
+            match f s with
+            | Ok transformed ->
+                output_string stdout transformed;
+                flush stdout;
+                Ok ()
+            | Error err -> Error err
+        )
+    )
+    chan (Ok ())
 
-    let convert chan (f : string -> string) : unit =
-      fold
-        (fun () msg ->
-           match msg with
-           | Ok s ->
-               let transformed = f s in
-               output_string stdout transformed;
-               flush stdout
-           | Error err ->
-               prerr_endline ("Error reading message: " ^ err))
-        chan ()
 end
 
 let () =
@@ -131,4 +142,16 @@ let () =
     else open_in input_file
   in
 
-  MBoxParser.convert ic (fun msg -> "--- EMAIL START ---\n" ^ msg ^ "--- EMAIL END ---\n\n")
+  let result =
+    MBoxParser.convert ic (fun msg ->
+      Ok ("--- EMAIL START ---\n" ^ msg ^ "--- EMAIL END ---\n\n"))
+  in
+
+  (* Close input file if it's not stdin *)
+  if input_file <> "-" then close_in ic;
+
+  match result with
+  | Ok () -> ()
+  | Error err ->
+      prerr_endline ("Error: " ^ err);
+      exit 1

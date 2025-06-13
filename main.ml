@@ -46,45 +46,46 @@
      (fun k v -> print ("  " ^ k ^ " : " ^ Int.to_string v))
      types
  
- let convert config_files ?(single_email = false) ic pbar
-     backend =
-   let b =
-     let open Lib.Backend in
-     match backend with
-     | Mrmime ->
-       ( module Lib.Convert.Mrmime_Converter
-       : Lib.Convert.CONVERTER )
-     | Ocamlnet ->
-       ( module Lib.Convert.Ocamlnet_Converter
-       : Lib.Convert.CONVERTER )
-   in
-   let module B = (val b) in
-   let open B in
-   let open Lib.Configuration in
-   let open Lib.Mbox.ToOutput.Make (B) in
-   let open Lib.Error_message in
-   let ( let* ) = Result.( >>= ) in
-   let processed =
-     let open Lib.Dependency in
-     let* _ = checkDependencies () in
-     let* config = get_config config_files in
-     if single_email
-     then
-       let module DP = Data.Printer in
-       let* converted = acopy_email config (read ic) pbar in
-       let print_both = DP.print converted in
-       Ok print_both
-     else (
+let convert config_files ?(single_email = false) ic pbar backend =
+  let b =
+    let open Lib.Backend in
+    match backend with
+    | Mrmime ->
+      (module Lib.Convert.Mrmime_Converter : Lib.Convert.CONVERTER)
+    | Ocamlnet ->
+      (module Lib.Convert.Ocamlnet_Converter : Lib.Convert.CONVERTER)
+  in
+  let module B = (val b) in
+  let open B in
+  let open Lib.Configuration in
+  let open Lib.Mbox.ToOutput.Make (B) in
+  let open Lib.Error_message in
+  let ( let* ) = Result.( >>= ) in
+
+  let processed =
+    let open Lib.Dependency in
+    let* _ = checkDependencies () in
+    let* config = get_config config_files in
+    if single_email then (
+      let module DP = Data.Printer in
+      let* converted = acopy_email config (read ic) pbar in
+      let _ = DP.print converted in
+      Ok ()
+    ) else (
       let handler msg =
         match acopy_email config msg pbar with
-          | Ok converted -> converted
-          | Error error -> message error
-      in Lib.Mbox_simple.MBoxParser.convert ic handler; 
-        Ok ())
-   in
-   match processed with
-   | Error err -> write stderr (message err)
-   | Ok _ -> ()
+        | Ok converted -> Ok (converted ^ "\n")
+        | Error errlist -> Error errlist
+      in
+      Lib.Mbox_simple.MBoxParser.convert ic handler
+    )
+  in
+
+  match processed with
+  | Error err -> write stderr (message err)
+  | Ok _ -> ()
+
+
  
  let convert_wrapper config_files sem rpt rpt_p inp backend =
    let pbar =

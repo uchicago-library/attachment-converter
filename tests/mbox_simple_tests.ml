@@ -52,19 +52,27 @@ let test_fold_multiple_messages _ =
 
 (* Test 4: Convert applies transformation to each message *)
 let test_convert_applies_function _ =
-  let ic = string_input_channel
-    "From user@example.com\nhello\nFrom another@example.com\nworld\n" in
+  let ic =
+    string_input_channel
+      "From user@example.com\nhello\nFrom another@example.com\nworld\n"
+  in
 
   let tmp_out = Filename.temp_file "mbox_out" ".txt" in
   let orig_stdout = Unix.dup Unix.stdout in
-  let fd_out = Unix.openfile tmp_out [Unix.O_WRONLY; Unix.O_TRUNC] 0o600 in
+  let fd_out = Unix.openfile tmp_out [Unix.O_WRONLY; Unix.O_TRUNC; Unix.O_CREAT] 0o600 in
   Unix.dup2 fd_out Unix.stdout;
 
-  MBoxParser.convert ic (String.uppercase_ascii);
+  let result =
+    MBoxParser.convert ic (fun s -> Ok (String.uppercase_ascii s))
+  in
 
   flush stdout;
   Unix.dup2 orig_stdout Unix.stdout;
   Unix.close fd_out;
+
+  (match result with
+  | Ok () -> ()
+  | Error err -> assert_failure ("Conversion failed: " ^ err));
 
   let oc = open_in tmp_out in
   let output = really_input_string oc (in_channel_length oc) in
@@ -72,7 +80,9 @@ let test_convert_applies_function _ =
 
   assert_bool "Output should contain uppercase FROM" (String.contains output 'F');
   assert_bool "Output should contain uppercase HELLO" (String.contains output 'H');
+
   close_in ic
+
 
 (* Test 5: Fold handles errors gracefully *)
 let test_fold_handles_errors _ =
