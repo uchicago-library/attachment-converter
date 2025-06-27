@@ -46,41 +46,52 @@
      (fun k v -> print ("  " ^ k ^ " : " ^ Int.to_string v))
      types
  
-let convert config_files ?(single_email = false) ic pbar backend =
+
+(* let convert_single_email config_files channel pbar acopy_email = 
+  let ( let* ) = Result.(>>=) in 
+  let open Lib.Dependency in 
+  let open Lib.Configuration in
+  let converted_res = 
+    let* () = checkDependencies () in 
+    let* config = get_config config_files in 
+    acopy_email config (read channel) pbar
+  in 
+  deal_with_result converted_res *)
+
+
+let iter f mbox = Lib.Mbox_simple.MBoxParser.fold (Fun.const f) mbox
+
+
+let convert config_files ?(single_email = false) ic pbar
+    backend =
   let b =
     let open Lib.Backend in
     match backend with
     | Mrmime ->
-      (module Lib.Convert.Mrmime_Converter : Lib.Convert.CONVERTER)
+      ( module Lib.Convert.Mrmime_Converter
+      : Lib.Convert.CONVERTER )
     | Ocamlnet ->
-      (module Lib.Convert.Ocamlnet_Converter : Lib.Convert.CONVERTER)
+      ( module Lib.Convert.Ocamlnet_Converter
+      : Lib.Convert.CONVERTER )
   in
   let module B = (val b) in
   let open B in
   let open Lib.Configuration in
-  let open Lib.Mbox.ToOutput.Make (B) in
+  let open Lib.Mbox_simple.ToOutput.Make (B) in
   let open Lib.Error_message in
   let ( let* ) = Result.( >>= ) in
-
   let processed =
     let open Lib.Dependency in
     let* _ = checkDependencies () in
     let* config = get_config config_files in
-    if single_email then (
+    if single_email
+    then
       let module DP = Data.Printer in
       let* converted = acopy_email config (read ic) pbar in
-      let _ = DP.print converted in
-      Ok ()
-    ) else (
-      let handler msg =
-        match acopy_email config msg pbar with
-        | Ok converted -> Ok (converted ^ "\n")
-        | Error errlist -> Error errlist
-      in
-      Lib.Mbox_simple.MBoxParser.convert ic handler
-    )
+      let print_both = DP.print converted in
+      Ok print_both
+    else acopy_mbox config ic pbar
   in
-
   match processed with
   | Error err -> write stderr (message err)
   | Ok _ -> ()

@@ -1,4 +1,4 @@
-(* open Prelude *)
+open Prelude
 
 module type Parser = sig
   (* an internal channel *)
@@ -12,8 +12,9 @@ module type Parser = sig
   (* read a single entity *)
   val read : mchan -> bool -> (string, string) result
 
-  (* convert messages in channel by applying f*)
-  val convert : in_channel -> (string -> (string, 'err) result) -> (unit, 'err) result
+  type iterator
+  val of_channel : in_channel -> iterator
+  val next : iterator -> (string, string) result
 
 end
 
@@ -37,9 +38,12 @@ module MBoxParser : Parser = struct
     mutable line_num: int;
   }
 
+  type iterator = {
+    mbox: mchan;
+    mutable finished: bool;
+  }
   (* create an mbox channel with a buffer, an empty peek option, and initial line number *)
-  let create_mchan chan = 
-    { chan; buffer = Buffer.create 1000; next = None; line_num = 0 }
+  let create_mchan chan = { chan; buffer = Buffer.create 50000; next = None; line_num = 0 }
 
   (* return the current line number *)
   let current_line_number m = m.line_num
@@ -66,7 +70,7 @@ module MBoxParser : Parser = struct
   let read_line m =
     let record line =
       Buffer.add_string m.buffer line;
-      Buffer.add_char m.buffer '\n'
+       Buffer.add_string m.buffer (eol LF) 
     in
     match m.next with
     | Some line ->
@@ -87,15 +91,22 @@ module MBoxParser : Parser = struct
       else
         Error "End of file"
   | Some line, m ->
-      if start_of_email && not (is_from_line line) then
-        Error (Printf.sprintf "Malformed start of email at line %d: %s" (current_line_number m) line)
-      else if is_from_line line && not start_of_email then
+      if start_of_email then (
+        if is_from_line line then (
+          (* At the start: skip first From line, don't add to buffer *)
+          m.next <- None;
+          read m false
+        ) else
+          Error (Printf.sprintf "Malformed start of email at line %d: %s"
+                   (current_line_number m) line)
+      )
+      else if is_from_line line then
+        (* End of email detected *)
         get_contents m
       else (
         read_line m;
         read m false
       )
-
 
 
   let fold fn chan acc =
@@ -108,49 +119,46 @@ module MBoxParser : Parser = struct
     in
     loop acc
     
-    let convert chan (f : string -> (string, 'err) result) : (unit, 'err) result =
-  fold
-    (fun acc msg ->
-      match acc with
-      | Error e -> Error e
-      | Ok () ->
-        match msg with
-        | Error parse_err ->
-            prerr_endline ("Parse error: " ^ parse_err);
-            Ok () 
-        | Ok s -> (
-            match f s with
-            | Ok transformed ->
-                output_string stdout transformed;
-                flush stdout;
-                Ok ()
-            | Error err -> Error err
-        )
-    )
-    chan (Ok ())
+let of_channel chan =
+  { mbox = create_mchan chan; finished = false }
+
+let next it =
+  if it.finished then Error "End of file"
+  else
+    match read it.mbox true with
+    | Ok msg -> Ok msg
+    | Error "End of file" ->
+        it.finished <- true;
+        Error "End of file"
+    | Error err -> Error err
 
 end
 
-let () =
-  let input_file =
-    if Array.length Sys.argv > 1 then Sys.argv.(1)
-    else "-"
-  in
-  let ic =
-    if input_file = "-" then stdin
-    else open_in input_file
-  in
+module ToOutput = struct
+  module Make (T : Convert.PARSETREE) = struct
+    
+   let convert_mbox in_chan converter =
+      let iterator = MBoxParser.of_channel in_chan in
+      let rec loop () =
+        match MBoxParser.next iterator with
+        | Ok msg -> (
+            output_string stdout (converter msg);
+            flush stdout;
+            loop ()
+          )
+        | Error _ -> Ok ()
+      in
+      loop ()
 
-  let result =
-    MBoxParser.convert ic (fun msg ->
-      Ok ("--- EMAIL START ---\n" ^ msg ^ "--- EMAIL END ---\n\n"))
-  in
-
-  (* Close input file if it's not stdin *)
-  if input_file <> "-" then close_in ic;
-
-  match result with
-  | Ok () -> ()
-  | Error err ->
-      prerr_endline ("Error: " ^ err);
-      exit 1
+    let acopy_mbox ?(idem = true) config in_chan pbar = 
+      let module C = Convert.Conversion.Make (T) in 
+        let converter em =
+          match C.acopy_email ~idem config em pbar with
+          | Ok converted -> converted
+          | Error errlist ->
+            Utils.print_err (Error_message.message errlist) ;
+            em
+          in 
+        convert_mbox in_chan converter
+  end
+end
