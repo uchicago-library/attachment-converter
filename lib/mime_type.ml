@@ -44,6 +44,8 @@ let to_string mt =
   ^ "/"
   ^ Subtype.to_string (subty mt)
 
+let pp = Fmt.of_to_string to_string
+
 let of_string s =
   let out =
     Angstrom.parse_string ~consume:All
@@ -72,6 +74,8 @@ let extension mt =
 
 let compare mt1 mt2 =
   String.compare (to_string mt1) (to_string mt2)
+
+let equal mt1 mt2 = compare mt1 mt2 = 0
 
 let pdf = make Type.application Subtype.pdf
 let pdfa = make Type.application Subtype.pdf

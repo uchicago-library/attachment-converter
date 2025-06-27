@@ -24,6 +24,7 @@
   ocamlformat-rpc
   ocaml-lsp-server
   re
+  (alcotest :with-test)
   (qtest :dev)
   (ocamlformat :dev)
   (ocp-index :dev)
