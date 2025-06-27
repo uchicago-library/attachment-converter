@@ -64,7 +64,6 @@
    in
    deal_with_result converted_res
 
-
  let iter f mbox = Lib.Mbox_simple.MBoxParser.fold (Fun.const f) mbox
 
  (* let convert_mbox config_files config_files channel pbar acopy_email = *)
