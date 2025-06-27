@@ -76,7 +76,6 @@ let compare mt1 mt2 =
   String.compare (to_string mt1) (to_string mt2)
 
 let equal mt1 mt2 = compare mt1 mt2 = 0
-
 let pdf = make Type.application Subtype.pdf
 let pdfa = make Type.application Subtype.pdf
 let txt = make Type.text Subtype.plain

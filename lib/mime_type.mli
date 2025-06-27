@@ -2,7 +2,6 @@ module Type : sig
   type t
 
   val application : t
-
   val of_string : string -> (t, Error.t) result
   val pp : t Fmt.t
   val equal : t -> t -> bool
@@ -22,7 +21,6 @@ module Subtype : sig
   val bmp : t
   val tiff : t
   val jpeg : t
-
   val of_string : string -> (t, Error.t) result
   val pp : t Fmt.t
   val equal : t -> t -> bool
@@ -37,10 +35,8 @@ val to_string : t -> string
 val of_string : string -> (t, Error.t) result
 val extension : t -> string
 val compare : t -> t -> int
-
 val pp : t Fmt.t
 val equal : t -> t -> bool
-
 val pdf : t
 val pdfa : t
 val txt : t

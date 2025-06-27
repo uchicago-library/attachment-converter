@@ -131,9 +131,8 @@ struct
     Buffer.clear t.buf ;
     let rec read () =
       let line = I.next t.input in
-      if
-        String.length line >= 5
-        && String.sub line 0 5 = "From "
+      if String.length line >= 5
+         && String.sub line 0 5 = "From "
       then (
         let fromline = t.start in
         t.start <- line ;
