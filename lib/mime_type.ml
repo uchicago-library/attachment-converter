@@ -31,7 +31,6 @@ module Subtype = struct
   let bmp = iana_exn Type.image "bmp"
   let tiff = iana_exn Type.image "tiff"
   let jpeg = iana_exn Type.image "jpeg"
-
   let of_string = assert false
 end
 
