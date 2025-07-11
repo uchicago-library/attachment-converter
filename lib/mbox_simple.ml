@@ -1,10 +1,43 @@
 (* open Prelude *)
 
+type mbox_io = {
+  mutable from_line : string option;
+  chan : in_channel;
+}
+
+let is_from_line line = String.length line >= 5 && String.sub line 0 5 = "From "
+
+let check_mbox (chan : in_channel) : mbox_io option = assert false
+
+let read_email (buffer : Buffer.t) (m : mbox_io) : (string * string) option =
+  let rec go () =
+    match m.from_line with
+    | None -> None
+    | Some from_line -> (
+        match In_channel.input_line m.chan with
+        | None -> (
+            m.from_line <- None;
+            Some (from_line, Buffer.contents buffer)
+          )
+        | Some next_line ->
+          if is_from_line next_line
+          then (
+            m.from_line <- Some next_line;
+            Some (from_line, Buffer.contents buffer)
+          )
+          else (
+            Buffer.add_string buffer next_line;
+            Buffer.add_char buffer '\n';
+            go ()
+          )
+      )
+  in
+  go ()
 
 module type Parser = sig
   (* an internal channel *)
   type mchan
-  
+
   (* create an internal channel *)
   val create_mchan : in_channel -> mchan
 
@@ -22,7 +55,7 @@ end
   Creates an mbox parser
 *)
 module MBoxParser : Parser = struct
-  
+
   (* a channel wrapper for an mbox *)
   type mchan = {
     (* channel that contains the data *)
@@ -39,7 +72,7 @@ module MBoxParser : Parser = struct
   }
 
   (* create an mbox channel with a buffer, an empty peek option, and initial line number *)
-  let create_mchan chan = 
+  let create_mchan chan =
     { chan; buffer = Buffer.create 1000; next = None; line_num = 0 }
 
   (* return the current line number *)
@@ -79,7 +112,7 @@ module MBoxParser : Parser = struct
         record line
 
   let is_from_line line = String.length line >= 5 && String.sub line 0 5 = "From "
-  
+
   let rec read mbox start_of_email =
   match peek_line mbox with
   | None, _ ->
@@ -108,7 +141,7 @@ module MBoxParser : Parser = struct
       | Error err -> loop (fn acc (Error err))
     in
     loop acc
-    
+
     let convert chan (f : string -> (string, 'err) result) : (unit, 'err) result =
   fold
     (fun acc msg ->
@@ -118,7 +151,7 @@ module MBoxParser : Parser = struct
         match msg with
         | Error parse_err ->
             prerr_endline ("Parse error: " ^ parse_err);
-            Ok () 
+            Ok ()
         | Ok s -> (
             match f s with
             | Ok transformed ->
