@@ -71,12 +71,14 @@ module Mbox : MBOX = struct
       end
       | Some line ->
         if is_from_line line
-        then begin
-          mbox.from_line <- Some line ;
-          mbox.from_line_num <- mbox.from_line_num + count ;
-          Some
+        then
+          let from_line_num = mbox.from_line_num in
+          begin
+            mbox.from_line <- Some line ;
+            mbox.from_line_num <- mbox.from_line_num + count ;
+            Some
             { from_line;
-              from_line_num = mbox.from_line_num;
+              from_line_num;
               after_from_line = Buffer.contents mbox._buf
             }
         end
