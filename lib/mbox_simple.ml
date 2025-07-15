@@ -1,35 +1,114 @@
-(* open Prelude *)
+open Prelude
 
-type mbox_io =
-  { mutable from_line : string option; chan : in_channel }
+module type MBOX = sig
 
-let is_from_line line =
-  String.length line >= 5 && String.sub line 0 5 = "From "
+  exception Invalid_mbox
 
-let check_mbox (chan : in_channel) : mbox_io option =
-  assert false
+  type t
 
-let read_email (buffer : Buffer.t) (m : mbox_io) :
-    (string * string) option =
-  let rec go () =
-    match m.from_line with
-    | None -> None
-    | Some from_line -> (
-      match In_channel.input_line m.chan with
-      | None ->
-        m.from_line <- None ;
-        Some (from_line, Buffer.contents buffer)
-      | Some next_line ->
-        if is_from_line next_line
-        then (
-          m.from_line <- Some next_line ;
-          Some (from_line, Buffer.contents buffer) )
-        else (
-          Buffer.add_string buffer next_line ;
-          Buffer.add_char buffer '\n' ;
-          go () ) )
-  in
-  go ()
+  type email =
+    {
+      from_line : string;
+      from_line_num : int;
+      after_from_line : string;
+    }
+
+  val of_in_channel : in_channel -> t option
+
+  val of_in_channel_exn : in_channel -> t
+
+  val input_email : t -> email option
+
+  val close : t -> unit
+
+  val foldl : (email -> 'a -> 'a) -> t -> 'a -> 'a
+
+  val iter : (email -> unit) -> t -> unit
+
+end
+
+module Mbox : MBOX = struct
+
+  exception Invalid_mbox
+
+  type t =
+    {
+      mutable from_line : string option;
+      mutable from_line_num : int;
+      chan : in_channel;
+      _buf : Buffer.t;
+    }
+
+  type email =
+    {
+      from_line : string;
+      from_line_num : int;
+      after_from_line : string;
+    }
+
+  let is_from_line line =
+    String.length line >= 5 && String.sub line 0 5 = "From "
+
+  let guard b = if b then Some () else None
+  let ( let* ) = Option.bind
+
+  let of_in_channel (chan : in_channel) : t option =
+    let* line = In_channel.input_line chan in
+    let* _ = guard (is_from_line line) in
+    Some {
+        from_line = Some line;
+        from_line_num = 1;
+        chan;
+        _buf = Buffer.create 1000;
+      }
+
+  let of_in_channel_exn (chan : in_channel) : t =
+    Option.to_exn Invalid_mbox (of_in_channel chan)
+
+  let close (mbox : t) : unit =
+    In_channel.close mbox.chan
+
+  let input_email (mbox : t) : email option =
+    let _ = Buffer.clear mbox._buf in
+    let rec go count =
+      let* from_line = mbox.from_line in
+      match In_channel.input_line mbox.chan with
+      | None -> begin
+        mbox.from_line <- None;
+        Some {
+          from_line;
+          from_line_num = mbox.from_line_num;
+          after_from_line = Buffer.contents mbox._buf;
+        }
+      end
+      | Some line ->
+        if is_from_line line
+        then begin
+          mbox.from_line <- Some line;
+          mbox.from_line_num <- mbox.from_line_num + count;
+          Some {
+            from_line;
+            from_line_num = mbox.from_line_num;
+            after_from_line = Buffer.contents mbox._buf
+          }
+        end
+        else begin
+          Buffer.add_string mbox._buf line;
+          Buffer.add_char mbox._buf '\n';
+          go (count + 1)
+        end
+    in go 1
+
+  let foldl (step : email -> 'a -> 'a) (mbox : t) (base : 'a) : 'a =
+    let rec go acc =
+      match input_email mbox with
+      | None -> acc
+      | Some email -> go (step email acc)
+    in go base
+
+  let iter (step : email -> unit) (mbox : t) =
+    foldl (fun email _ -> step email) mbox ()
+end
 
 module type Parser = sig
   (* an internal channel *)
