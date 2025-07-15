@@ -837,15 +837,18 @@ module Conversion = struct
         in
         Ok (T.to_string_line_feed ~line_feed converted_tree)
 
-    let convert_single_email ?(idem=true) config string pbar =
+    let convert_single_email ?(idem = true) config string
+        pbar =
       let open Error_message in
       match acopy_email ~idem config string pbar with
       | Ok converted -> write stdout converted
       | Error err -> write stderr (message err)
 
-    let convert_mbox ?(idem=true) config mbox pbar =
+    let convert_mbox ?(idem = true) config mbox pbar =
       Mbox_simple.Mbox.iter
-        (fun email -> convert_single_email ~idem config email.after_from_line pbar)
+        (fun email ->
+          convert_single_email ~idem config
+            email.after_from_line pbar )
         mbox
   end
 end

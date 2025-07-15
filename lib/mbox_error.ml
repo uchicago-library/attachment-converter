@@ -1,4 +1,4 @@
-type t = [ `InvalidMBox ]
+type t = [`InvalidMBox]
 
 module Smart = struct
   let invalid_mbox = `InvalidMbox

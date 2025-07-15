@@ -4,8 +4,7 @@ type error =
   | Formats_error.t
   | Convert_error.t
   | Dependency_error.t
-  | Mbox_error.t
-  ]
+  | Mbox_error.t ]
 
 type t = error list
 

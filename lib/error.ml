@@ -59,7 +59,8 @@ let to_string =
        \tWSL Ubuntu\n\
        \r"
   | `InvalidMBox ->
-    "Invalid MBox: first line of mbox must start with \"FROM \""
+    "Invalid MBox: first line of mbox must start with \
+     \"FROM \""
 
 module T = struct
   let with_error err x =
