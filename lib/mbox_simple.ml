@@ -11,7 +11,7 @@ module type MBOX = sig
       after_from_line : string
     }
 
-  val of_in_channel : in_channel -> t option
+  val of_in_channel : in_channel -> (t, Error.t) result
   val of_in_channel_exn : in_channel -> t
   val input_email : t -> email option
   val close : t -> unit
@@ -41,7 +41,7 @@ module Mbox : MBOX = struct
   let guard b = if b then Some () else None
   let ( let* ) = Option.bind
 
-  let of_in_channel (chan : in_channel) : t option =
+  let of_in_channel_opt (chan : in_channel) : t option =
     let* line = In_channel.input_line chan in
     let* _ = guard (is_from_line line) in
     Some
@@ -51,8 +51,12 @@ module Mbox : MBOX = struct
         _buf = Buffer.create 1000
       }
 
+  let of_in_channel chan =
+    let module Trace = Error.T in
+    Trace.of_option `InvalidMBox (of_in_channel_opt chan)
+
   let of_in_channel_exn (chan : in_channel) : t =
-    Option.to_exn Invalid_mbox (of_in_channel chan)
+    Option.to_exn Invalid_mbox (of_in_channel_opt chan)
 
   let close (mbox : t) : unit = In_channel.close mbox.chan
 

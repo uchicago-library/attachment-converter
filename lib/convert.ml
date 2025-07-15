@@ -836,6 +836,17 @@ module Conversion = struct
           Progress_bar.Printer.print msg pbar
         in
         Ok (T.to_string_line_feed ~line_feed converted_tree)
+
+    let convert_single_email ?(idem=true) config string pbar =
+      let open Error_message in
+      match acopy_email ~idem config string pbar with
+      | Ok converted -> write stdout converted
+      | Error err -> write stderr (message err)
+
+    let convert_mbox ?(idem=true) config mbox pbar =
+      Mbox_simple.Mbox.iter
+        (fun email -> convert_single_email ~idem config email.after_from_line pbar)
+        mbox
   end
 end
 
@@ -848,6 +859,20 @@ module type CONVERTER = sig
     string ->
     out_channel ->
     (string, Error.t) result
+
+  val convert_single_email :
+    ?idem:bool ->
+    Configuration.Formats.t ->
+    string ->
+    out_channel ->
+    unit
+
+  val convert_mbox :
+    ?idem:bool ->
+    Configuration.Formats.t ->
+    Mbox_simple.Mbox.t ->
+    out_channel ->
+    unit
 end
 
 module Ocamlnet_Converter =
