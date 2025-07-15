@@ -1,49 +1,38 @@
 open Prelude
 
 module type MBOX = sig
-
   exception Invalid_mbox
 
   type t
 
   type email =
-    {
-      from_line : string;
+    { from_line : string;
       from_line_num : int;
-      after_from_line : string;
+      after_from_line : string
     }
 
   val of_in_channel : in_channel -> t option
-
   val of_in_channel_exn : in_channel -> t
-
   val input_email : t -> email option
-
   val close : t -> unit
-
   val foldl : (email -> 'a -> 'a) -> t -> 'a -> 'a
-
   val iter : (email -> unit) -> t -> unit
-
 end
 
 module Mbox : MBOX = struct
-
   exception Invalid_mbox
 
   type t =
-    {
-      mutable from_line : string option;
+    { mutable from_line : string option;
       mutable from_line_num : int;
       chan : in_channel;
-      _buf : Buffer.t;
+      _buf : Buffer.t
     }
 
   type email =
-    {
-      from_line : string;
+    { from_line : string;
       from_line_num : int;
-      after_from_line : string;
+      after_from_line : string
     }
 
   let is_from_line line =
@@ -55,18 +44,17 @@ module Mbox : MBOX = struct
   let of_in_channel (chan : in_channel) : t option =
     let* line = In_channel.input_line chan in
     let* _ = guard (is_from_line line) in
-    Some {
-        from_line = Some line;
+    Some
+      { from_line = Some line;
         from_line_num = 1;
         chan;
-        _buf = Buffer.create 1000;
+        _buf = Buffer.create 1000
       }
 
   let of_in_channel_exn (chan : in_channel) : t =
     Option.to_exn Invalid_mbox (of_in_channel chan)
 
-  let close (mbox : t) : unit =
-    In_channel.close mbox.chan
+  let close (mbox : t) : unit = In_channel.close mbox.chan
 
   let input_email (mbox : t) : email option =
     let _ = Buffer.clear mbox._buf in
@@ -74,37 +62,40 @@ module Mbox : MBOX = struct
       let* from_line = mbox.from_line in
       match In_channel.input_line mbox.chan with
       | None -> begin
-        mbox.from_line <- None;
-        Some {
-          from_line;
-          from_line_num = mbox.from_line_num;
-          after_from_line = Buffer.contents mbox._buf;
-        }
+        mbox.from_line <- None ;
+        Some
+          { from_line;
+            from_line_num = mbox.from_line_num;
+            after_from_line = Buffer.contents mbox._buf
+          }
       end
       | Some line ->
         if is_from_line line
         then begin
-          mbox.from_line <- Some line;
-          mbox.from_line_num <- mbox.from_line_num + count;
-          Some {
-            from_line;
-            from_line_num = mbox.from_line_num;
-            after_from_line = Buffer.contents mbox._buf
-          }
+          mbox.from_line <- Some line ;
+          mbox.from_line_num <- mbox.from_line_num + count ;
+          Some
+            { from_line;
+              from_line_num = mbox.from_line_num;
+              after_from_line = Buffer.contents mbox._buf
+            }
         end
         else begin
-          Buffer.add_string mbox._buf line;
-          Buffer.add_char mbox._buf '\n';
+          Buffer.add_string mbox._buf line ;
+          Buffer.add_char mbox._buf '\n' ;
           go (count + 1)
         end
-    in go 1
+    in
+    go 1
 
-  let foldl (step : email -> 'a -> 'a) (mbox : t) (base : 'a) : 'a =
+  let foldl (step : email -> 'a -> 'a) (mbox : t) (base : 'a)
+      : 'a =
     let rec go acc =
       match input_email mbox with
       | None -> acc
       | Some email -> go (step email acc)
-    in go base
+    in
+    go base
 
   let iter (step : email -> unit) (mbox : t) =
     foldl (fun email _ -> step email) mbox ()
