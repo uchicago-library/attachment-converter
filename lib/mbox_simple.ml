@@ -77,11 +77,11 @@ module Mbox : MBOX = struct
             mbox.from_line <- Some line ;
             mbox.from_line_num <- mbox.from_line_num + count ;
             Some
-            { from_line;
-              from_line_num;
-              after_from_line = Buffer.contents mbox._buf
-            }
-        end
+              { from_line;
+                from_line_num;
+                after_from_line = Buffer.contents mbox._buf
+              }
+          end
         else begin
           Buffer.add_string mbox._buf line ;
           Buffer.add_char mbox._buf '\n' ;
