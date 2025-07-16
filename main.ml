@@ -70,15 +70,16 @@ let convert_wrapper config_files single_email rpt rpt_p inp
         let* config =
           Lib.Configuration.get_config config_files
         in
-        if single_email
-        then
-          let email = In_channel.input_all ic in
-          Ok (convert config (`Email email) pbar backend)
-        else
-          let* mbox =
-            Lib.Mbox_simple.Mbox.of_in_channel ic
-          in
-          Ok (convert config (`Mbox mbox) pbar backend)
+        let* target =
+          if single_email
+          then Ok (`Email (In_channel.input_all ic))
+          else
+            let* mbox =
+              Lib.Mbox_simple.Mbox.of_in_channel ic
+            in
+            Ok (`Mbox mbox)
+        in
+        Ok (convert config target pbar backend)
       in
       match check_and_convert with
       | Error err ->

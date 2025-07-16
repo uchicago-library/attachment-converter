@@ -245,23 +245,23 @@ module MBoxParser : Parser = struct
       chan (Ok ())
 end
 
-let () =
-  let input_file =
-    if Array.length Sys.argv > 1 then Sys.argv.(1) else "-"
-  in
-  let ic =
-    if input_file = "-" then stdin else open_in input_file
-  in
-  let result =
-    MBoxParser.convert ic (fun msg ->
-        Ok
-          ( "--- EMAIL START ---\n" ^ msg
-          ^ "--- EMAIL END ---\n\n" ) )
-  in
-  (* Close input file if it's not stdin *)
-  if input_file <> "-" then close_in ic ;
-  match result with
-  | Ok () -> ()
-  | Error err ->
-    prerr_endline ("Error: " ^ err) ;
-    exit 1
+(* let () = *)
+(*   let input_file = *)
+(*     if Array.length Sys.argv > 1 then Sys.argv.(1) else "-" *)
+(*   in *)
+(*   let ic = *)
+(*     if input_file = "-" then stdin else open_in input_file *)
+(*   in *)
+(*   let result = *)
+(*     MBoxParser.convert ic (fun msg -> *)
+(*         Ok *)
+(*           ( "--- EMAIL START ---\n" ^ msg *)
+(*           ^ "--- EMAIL END ---\n\n" ) ) *)
+(*   in *)
+(*   (\* Close input file if it's not stdin *\) *)
+(*   if input_file <> "-" then close_in ic ; *)
+(*   match result with *)
+(*   | Ok () -> () *)
+(*   | Error err -> *)
+(*     prerr_endline ("Error: " ^ err) ; *)
+(*     exit 1 *)
