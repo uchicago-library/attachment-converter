@@ -81,13 +81,16 @@ module ConvUtil = struct
   let identifier ut = ut.identifier
   let envoke ut = ut.envoke
 
+  let makefile_home_install_path =
+    Prelude.File.squiggle "~/.config/attachment-converter/scripts/"
+
   let default_script_dir () =
     let paths =
-      [ "/opt/homebrew/Cellar/attc/" ^ Version.ver_num
+      [ makefile_home_install_path;
+        "/opt/homebrew/Cellar/attc/" ^ Version.ver_num
         ^ "/lib/";
         "/usr/local/Cellar/attc/" ^ Version.ver_num
-        ^ "/lib/";
-        "/usr/lib/attachment-converter/scripts/"
+        ^ "/lib/" ;
       ]
     in
     let rec find_path = function
