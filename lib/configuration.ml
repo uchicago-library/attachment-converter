@@ -87,8 +87,7 @@ module ConvUtil = struct
 
   let default_script_dir () =
     let paths =
-      [ makefile_home_install_path;
-        "/opt/homebrew/Cellar/attc/" ^ Version.ver_num
+      [ "/opt/homebrew/Cellar/attc/" ^ Version.ver_num
         ^ "/lib/";
         "/usr/local/Cellar/attc/" ^ Version.ver_num
         ^ "/lib/"
