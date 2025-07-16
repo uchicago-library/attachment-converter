@@ -247,10 +247,11 @@ end
 
 (* let () = *)
 (*   let input_file = *)
-(*     if Array.length Sys.argv > 1 then Sys.argv.(1) else "-" *)
+(* if Array.length Sys.argv > 1 then Sys.argv.(1) else
+   "-" *)
 (*   in *)
 (*   let ic = *)
-(*     if input_file = "-" then stdin else open_in input_file *)
+(* if input_file = "-" then stdin else open_in input_file *)
 (*   in *)
 (*   let result = *)
 (*     MBoxParser.convert ic (fun msg -> *)
