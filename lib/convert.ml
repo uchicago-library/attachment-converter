@@ -846,10 +846,12 @@ module Conversion = struct
 
     let convert_mbox ?(idem = true) config mbox pbar =
       Mbox_simple.Mbox.iter
-        (fun email -> begin
-            write stdout (email.from_line ^ "\n");
-            convert_single_email ~idem config email.after_from_line pbar
-          end)
+        (fun email ->
+          begin
+            write stdout (email.from_line ^ "\n") ;
+            convert_single_email ~idem config
+              email.after_from_line pbar
+          end )
         mbox
   end
 end
