@@ -184,7 +184,6 @@ module Mrmime_parsetree = struct
     let d = date email_string >>| trim in
     let f = from email_string >>| trim in
     let m = message_id email_string >>| trim in
-    (* Prelude.writefile ~fn:"dude.eml" email_string ; *)
     Trace.throw
       (E.Smart.mrmime_parse_error ~date:d ~from:f
          ~message_id:m )
