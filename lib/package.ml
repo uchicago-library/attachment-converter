@@ -5,6 +5,7 @@ module Application = struct
     | LibreOffice
     | Pandoc
     | Vips
+    | ImageMagick
     | GhostScript
     | Verapdf
 end
@@ -30,6 +31,10 @@ let linux : t list =
       packageName = "libvips";
       executable = Exists "vips"
     };
+    { app = ImageMagick;
+      packageName = "imagemagick";
+      executable = Exists "magick"
+    };
     { app = GhostScript;
       packageName = "ghostscript";
       executable = Exists "gs"
@@ -48,6 +53,10 @@ let darwin : t list =
     { app = Vips;
       packageName = "libvips";
       executable = Exists "vips"
+    };
+    { app = ImageMagick;
+      packageName = "imagemagick";
+      executable = Exists "magick"
     };
     { app = GhostScript;
       packageName = "ghostscript";
