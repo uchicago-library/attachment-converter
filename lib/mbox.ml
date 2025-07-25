@@ -46,13 +46,13 @@ let input_email mbox =
     let* from_line = mbox.from_line in
     match In_channel.input_line mbox.chan with
     | None -> begin
-        mbox.from_line <- None ;
-        Some
-          { from_line;
-            from_line_num = mbox.from_line_num;
-            after_from_line = Buffer.contents mbox._buf
-          }
-      end
+      mbox.from_line <- None ;
+      Some
+        { from_line;
+          from_line_num = mbox.from_line_num;
+          after_from_line = Buffer.contents mbox._buf
+        }
+    end
     | Some line ->
       if is_from_line line
       then

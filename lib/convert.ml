@@ -82,7 +82,7 @@ module GrovelErrorInfo = struct
       seq
         [ bol;
           no_case (seq [ str h; char ':'; rep1 space ]);
-          group (non_greedy (rep1 any)) ;
+          group (non_greedy (rep1 any));
           eol
         ]
 
@@ -655,10 +655,10 @@ module Conversion = struct
       let unoption name = function
         | None -> ""
         | Some s ->
-           let open String in
-           let pred c = not (mem c "\r\n\t") in
-           let processed = filter pred s in
-           sprintf "%s: %s\n" name processed
+          let open String in
+          let pred c = not (mem c "\r\n\t") in
+          let processed = filter pred s in
+          sprintf "%s: %s\n" name processed
       in
       let open Parsetree_utils (T) in
       let filename = attachment_name att in

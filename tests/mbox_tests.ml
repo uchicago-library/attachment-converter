@@ -52,12 +52,8 @@
 (*   to_mbox ~eol:"\n" [ "Email 1"; "Email 2"; "Email 3" ] *)
 
 (* let dummy_mbox_expected = *)
-(*   "From BLAH\n\ *)
-(*    Email 1\n\ *)
-(*    From BLAH\n\ *)
-(*    Email 2\n\ *)
-(*    From BLAH\n\ *)
-(*    Email 3\n" *)
+(* "From BLAH\n\ *) (* Email 1\n\ *) (* From BLAH\n\ *) (*
+   Email 2\n\ *) (* From BLAH\n\ *) (* Email 3\n" *)
 
 (* let to_mbox_test_1 = *)
 (*   let description = "basic to_mbox test" in *)
@@ -85,12 +81,18 @@
 (*   let f1, m1 = T.next t in *)
 (*   let f2, m2 = T.next t in *)
 (*   let f3, m3 = T.next t in *)
-(*   let checkf1 _ = assert_equal "From BLAH" f1 ~printer:id in *)
-(*   let checkf2 _ = assert_equal "From BLAH" f2 ~printer:id in *)
-(*   let checkf3 _ = assert_equal "From BLAH" f3 ~printer:id in *)
-(*   let checkm1 _ = assert_equal "Email 1\n" m1 ~printer:id in *)
-(*   let checkm2 _ = assert_equal "Email 2\n" m2 ~printer:id in *)
-(*   let checkm3 _ = assert_equal "Email 3\n" m3 ~printer:id in *)
+(* let checkf1 _ = assert_equal "From BLAH" f1 ~printer:id
+   in *)
+(* let checkf2 _ = assert_equal "From BLAH" f2 ~printer:id
+   in *)
+(* let checkf3 _ = assert_equal "From BLAH" f3 ~printer:id
+   in *)
+(* let checkm1 _ = assert_equal "Email 1\n" m1 ~printer:id
+   in *)
+(* let checkm2 _ = assert_equal "Email 2\n" m2 ~printer:id
+   in *)
+(* let checkm3 _ = assert_equal "Email 3\n" m3 ~printer:id
+   in *)
 (*   description *)
 (*   >::: [ "fromline check" >:: checkf1; *)
 (*          "fromline check" >:: checkf2; *)
@@ -102,11 +104,12 @@
 
 (* let basic_convert_test f expected description = *)
 (*   let module T = *)
-(*     Conversion (MBoxIterator (StringInput)) (StringOutput) *)
+(* Conversion (MBoxIterator (StringInput)) (StringOutput) *)
 (*   in *)
 (*   let output = T.convert dummy_mbox_expected () f in *)
-(*   let check _ = assert_equal expected output ~printer:id in *)
-(*   description >:: check *)
+(* let check _ = assert_equal expected output ~printer:id
+   in *)
+(* description >:: check *)
 
 (* let convert_test_1 = *)
 (*   basic_convert_test (k "") "" *)
@@ -116,14 +119,14 @@
 (*   basic_convert_test *)
 (*     (fun (x, y) -> x ^ "\n" ^ y) *)
 (*     dummy_mbox_expected *)
-(*     "identity conversion (with trailing newline) on mbox" *)
+(* "identity conversion (with trailing newline) on mbox" *)
 
 (* let convert_test_3 = *)
 (*   let description = *)
 (*     "read in file and apply identity conversion" *)
 (*   in *)
 (*   let module T = *)
-(*     Conversion (MBoxIterator (StringInput)) (StringOutput) *)
+(* Conversion (MBoxIterator (StringInput)) (StringOutput) *)
 (*   in *)
 (*   let email = "testing\ntesting" in *)
 (*   let mbox = to_mbox ~eol:"\n" [ email; email ] in *)
