@@ -74,9 +74,7 @@ let convert_wrapper config_files single_email rpt rpt_p inp
           if single_email
           then Ok (`Email (In_channel.input_all ic))
           else
-            let* mbox =
-              Lib.Mbox_simple.Mbox.of_in_channel ic
-            in
+            let* mbox = Lib.Mbox.of_in_channel ic in
             Ok (`Mbox mbox)
         in
         Ok (convert config target pbar backend)

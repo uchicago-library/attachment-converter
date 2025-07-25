@@ -924,7 +924,7 @@ module Conversion = struct
       | Error err -> write stderr (message err)
 
     let convert_mbox ?(idem = true) config mbox pbar =
-      Mbox_simple.Mbox.iter
+      Mbox.iter
         (fun email ->
           begin
             write stdout (email.from_line ^ "\n") ;
@@ -955,7 +955,7 @@ module type CONVERTER = sig
   val convert_mbox :
     ?idem:bool ->
     Configuration.Formats.t ->
-    Mbox_simple.Mbox.t ->
+    Mbox.t ->
     out_channel ->
     unit
 end

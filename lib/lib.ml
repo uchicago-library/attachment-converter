@@ -9,7 +9,6 @@ module Config_key = Config_key
 module Configuration = Configuration
 module Report = Report
 module Mbox = Mbox
-module Mbox_simple = Mbox_simple
 module Convert = Convert
 module Convert_error = Convert_error
 module Progress_bar = Progress_bar
