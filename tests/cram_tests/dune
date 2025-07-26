@@ -1,0 +1,6 @@
+(executables
+ (names test1 test2)
+ (libraries lib))
+
+(cram
+ (deps test1.exe test2.exe))
