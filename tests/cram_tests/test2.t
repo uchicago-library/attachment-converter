@@ -1,3 +1,3 @@
 Again
-  $ dune exec ./test2.exe
+  $ ./test2.exe
   Hello world again
