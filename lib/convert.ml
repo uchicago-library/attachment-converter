@@ -921,7 +921,8 @@ module Conversion = struct
       let open Error_message in
       match acopy_email ~idem config string pbar with
       | Ok converted -> write stdout converted
-      | Error err -> write stderr (message err)
+      | Error err -> write stderr (message err) ;
+                     write stdout string
 
     let convert_mbox ?(idem = true) config mbox pbar =
       Mbox.iter
