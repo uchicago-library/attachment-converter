@@ -81,7 +81,7 @@ module GrovelErrorInfo = struct
     let header h =
       seq
         [ bol;
-          no_case (seq [ str h; char ':'; rep1 space ]);
+          no_case (seq [ str h; char ':'; rep (set "\t ") ]);
           group (non_greedy (rep1 any));
           eol
         ]
@@ -133,7 +133,8 @@ module type PARSETREE = sig
   val content_type : header -> Header.Field.Value.t option
   val date : t -> string option
   val from : t -> string option
-  val message_id : t -> string option
+
+  (* TODO add message id getter here *)
 
   type attachment = header Attachment.t
 
@@ -179,14 +180,10 @@ module Mrmime_parsetree = struct
 
   let of_string_error email_string =
     let open GrovelErrorInfo in
-    let ( >>| ) = Option.( >>| ) in
-    let open Stdlib.String in
-    let d = date email_string >>| trim in
-    let f = from email_string >>| trim in
-    let m = message_id email_string >>| trim in
     Trace.throw
-      (E.Smart.mrmime_parse_error ~date:d ~from:f
-         ~message_id:m )
+      (E.Smart.mrmime_parse_error ~date:(date email_string)
+         ~from:(from email_string)
+         ~message_id:(message_id email_string) )
 
   let of_string_exn email_string =
     email_string
@@ -308,20 +305,6 @@ module Mrmime_parsetree = struct
     |> function
     | Field (_, Mailboxes, poly) ->
       let str = Prettym.to_string mailboxes poly in
-      Some (Stdlib.String.trim str)
-    | _ -> None
-
-  let message_id parsetree =
-    let open Mrmime.Header in
-    let open Mrmime.Field in
-    let open Mrmime.MessageID.Encoder in
-    parsetree
-    |> header
-    |> assoc Mrmime.Field_name.message_id
-    |> List.hd
-    |> function
-    | Field (_, MessageID, poly) ->
-      let str = Prettym.to_string message_id poly in
       Some (Stdlib.String.trim str)
     | _ -> None
 
@@ -519,13 +502,6 @@ module Ocamlnet_parsetree = struct
     | exception e -> raise e
     | success -> Some success
 
-  let message_id parsetree =
-    let h = header parsetree in
-    match h#field "message-id" with
-    | exception Not_found -> None
-    | exception e -> raise e
-    | success -> Some success
-
   let is_attachment =
     header
     >> content_disposition
@@ -651,65 +627,21 @@ module Conversion = struct
             meta_header_val
         ]
 
-    let grab_failure_info tree att =
-      let unoption name = function
-        | None -> ""
-        | Some s ->
-          let open String in
-          let pred c = not (mem c "\r\n\t") in
-          let processed = filter pred s in
-          sprintf "%s: %s\n" name processed
-      in
-      let open Parsetree_utils (T) in
-      let filename = attachment_name att in
-      let d = unoption "Date" @@ date tree in
-      let f = unoption "From" @@ from tree in
-      let m = unoption "Message-ID" @@ message_id tree in
-      let fn = unoption "Filename" @@ filename in
-      (d, f, m, fn)
-
-    let convert_attachment tree att pbar md =
+    let convert_attachment att pbar md =
       let convert_data str =
         let args = split md.script in
-        let write_email output_chan =
-          Prelude.write output_chan str
-        in
-        match
-          Unix.Proc.runfull ~reader:Prelude.read
-            ~writer:write_email ~err:Prelude.read args
-        with
-        | Prelude.Unix.WEXITED 0, output, _ -> output
-        | Prelude.Unix.WEXITED estatus, _, Some msg ->
-          let prep_error s =
-            s
-            |> String.(trim whitespace)
-            |> String.replace "\n" "\n  "
-          in
-          let d, f, m, fn = grab_failure_info tree att in
-          let error_msg =
-            sprintf
-              "Error-Type: attachment skipped; conversion \
-               %s exited with status %d and error output:\n\
-              \  %s\n\
-               %s%s%s%s\n"
-              md.conversion_id estatus (prep_error msg) d f
-              m fn
-          in
-          write stderr error_msg ;
-          None
-        | (WSIGNALED _ | WSTOPPED _), _, Some _ ->
-          let d, f, m, fn = grab_failure_info tree att in
-          let error_msg =
-            sprintf
-              "Error-Type: attachment skipped; conversion \
-               %s was interrupted\n\
-               %s%s%s%s\n"
-              md.conversion_id d f m fn
-          in
-          write stderr error_msg ;
-          None
-        | _, _, None -> assert false
+        match Unix.Proc.rw args str with
+        | exception Failure msg ->
+          write stderr
+            (* include: message id, date, from w/ the
+               formatting of the error *)
+            ( "Conversion Failure: Could not run "
+            ^ md.conversion_id
+            ^ " script, produced message \"" ^ msg ^ "\"\n"
+            ) ;
+          None (* TODO: Better logging *)
         | exception e -> raise e
+        | converted -> Some converted
       in
       let ts = timestamp () in
       let md =
@@ -819,7 +751,7 @@ module Conversion = struct
             in
             att
             :: ( List.map
-                   ( convert_attachment tree att pbar
+                   ( convert_attachment att pbar
                    << create_params )
                    trans_lst
                |> Option.reduce )
@@ -915,24 +847,6 @@ module Conversion = struct
           Progress_bar.Printer.print msg pbar
         in
         Ok (T.to_string_line_feed ~line_feed converted_tree)
-
-    let convert_single_email ?(idem = true) config string
-        pbar =
-      let open Error_message in
-      match acopy_email ~idem config string pbar with
-      | Ok converted -> write stdout converted
-      | Error err -> write stderr (message err) ;
-                     write stdout string
-
-    let convert_mbox ?(idem = true) config mbox pbar =
-      Mbox.iter
-        (fun email ->
-          begin
-            write stdout (email.from_line ^ "\n") ;
-            convert_single_email ~idem config
-              email.after_from_line pbar
-          end )
-        mbox
   end
 end
 
@@ -945,20 +859,6 @@ module type CONVERTER = sig
     string ->
     out_channel ->
     (string, Error.t) result
-
-  val convert_single_email :
-    ?idem:bool ->
-    Configuration.Formats.t ->
-    string ->
-    out_channel ->
-    unit
-
-  val convert_mbox :
-    ?idem:bool ->
-    Configuration.Formats.t ->
-    Mbox.t ->
-    out_channel ->
-    unit
 end
 
 module Ocamlnet_Converter =

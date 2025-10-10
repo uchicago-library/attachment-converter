@@ -1,196 +1,86 @@
-(** {1 Mbox parser ({i Xavier Leroy})}
-
-  Snarfed from: <{{:http://cristal.inria.fr/~xleroy/software.html#spamoracle}http://cristal.inria.fr/~xleroy/software.html#spamoracle}>
-
-  Hacked by KW 2010-05-13 <{{:http://www.lib.uchicago.edu/keith/}http://www.lib.uchicago.edu/keith/}>
-    - added map and fold functionals
-
-  Borrowed by Nathan Mull 2022-04-06 for Attachment Converter
-
-  @author Xavier Leroy, projet Cristal, INRIA Rocquencourt
- *)
-(***********************************************************************)
-(* *)
-(* SpamOracle -- a Bayesian spam filter *)
-(* *)
-(* Xavier Leroy, projet Cristal, INRIA Rocquencourt *)
-(* *)
-(* Copyright 2002 Institut National de Recherche en
-   Informatique et *)
-(* en Automatique. This file is distributed under the terms
-   of the *)
-(* GNU Public License version 2,
-   http://www.gnu.org/licenses/gpl.txt *)
-(* *)
-(***********************************************************************)
-
-(* $Id: mbox.ml,v 1.4 2002/08/26 09:35:25 xleroy Exp $ *)
-
-(* Reading of a mailbox file and splitting into individual
-   messages *)
-
 open Prelude
 
-module type OUTPUT = sig
-  type s
-  type t
-  type o
+exception Invalid_mbox
 
-  val create : s -> t
-  val write : t -> string -> unit
-  val value : t -> o
-end
+type t =
+  { mutable from_line : string option;
+    mutable from_line_num : int;
+    chan : in_channel;
+    _buf : Buffer.t
+  }
 
-module ChannelOutput :
-  OUTPUT with type s = out_channel with type o = unit =
-struct
-  type s = out_channel
-  type t = out_channel
-  type o = unit
+type email =
+  { from_line : string;
+    from_line_num : int;
+    after_from_line : string
+  }
 
-  let create chan = chan
-  let write chan str = Prelude.write chan str
-  let value _ = ()
-end
+let is_from_line line =
+  String.length line >= 5 && String.sub line 0 5 = "From "
 
-module StringOutput :
-  OUTPUT with type s = unit with type o = string = struct
-  type s = unit
-  type t = { mutable out : string }
-  type o = string
+let guard b = if b then Some () else None
+let ( let* ) = Option.bind
 
-  let create () = { out = "" }
-  let write t str = t.out <- t.out ^ str
-  let value t = t.out
-end
-
-module type INPUT = sig
-  type s
-  type t
-  type o
-
-  val create : s -> t
-  val next : t -> o
-
-  exception End_of_input
-end
-
-module ChannelInput :
-  INPUT with type s = in_channel with type o = string =
-struct
-  type s = in_channel
-  type t = in_channel
-  type o = string
-
-  exception End_of_input
-
-  let create chan = chan
-
-  let next chan =
-    try readline chan
-    with End_of_file -> raise End_of_input
-end
-
-module StringInput :
-  INPUT with type s = string with type o = string = struct
-  type s = string
-  type t = { mutable lines : string list }
-  type o = string
-
-  exception End_of_input
-
-  let create s = { lines = String.split ~sep:"\n" s }
-
-  let next t =
-    try
-      let next_line = hd t.lines in
-      t.lines <- tl t.lines ;
-      next_line
-    with Failure _ -> raise End_of_input
-end
-
-module MBoxIterator (I : INPUT with type o = string) :
-  INPUT with type s = I.s with type o = string * string =
-struct
-  type s = I.s
-
-  type t =
-    { input : I.t; mutable start : string; buf : Buffer.t }
-
-  type o = string * string
-
-  let create s =
-    { input = I.create s;
-      start = "";
-      buf = Buffer.create 50000
+let of_in_channel_opt (chan : in_channel) : t option =
+  let* line = In_channel.input_line chan in
+  let* _ = guard (is_from_line line) in
+  Some
+    { from_line = Some line;
+      from_line_num = 1;
+      chan;
+      _buf = Buffer.create 1000
     }
 
-  exception End_of_input
+let of_in_channel chan =
+  let module Trace = Error.T in
+  Trace.of_option `InvalidMBox (of_in_channel_opt chan)
 
-  let next t =
-    Buffer.clear t.buf ;
-    let rec read () =
-      let line = I.next t.input in
-      if
-        String.length line >= 5
-        && String.sub line 0 5 = "From "
-      then (
-        let fromline = t.start in
-        t.start <- line ;
-        if Buffer.length t.buf > 0
-        then (fromline, Buffer.contents t.buf)
-        else read () )
+let of_in_channel_exn chan =
+  Option.to_exn Invalid_mbox (of_in_channel_opt chan)
+
+let close mbox = In_channel.close mbox.chan
+
+let input_email mbox =
+  let _ = Buffer.clear mbox._buf in
+  let rec go count =
+    let* from_line = mbox.from_line in
+    match In_channel.input_line mbox.chan with
+    | None -> begin
+      mbox.from_line <- None ;
+      Some
+        { from_line;
+          from_line_num = mbox.from_line_num;
+          after_from_line = Buffer.contents mbox._buf
+        }
+    end
+    | Some line ->
+      if is_from_line line
+      then
+        let from_line_num = mbox.from_line_num in
+        begin
+          mbox.from_line <- Some line ;
+          mbox.from_line_num <- mbox.from_line_num + count ;
+          Some
+            { from_line;
+              from_line_num;
+              after_from_line = Buffer.contents mbox._buf
+            }
+        end
       else begin
-        Buffer.add_string t.buf line ;
-        Buffer.add_string t.buf (eol LF) ;
-        read ()
+        Buffer.add_string mbox._buf line ;
+        Buffer.add_char mbox._buf '\n' ;
+        go (count + 1)
       end
-    in
-    try read ()
-    with I.End_of_input ->
-      if Buffer.length t.buf > 0
-      then (
-        let from_line = t.start in
-        t.start <- "" ;
-        (from_line, Buffer.contents t.buf) )
-      else raise End_of_input
-end
+  in
+  go 1
 
-module Conversion (I : INPUT) (O : OUTPUT) = struct
-  let convert si so converter =
-    let iterator = I.create si in
-    let output = O.create so in
-    let rec loop () =
-      match
-        try Some (converter (I.next iterator))
-        with I.End_of_input -> None
-      with
-      | Some converted ->
-        O.write output converted ;
-        loop () (* TODO: Better output/logging *)
-      | None -> ()
-    in
-    loop () ;
-    O.value output
-end
+let foldl step mbox base =
+  let rec go acc =
+    match input_email mbox with
+    | None -> acc
+    | Some email -> go (step email acc)
+  in
+  go base
 
-module ToOutput = struct
-  module Make (T : Convert.PARSETREE) = struct
-    let convert_mbox in_chan converter =
-      let open
-        Conversion
-          (MBoxIterator (ChannelInput)) (ChannelOutput) in
-      convert in_chan stdout converter
-
-    let acopy_mbox ?(idem = true) config in_chan pbar =
-      let module C = Convert.Conversion.Make (T) in
-      let converter (fromline, em) =
-        match C.acopy_email ~idem config em pbar with
-        | Ok converted -> fromline ^ "\n" ^ converted
-        | Error errlist ->
-          Utils.print_err (Error_message.message errlist) ;
-          fromline ^ "\n" ^ em (* TODO: better logging *)
-      in
-      Ok (convert_mbox in_chan converter)
-  end
-end
+let iter step mbox =
+  foldl (fun email _ -> step email) mbox ()

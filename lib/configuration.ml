@@ -82,7 +82,8 @@ module ConvUtil = struct
   let envoke ut = ut.envoke
 
   let makefile_home_install_path =
-    Prelude.File.squiggle "~/.config/attachment-converter/scripts/"
+    Prelude.File.squiggle
+      "~/.config/attachment-converter/scripts/"
 
   let default_script_dir () =
     let paths =

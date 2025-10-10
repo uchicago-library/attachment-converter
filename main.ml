@@ -8,19 +8,6 @@
 open Prelude
 open Cmdliner
 
-module Data = struct
-  module Printer = struct
-    let print msg = write stdout msg
-  end
-end
-
-type cmd_input = [`Stdin | `File of string]
-
-type cmd_input_parser =
-  string -> (cmd_input, [`Msg of string]) Stdlib.result
-
-type cmd_input_printer = cmd_input Arg.printer
-
 let cmd_input_parser str =
   if Sys.file_exists str
   then Ok (`File str)
@@ -46,8 +33,7 @@ let report ?(params = false) ic =
     (fun k v -> print ("  " ^ k ^ " : " ^ Int.to_string v))
     types
 
-let convert config_files ?(single_email = false) ic pbar
-    backend =
+let convert config target pbar backend =
   let b =
     let open Lib.Backend in
     match backend with
@@ -60,27 +46,12 @@ let convert config_files ?(single_email = false) ic pbar
   in
   let module B = (val b) in
   let open B in
-  let open Lib.Configuration in
-  let open Lib.Mbox.ToOutput.Make (B) in
-  let open Lib.Error_message in
-  let ( let* ) = Result.( >>= ) in
-  let processed =
-    let open Lib.Dependency in
-    let* _ = checkDependencies () in
-    let* config = get_config config_files in
-    if single_email
-    then
-      let module DP = Data.Printer in
-      let* converted = acopy_email config (read ic) pbar in
-      let print_both = DP.print converted in
-      Ok print_both
-    else acopy_mbox config ic pbar
-  in
-  match processed with
-  | Error err -> write stderr (message err)
-  | Ok _ -> ()
+  match target with
+  | `Email email -> convert_single_email config email pbar
+  | `Mbox mbox -> convert_mbox config mbox pbar
 
-let convert_wrapper config_files sem rpt rpt_p inp backend =
+let convert_wrapper config_files single_email rpt rpt_p inp
+    backend =
   let pbar =
     match open_out "/dev/tty" with
     (* no controlling tty *)
@@ -93,10 +64,30 @@ let convert_wrapper config_files sem rpt rpt_p inp backend =
     else if rpt
     then report ic
     else
-      convert config_files ~single_email:sem ic pbar backend
+      let ( let* ) = Result.bind in
+      let check_and_convert =
+        let* () = Lib.Dependency.checkDependencies () in
+        let* config =
+          Lib.Configuration.get_config config_files
+        in
+        let* target =
+          if single_email
+          then Ok (`Email (In_channel.input_all ic))
+          else
+            let* mbox = Lib.Mbox.of_in_channel ic in
+            Ok (`Mbox mbox)
+        in
+        Ok (convert config target pbar backend)
+      in
+      match check_and_convert with
+      | Error err ->
+        write stderr (Lib.Error_message.message err)
+      | Ok _ -> ()
   in
   match inp with
-  | `File fn -> within report_or_convert fn
+  | `File fn ->
+    let ic = open_in fn in
+    report_or_convert ic
   | `Stdin -> report_or_convert stdin
 
 let backend_t =

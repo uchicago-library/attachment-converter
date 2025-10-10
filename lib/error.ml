@@ -19,16 +19,17 @@ let to_string =
   | `ReferParse (n, s) ->
     sprintf
       "Refer parse error in config file, line %i\n\
-       Content of line: %s"
-      n s
+       Content of line: %s" n s
   | `OcamlnetParseError
       ({ date; from; message_id }, onet_error) ->
     let unoption header_name = function
       | None -> ""
-      | Some s -> sprintf "\t%s: %s\n" header_name s
+      | Some s -> sprintf "%s: %s\n" header_name s
     in
     sprintf
-      "Email parse error!\n%s%s%s\tError Message: %s\n"
+      "Error-Type: email skipped; email parse error\n\
+       Backend: OCamlnet\n\
+       %s%s%sError-Message: %s\n\n"
       (unoption "Date" date)
       (unoption "From" from)
       (unoption "Message-ID" message_id)
@@ -36,9 +37,12 @@ let to_string =
   | `MrmimeParseError { date; from; message_id } ->
     let unoption header_name = function
       | None -> ""
-      | Some s -> sprintf "\t%s: %s\n" header_name s
+      | Some s -> sprintf "%s: %s\n" header_name s
     in
-    sprintf "Email parse error!\n%s%s%s"
+    sprintf
+      "Error-Type: email skipped; email parse error\n\
+       Backend: Mr. Mime\n\
+       %s%s%s\n"
       (unoption "Date" date)
       (unoption "From" from)
       (unoption "Message-ID" message_id)
@@ -59,6 +63,9 @@ let to_string =
        \tArch Linux\n\
        \tWSL Ubuntu\n\
        \r"
+  | `InvalidMBox ->
+    "Invalid MBox: first line of mbox must start with \
+     \"FROM \""
 
 module T = struct
   let with_error err x =
