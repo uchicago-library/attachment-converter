@@ -14,7 +14,7 @@ email attachments in an MBOX to preservation formats.  Whenever it
 finds a file attachment in the input MBOX that it knows how to
 convert, it performs the conversion and inserts the new file
 attachment back into the email next to the original, to make it easy
-for the user locate.
+for the user to locate.
 
 Attachment Converter calls out to external utilities to perform all of
 its file conversions, but the user can also configure it to convert a
