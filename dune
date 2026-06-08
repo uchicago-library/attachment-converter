@@ -1,7 +1,3 @@
-; attachment-converter                                -*- dune -*-
-; dune
-; Matt Teichman <https://elucidations.now.sh>
-
 (executable
  (name main)
  (public_name attc)

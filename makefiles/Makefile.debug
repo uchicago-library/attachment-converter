@@ -1,7 +1,3 @@
-# attachment-converter					-*-
-# Makefile.debug
-# Matt Teichman <https://elucidations.now.sh>
-
 # print any make variable
 # e.g. print the value of the variable DESTDIR
 # $ make debug-DESTDIR

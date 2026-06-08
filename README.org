@@ -51,7 +51,6 @@ Our illustrious team of developers currently includes:
 
 + [[https://github.com/nmmull][Nathan Mull]]
 + [[https://elucidations.vercel.app/][Matt Teichman]]
-+ Charles Njoroge
 
 Previous developers include:
 
@@ -61,7 +60,7 @@ Previous developers include:
 + [[https://theworldofobi.github.io/][Obi Obetta]]
 + [[https://www.lib.uchicago.edu/about/directory/staff/emily-schartz/][Emily Schartz]]
 + Ben Kim
-
++ Charles Njoroge
 
 [[https://elucidations.vercel.app/][Matt Teichman]] and [[https://github.com/nmmull][Nathan Mull]] will be contributing to and maintaining
 the project on an longterm basis.  Matt is currently in charge of

@@ -1,7 +1,3 @@
-; attachment-converter                                -*- dune -*-
-; dune
-; Matt Teichman <https://elucidations.now.sh>
-
 (library
  (name lib)
  (libraries prelude mrmime threads netstring unix re))

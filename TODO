@@ -1,17 +1,18 @@
 # -*- mode: org; coding: utf-8 -*-
 #+TITLE: TODO List for attachment-converter
-#+AUTHOR: Matt Teichman
-#+EMAIL:
-#+OPTIONS: toc:nil num:nil tags:nil email:off ^:{}
-#+LaTeX_CLASS: tuftehandout
-# org-bootstrap
-#+INCLUDE: "~/.carcass/doc/ob-html-head.org"
 
-* use multiple email parsing backends
-* gather and fix a buncha bugs
-* flesh out user documentation
-* write mlis
-* flesh out developer documentation
-* auto-generated API type documentation
-* actual progress bar
-* message parsing for OCamlnet
+* Release todos: June 2026
+** Update license
+*** GPL-3
+** Packaging
+*** Debian
++ confirm that we still have still have DLDC private key for Debian
+  repo
+*** Arch
+*** Homebrew
+** Update user documentation
+*** demo video
+*** possible installation video(s)?
+** Update GitHub readme
+** Time permitting
+*** update/flesh out dev docs

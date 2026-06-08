@@ -1,6 +1,4 @@
 # attachment-converter                             -*- makefile -*-
-# GNUmakefile
-# Matt Teichman <https://elucidations.now.sh>
 
 SHELL := bash
 .SHELLFLAGS := -eu -o pipefail -c #need this? pt 2

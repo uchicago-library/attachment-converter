@@ -43,5 +43,4 @@ error messages getting logged to stderr.
   (ocamlformat :dev)
   (ocp-index :dev)
   (merlin :dev)))
-
 (cram enable)
