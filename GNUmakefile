@@ -30,8 +30,7 @@ include $(LIB)/Makefile.debug
 .DEFAULT_GOAL := build
 
 ################################################################################
-
-# DEV MAKE TARGETS
+# dev make targets
 
 all build::				## build the project binaries
 	eval $$(opam env)
@@ -72,8 +71,7 @@ sandbox::
 -include $(LIB)/Makefile.help
 
 ################################################################################
-
-# USER MAKE TARGETS
+# user make targets
 
 opam:
 	./os-install.sh opam
@@ -152,6 +150,24 @@ pkg-build: pkg-opam cd-home deps
 
 gen-man-page: opam-install
 	./main.exe --help=groff > doc/attc.1
+
+
+################################################################################
+# deploying
+
+ARCH_REPO_PATH = staff.lib.uchicago.edu:/data/web/dldc/open/repos/arch
+VER_NUM=0.1.4
+
+TEMP_DIR := $(shell mktemp -d)
+
+deploy-arch-repo:
+	scp arch/PKGBUILD $(TEMP_DIR)
+	cd $(TEMP_DIR) && \
+		makepkg -Cc && \
+		repo-add -s dldc.db.tar.gz attc-$(VER_NUM)-1-x86_64.pkg.tar.zst && \
+		rsync -a * $(ARCH_REPO_PATH) && \
+	rm -rf $(TEMP_DIR)
+.PHONY: deploy-arch-repo
 
 
 # This file is part of Attachment Converter.

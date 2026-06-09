@@ -12,8 +12,8 @@ depends=( 'libreoffice-fresh' 'pandoc' 'ghostscript' 'libvips' )
 makedepends=( 'opam' 'mercurial' )
 source=("https://github.com/uchicago-library/attachment-converter/archive/refs/tags/v${pkgver}.tar.gz")
 # update this sha 256 checksum with the command:
-# curl -sL "https://github.com/uchicago-library/attachment-converter/archive/refs/tags/VER_NUM.tar.gz" | sha256sum | cut -d " " -f 1
-sha256sums=('3943546d89a7ee6f52331278cc60f96ca229ddaa13e2dd1d9fabec2f90c2dbb0')
+# curl -sL "https://github.com/uchicago-library/attachment-converter/archive/refs/tags/v${pkgver}.tar.gz" | sha256sum | cut -d " " -f 1
+sha256sums=('d32bf15f7820172fc6893c7e0173e303b2cbb621f69748d93836f473e7c73318')
 
 build() {
 	cd ${srcdir}/attachment-converter-${pkgver}
@@ -21,7 +21,6 @@ build() {
 }
 
 package() {
-        echo ${pkgdir}
 	mkdir -p ${pkgdir}/usr/bin
 	mkdir -p ${pkgdir}/usr/lib/attachment-converter/scripts
 	cp ${srcdir}/attachment-converter-${pkgver}/conversion-scripts/*.sh ${pkgdir}/usr/lib/attachment-converter/scripts
