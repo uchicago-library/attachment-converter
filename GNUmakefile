@@ -133,7 +133,7 @@ install: shell-copy opam-install
 	eval $$(opam env)
 	@echo Installing to $(DESTDIR)/bin/attc...
 	cd $(PROJECT_ROOT)
-	mv _build/default/main.exe $(DESTDIR)/bin/attc
+	sudo mv _build/default/main.exe $(DESTDIR)/bin/attc
 	@echo Attachment Converter has been installed to $(DESTDIR)/bin/attc. 
 	@echo Please ensure that $(DESTDIR)/bin is on your path.
 .PHONY: install
