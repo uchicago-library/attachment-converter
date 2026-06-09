@@ -174,6 +174,10 @@ VER_NUM=0.1.5
 
 TEMP_DIR := $(shell mktemp -d)
 
+arch-checksum:
+	curl -sL "https://github.com/uchicago-library/attachment-converter/archive/refs/tags/v$(VER_NUM).tar.gz" | sha256sum | cut -d " " -f 1
+.PHONY: arch-checksum
+
 arch-release:
 	scp arch/PKGBUILD $(TEMP_DIR)
 	scp $(SSH_PATH)/dldc.db.tar.gz $(TEMP_DIR) || true
