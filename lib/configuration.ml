@@ -91,9 +91,13 @@ module ConvUtil = struct
     Prelude.File.squiggle
       "~/.config/attachment-converter/scripts/"
 
+  let linux_multiuser_install_path =
+    "/usr/lib/attachment-converter/scripts/"
+
   let default_script_dir () =
     let paths =
       [ makefile_home_install_path;
+        linux_multiuser_install_path;
         "/opt/homebrew/Cellar/attc/" ^ Version.ver_num
         ^ "/lib/";
         "/usr/local/Cellar/attc/" ^ Version.ver_num
