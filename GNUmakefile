@@ -29,9 +29,9 @@ include $(LIB)/Makefile.debug
 
 .DEFAULT_GOAL := build
 
-################################################################################
 
-# DEV MAKE TARGETS
+################################################################################
+# dev make rules
 
 all build::				## build the project binaries
 	eval $$(opam env)
@@ -71,9 +71,9 @@ sandbox::
 
 -include $(LIB)/Makefile.help
 
-################################################################################
 
-# USER MAKE TARGETS
+################################################################################
+# user make rules
 
 opam:
 	./os-install.sh opam
@@ -138,7 +138,10 @@ install: shell-copy opam-install
 	@echo Please ensure that $(DESTDIR)/bin is on your path.
 .PHONY: install
 
-# Homebrew and ARCH specific Targets
+
+################################################################################
+# homebrew and arch specific rules
+
 pkg-opam:
 	opam init --yes --yes --disable-sandboxing
 .PHONY: pkg-opam
@@ -151,6 +154,49 @@ pkg-build: pkg-opam cd-home deps
 
 gen-man-page: opam-install
 	./main.exe --help=groff > doc/attc.1
+
+
+################################################################################
+# releasing
+
+ARCH_REPO_HOSTNAME = staff.lib.uchicago.edu
+ARCH_REPO_PATH = /data/web/dldc/open/repos/arch
+SSH_PATH = $(ARCH_REPO_HOSTNAME):$(ARCH_REPO_PATH)
+VER_NUM=0.1.5
+
+# upon version bump, this version number needs to be updated in three
+# places:
+
+# - this makefile
+# - Lib.Version.ver_num
+# - the PKGBUILD
+
+TEMP_DIR := $(shell mktemp -d)
+
+arch-checksum:
+	curl -sL "https://github.com/uchicago-library/attachment-converter/archive/refs/tags/v$(VER_NUM).tar.gz" | sha256sum | cut -d " " -f 1
+.PHONY: arch-checksum
+
+arch-release:
+	scp arch/PKGBUILD $(TEMP_DIR)
+	scp $(SSH_PATH)/dldc.db.tar.gz $(TEMP_DIR) || true
+	scp $(SSH_PATH)/dldc.files.tar.gz $(TEMP_DIR) || true
+	cd $(TEMP_DIR) && \
+		makepkg -Cc && \
+		repo-add -s dldc.db.tar.gz attc-$(VER_NUM)-1-x86_64.pkg.tar.zst && \
+		rsync -a * $(SSH_PATH) && \
+	rm -rf $(TEMP_DIR)
+.PHONY: arch-release
+
+arch-remove:
+	scp $(SSH_PATH)/dldc.db.tar.gz $(TEMP_DIR)
+	scp $(SSH_PATH)/dldc.files.tar.gz $(TEMP_DIR)
+	repo-remove -s $(TEMP_DIR)/dldc.db.tar.gz attc
+	rsync -a $(TEMP_DIR)/dldc.db.tar.gz $(SSH_PATH)
+	rsync -a $(TEMP_DIR)/dldc.files.tar.gz $(SSH_PATH)
+	ssh $(ARCH_REPO_HOSTNAME) rm $(ARCH_REPO_PATH)/attc-$(VER_NUM)-1-x86_64.pkg.tar.zst
+	rm -rf $(TEMP_DIR)
+.PHONY: arch-remove
 
 
 # This file is part of Attachment Converter.

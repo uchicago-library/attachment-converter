@@ -1,20 +1,23 @@
 # Maintainer: Matt Teichman <teichman@uchicago.edu>
-# Maintainer: Ben Kim <benkim@uchicago.edu>
+# Contributor: Ben Kim <benkim@uchicago.edu>
 pkgname=attc
-pkgver=PKG_VER
+# update this upon version bump
+pkgver=0.1.5
 pkgrel=1
 pkgdesc="Tool for batch-converting email attachments to preservation formats for archival purposes"
 arch=(x86_64)
 url="https://dldc.lib.uchicago.edu/open/attachment-converter/index.html"
-license=(GPL-2.0-or-later)
-depends=( 'libreoffice-fresh' 'pandoc' 'ghostscript' 'libvips' )
+license=(GPL-3.0-or-later)
+depends=( 'libreoffice-fresh' 'pandoc' 'ghostscript' 'libvips' 'imagemagick' )
 makedepends=( 'opam' 'mercurial' )
-source=("https://github.com/uchicago-library/attachment-converter/archive/${pkgver}/attachment-converter-${pkgver}.tar.gz")
-sha256sums=('')
+source=("https://github.com/uchicago-library/attachment-converter/archive/refs/tags/v${pkgver}.tar.gz")
+# update this sha 256 checksum with the command:
+# curl -sL "https://github.com/uchicago-library/attachment-converter/archive/refs/tags/v${pkgver}.tar.gz" | sha256sum | cut -d " " -f 1
+sha256sums=('60a5ac2741c2ecaaf36585e2a370a7ecb3274eca66f68ef23c4657426b21fc21')
 
 build() {
 	cd ${srcdir}/attachment-converter-${pkgver}
-	make brew-install
+	make
 }
 
 package() {
