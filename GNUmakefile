@@ -153,21 +153,42 @@ gen-man-page: opam-install
 
 
 ################################################################################
-# deploying
+# releasing
 
-ARCH_REPO_PATH = staff.lib.uchicago.edu:/data/web/dldc/open/repos/arch
+ARCH_REPO_HOSTNAME = staff.lib.uchicago.edu
+ARCH_REPO_PATH = /data/web/dldc/open/repos/arch
+SSH_PATH = $(ARCH_REPO_HOSTNAME):$(ARCH_REPO_PATH)
 VER_NUM=0.1.4
+
+# upon version bump, this version number needs to be updated in three
+# places:
+
+# - this makefile
+# - Lib.Version.ver_num
+# - the PKGBUILD
 
 TEMP_DIR := $(shell mktemp -d)
 
-deploy-arch-repo:
+arch-release:
 	scp arch/PKGBUILD $(TEMP_DIR)
+	scp $(SSH_PATH)/dldc.db.tar.gz $(TEMP_DIR) || true
+	scp $(SSH_PATH)/dldc.files.tar.gz $(TEMP_DIR) || true
 	cd $(TEMP_DIR) && \
 		makepkg -Cc && \
 		repo-add -s dldc.db.tar.gz attc-$(VER_NUM)-1-x86_64.pkg.tar.zst && \
-		rsync -a * $(ARCH_REPO_PATH) && \
+		rsync -a * $(SSH_PATH) && \
 	rm -rf $(TEMP_DIR)
-.PHONY: deploy-arch-repo
+.PHONY: arch-release
+
+arch-remove:
+	scp $(SSH_PATH)/dldc.db.tar.gz $(TEMP_DIR)
+	scp $(SSH_PATH)/dldc.files.tar.gz $(TEMP_DIR)
+	repo-remove -s $(TEMP_DIR)/dldc.db.tar.gz attc
+	rsync -a $(TEMP_DIR)/dldc.db.tar.gz $(SSH_PATH)
+	rsync -a $(TEMP_DIR)/dldc.files.tar.gz $(SSH_PATH)
+	ssh $(ARCH_REPO_HOSTNAME) rm $(ARCH_REPO_PATH)/attc-$(VER_NUM)-1-x86_64.pkg.tar.zst
+	rm -rf $(TEMP_DIR)
+.PHONY: arch-remove
 
 
 # This file is part of Attachment Converter.
