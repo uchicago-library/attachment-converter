@@ -30,7 +30,7 @@ include $(LIB)/Makefile.debug
 .DEFAULT_GOAL := build
 
 ################################################################################
-# dev make targets
+# dev make rules
 
 all build::				## build the project binaries
 	eval $$(opam env)
@@ -71,7 +71,7 @@ sandbox::
 -include $(LIB)/Makefile.help
 
 ################################################################################
-# user make targets
+# user make rules
 
 opam:
 	./os-install.sh opam
@@ -137,7 +137,10 @@ install: shell-copy opam-install
 	@echo Please ensure that $(DESTDIR)/bin is on your path.
 .PHONY: install
 
-# Homebrew and ARCH specific Targets
+
+################################################################################
+# homebrew and arch specific rules
+
 pkg-opam:
 	opam init --yes --yes --disable-sandboxing
 .PHONY: pkg-opam
