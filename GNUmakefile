@@ -75,6 +75,8 @@ sandbox::
 ################################################################################
 # user make rules
 
+SOLVER =
+
 opam:
 	./os-install.sh opam
 	opam init --yes --yes --disable-sandboxing
@@ -90,7 +92,7 @@ cd-home:
 deps::
 	eval $$(opam env)
 	opam repository add dldc https://dldc.lib.uchicago.edu/opam
-	opam install . --deps-only --yes -vvv
+	opam install . $(if $(SOLVER),--solver=$(SOLVER),) --deps-only --yes -vvv
 .PHONY: deps
 
 opam-deps.maketrack: mercurial cd-home deps	
@@ -162,7 +164,7 @@ gen-man-page: opam-install
 ARCH_REPO_HOSTNAME = staff.lib.uchicago.edu
 ARCH_REPO_PATH = /data/web/dldc/open/repos/arch
 SSH_PATH = $(ARCH_REPO_HOSTNAME):$(ARCH_REPO_PATH)
-VER_NUM=0.1.7
+VER_NUM=0.1.8
 
 # upon version bump, this version number needs to be updated in four
 # places:
