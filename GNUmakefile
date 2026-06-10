@@ -8,7 +8,6 @@
 
 SHELL := bash
 .SHELLFLAGS := -eu -o pipefail -c #need this? pt 2
-# IFS=$'\n\t'
 .ONESHELL:
 .DELETE_ON_ERROR:
 MAKEFLAGS += --warn-undefined-variables
@@ -92,7 +91,7 @@ cd-home:
 deps::
 	eval $$(opam env)
 	opam repository add dldc https://dldc.lib.uchicago.edu/opam
-	opam install . $(if $(SOLVER),--solver=$(SOLVER),) --deps-only --yes -vvv
+	opam install . $(if $(SOLVER),--solver=$(SOLVER),) --deps-only --yes -vv --debug-level=3
 .PHONY: deps
 
 opam-deps.maketrack: mercurial cd-home deps	
