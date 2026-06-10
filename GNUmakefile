@@ -162,7 +162,7 @@ gen-man-page: opam-install
 ARCH_REPO_HOSTNAME = staff.lib.uchicago.edu
 ARCH_REPO_PATH = /data/web/dldc/open/repos/arch
 SSH_PATH = $(ARCH_REPO_HOSTNAME):$(ARCH_REPO_PATH)
-VER_NUM=0.1.5
+VER_NUM=0.1.7
 
 # upon version bump, this version number needs to be updated in four
 # places:
