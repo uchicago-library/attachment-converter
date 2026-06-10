@@ -164,12 +164,13 @@ ARCH_REPO_PATH = /data/web/dldc/open/repos/arch
 SSH_PATH = $(ARCH_REPO_HOSTNAME):$(ARCH_REPO_PATH)
 VER_NUM=0.1.5
 
-# upon version bump, this version number needs to be updated in three
+# upon version bump, this version number needs to be updated in four
 # places:
 
 # - this makefile
 # - Lib.Version.ver_num
 # - the PKGBUILD
+# - the git tag for the new release
 
 TEMP_DIR := $(shell mktemp -d)
 
