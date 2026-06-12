@@ -25,5 +25,6 @@ package() {
 	mkdir -p ${pkgdir}/usr/lib/attachment-converter/scripts
 	cp ${srcdir}/attachment-converter-${pkgver}/conversion-scripts/*.sh ${pkgdir}/usr/lib/attachment-converter/scripts
 	mv ${srcdir}/attachment-converter-${pkgver}/_build/default/main.exe ${pkgdir}/usr/bin/attc
-	install ${srcdir}/attachment-converter-${pkgver}/doc/attc.1 /usr/share/man/man1
+	mkdir -p ${pkgdir}/usr/share/man/man1
+	install ${srcdir}/attachment-converter-${pkgver}/doc/attc.1 ${pkgdir}/usr/share/man/man1
 }
