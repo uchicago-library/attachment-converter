@@ -163,7 +163,7 @@ gen-man-page: opam-install
 ARCH_REPO_HOSTNAME = staff.lib.uchicago.edu
 ARCH_REPO_PATH = /data/web/dldc/open/repos/arch
 SSH_PATH = $(ARCH_REPO_HOSTNAME):$(ARCH_REPO_PATH)
-VER_NUM=0.1.35
+VER_NUM=0.1.36
 
 # upon version bump, this version number needs to be updated in four
 # places:
@@ -174,6 +174,12 @@ VER_NUM=0.1.35
 # - the debian changelog
 # - the formula in the homebrew-attc repository
 # - the git tag for the new release
+
+# also: make sure the prelude checksum in
+# ubuntu_wsl/prelude.100.1/opam is up to date
+
+# AND THEN update the sha checksum in the homebrew formula once the
+# new release tag is uploaded
 
 TEMP_DIR := $(shell mktemp -d)
 
