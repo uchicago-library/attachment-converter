@@ -17,7 +17,7 @@ sha256sums=('5fb55e2d6fa30881146d151f67c0d75f9c1b7e3441f8930b1fd4580434fd0ce8')
 
 build() {
 	cd ${srcdir}/attachment-converter-${pkgver}
-	make
+	make all gen-man-page
 }
 
 package() {
