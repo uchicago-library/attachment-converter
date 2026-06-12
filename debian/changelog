@@ -1,5 +1,5 @@
-attachment-converter (0.1.33-1~jammy) jammy; urgency=medium
+attachment-converter (0.1.34-1~resolute) resolute; urgency=medium
 
-  * Initial release. (Closes: #XXXX)
+  * Initial release.
 
- -- Ben Kim <benkim@uchicago.edu>  Mon, 22 Jul 2024 15:37:44 -0500
+ -- Matt Teichman <teichman@uchicago.edu>  Fri, 12 Jun 2026 14:37:13 -0500

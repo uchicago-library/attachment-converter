@@ -4,13 +4,13 @@ Upstream-Contact: Matt Teichman <tiechman@uchicago.edu>
 Source: https://github.com/uchicago-library/attachment-converter
 
 Files: *
-Copyright: 2021 Matt Teichman <teichman@uchicago.edu>
-License: GPL-2+
+Copyright: 2026 Matt Teichman <teichman@uchicago.edu>
+License: GPL-3.0-or-later
 
-License: GPL-2+
+License: GPL-3.0-or-later
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
- the Free Software Foundation; either version 2 of the License, or
+ the Free Software Foundation; either version 3 of the License, or
  (at your option) any later version. 
  .
  This program is distributed in the hope that it will be useful,
@@ -24,4 +24,4 @@ License: GPL-2+
  .
  On Debian systems, the full text of the GNU General Public
  License version 2 can be found in the file
- '/usr/share/common-licenses/GPL-2'.
+ '/usr/share/common-licenses/GPL-3'.
