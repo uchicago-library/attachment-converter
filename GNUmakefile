@@ -172,6 +172,7 @@ VER_NUM=0.1.35
 # - Lib.Version.ver_num
 # - the PKGBUILD
 # - the debian changelog
+# - the formula in the homebrew-attc repository
 # - the git tag for the new release
 
 TEMP_DIR := $(shell mktemp -d)
