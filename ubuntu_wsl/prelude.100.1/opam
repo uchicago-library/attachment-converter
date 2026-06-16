@@ -10,7 +10,7 @@ homepage: "https://www.lib.uchicago.edu/keith/software/prelude/"
 build: [make "all"]
 install: [make "install"]
 remove: [make "uninstall"]
-url { archive: "https://www.lib.uchicago.edu/keith/hg/prelude.tar.gz" checksum: "sha256=17c31b2209e9cad027fe6c92c1414a813e3fd2e8ea9b1a3a81f667a92cb03ccf" }
+url { archive: "https://www.lib.uchicago.edu/keith/hg/prelude.tar.gz" checksum: "sha256=9e5f0622a56b4ecba9bf139a94d1ff4c6344ea659278451e56393c46c09ae5d9" }
 dev-repo: "hg+file:///home/keith/src/prelude"
 # NB we need to maintain the depends manually here so erg doesn't add a build dep on itself!
 depends: [
