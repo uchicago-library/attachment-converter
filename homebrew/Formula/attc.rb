@@ -3,7 +3,7 @@ class Attc < Formula
   homepage "https://dldc.lib.uchicago.edu/open/attachment-converter/index.html"
   url "https://github.com/uchicago-library/attachment-converter/archive/refs/tags/VER_NUM.tar.gz"
   sha256 ""
-  license "GPL-2.0"
+  license "GPL-3.0-or-later"
 
   depends_on "opam" => :build
   depends_on "ghostscript"
