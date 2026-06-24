@@ -163,7 +163,7 @@ gen-man-page: opam-install
 ARCH_REPO_HOSTNAME = staff.lib.uchicago.edu
 ARCH_REPO_PATH = /data/web/dldc/open/repos/arch
 SSH_PATH = $(ARCH_REPO_HOSTNAME):$(ARCH_REPO_PATH)
-VER_NUM=0.1.39
+VER_NUM=0.1.40
 
 # upon version bump, this version number needs to be updated in four
 # places:
@@ -175,9 +175,10 @@ VER_NUM=0.1.39
 # - the formula in the homebrew-attc repository
 # - the git tag for the new release
 # - check that latest Prelude is in debian directory; update with opam file from DLDC repo
+# - check that ubuntu_wsl/OpamPack.sh is copying the right Prelude path (e.g. not prelude.100.1 anymore)
 
 # also: make sure the prelude checksum in
-# ubuntu_wsl/prelude.100.1/opam is up to date
+# ubuntu_wsl/prelude.100.7/opam is up to date
 
 # AND THEN update the sha checksum in the homebrew formula once the
 # new release tag is uploaded

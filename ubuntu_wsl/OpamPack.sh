@@ -64,7 +64,7 @@ for p in $PACKAGES ; do
 done
 
 rm -r packages/prelude/*
-cp -r ../prelude.100.1 packages/prelude/
+cp -r ../prelude.100.7 packages/prelude/
 
 # Remove unnecessary packages and git files
 
