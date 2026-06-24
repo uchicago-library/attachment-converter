@@ -1,6 +1,5 @@
 # -*- mode: tuareg-opam -*-
 opam-version: "2.0"
-version: "100.1"
 synopsis: "OCaml standard library additions and renamings"
 authors: "Keith WACLENA <keith@lib.uchicago.edu>"
 license: "GPL-3.0"
@@ -10,7 +9,6 @@ homepage: "https://www.lib.uchicago.edu/keith/software/prelude/"
 build: [make "all"]
 install: [make "install"]
 remove: [make "uninstall"]
-url { archive: "https://www.lib.uchicago.edu/keith/hg/prelude.tar.gz" checksum: "sha256=9e5f0622a56b4ecba9bf139a94d1ff4c6344ea659278451e56393c46c09ae5d9" }
 dev-repo: "hg+file:///home/keith/src/prelude"
 # NB we need to maintain the depends manually here so erg doesn't add a build dep on itself!
 depends: [
@@ -23,3 +21,5 @@ depends: [
   "ocamlfind" {build}
   "ocaml-makefile" {build}
 ]
+version: "100.7"
+url { archive: "https://www.lib.uchicago.edu/keith/hg/prelude-100.7.tar.gz" checksum: "sha256=1fdbe01969793c8809287a808bcc6bd11c15c58f411ceb52fa8d1cc14a9c8f4e" }
