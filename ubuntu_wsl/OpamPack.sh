@@ -73,34 +73,6 @@ rm -rf .git
 cd ..
 
 rm -rf opamroot
-mkdir opamroot
-
-
-
-# Set it as the default OPAM root directory
-
-export OPAMROOT=$PWD/opamroot
-
-
-
-# Initialize it as an Opam repository, without creating a switch to
-# prevent the installation of an OCaml compiler.
-
-echo n \
-    | opam init \
-             --bare \
-             --disable-sandboxing \
-             --disable-shell-hook \
-             --root=$PWD/opamroot \
-             $PWD/opam-repository
-eval $(opam env)
-
-
-
-# Create an empty switch named =opampack=
-
-opam switch create --empty opampack
-eval $(opam env --switch=opampack)
 
 # Download all the required packages for the installation
 
