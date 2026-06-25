@@ -104,7 +104,7 @@ eval $(opam env --switch=opampack)
 
 # Download all the required packages for the installation
 
-opam install -y --download-only $USER_PACKAGES
+opam install --debug-level=1 -y --download-only $USER_PACKAGES
 
 
 
