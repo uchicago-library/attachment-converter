@@ -9,7 +9,7 @@
 
 # Initialization
 
-USER_PACKAGES="ocaml.4.14.2 ocaml-base-compiler.4.14.2 ocamlbuild dune ocamlfind mrmime ocamlnet camlp-streams ounit2 cmdliner utop prelude"
+USER_PACKAGES="ocaml.4.14.2 ocaml-base-compiler.4.14.2 dune prelude ocamlbuild ocamlfind mrmime ocamlnet camlp-streams ounit2 cmdliner utop re"
 
 git clone https://github.com/ocaml/opam-repository.git --depth=1
 
