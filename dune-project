@@ -32,7 +32,7 @@ Attachment Converter reads from stdin and outputs to stdout, with
 error messages getting logged to stderr.
 ")
  (depends
-  (ocaml (>= 4.12.0))
+  ocaml
   dune
   prelude
   ocamlbuild

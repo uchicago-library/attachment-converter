@@ -31,7 +31,7 @@ authors: [
   "Ben Kim"
 ]
 depends: [
-  "ocaml" {>= "4.12.0"}
+  "ocaml"
   "dune" {>= "3.20"}
   "prelude"
   "ocamlbuild"
