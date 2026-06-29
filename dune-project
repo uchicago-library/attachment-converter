@@ -43,8 +43,6 @@ error messages getting logged to stderr.
   ounit2
   cmdliner
   utop
-  ocamlformat-rpc
-  ocaml-lsp-server
   re
   (qtest :dev)
   (ocamlformat :dev)
