@@ -212,13 +212,13 @@ arch-remove:
 .PHONY: arch-remove
 
 opampack-upacks:
-	opam show --just-file --field=depends ./attachment-converter.opam | sed '/"ocaml"/s/["{}> =]//g;/"dune"/s/.*/dune/;/{/d' | sed 's/"//g' | paste -sd ' '
+	opam show --just-file --field=depends ./attachment-converter.opam | sed '/"ocaml"/s/["{}> =]//g;/"dune"/s/.*/dune/;/{/d' | sed 's/"//g' | paste -sd ' ' > ubuntu_wsl/opampack-upacks
 .PHONY: opampack-upacks
 
 # note: this takes a minute or two to run, because it builds attc in a
 # fresh sandboxed switch
 opampack-packs:
-	opam switch remove --yes $PWD && make sandbox 1> /dev/null && eval $(opam env) && opam list --short
+	opam switch remove --yes $(PWD) || true && make sandbox 1> /dev/null && eval $$(opam env) && opam list --short | grep -vf <(echo prelude) | paste -sd ' ' > ubuntu_wsl/opampack-packs
 .PHONY: opampack-packs
 
 # This file is part of Attachment Converter.
