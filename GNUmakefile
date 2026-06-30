@@ -222,8 +222,10 @@ opampack-upacks:
 # note: this takes a minute or two to run, because it builds attc in a
 # fresh sandboxed switch
 opampack-packs:
-	opam switch remove --yes $(PWD) || true && make sandbox 1> /dev/null && eval $$(opam env) && opam list --short | grep -vf <(echo prelude) | paste -sd ' ' > ubuntu_wsl/opampack-packs
+	opam switch remove --yes $(PWD) || true && make sandbox 1> /dev/null && eval $$(opam env) && opam list --short | paste -sd ' ' > ubuntu_wsl/opampack-packs
 .PHONY: opampack-packs
+
+opampack: opampack-upacks opampack-packs
 
 # This file is part of Attachment Converter.
 
