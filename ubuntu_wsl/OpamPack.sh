@@ -9,7 +9,7 @@
 
 # Initialization
 
-USER_PACKAGES="ocaml.4.14.2 ocaml-base-compiler.4.14.2 dune prelude ocamlbuild ocamlfind mrmime ocamlnet camlp-streams ounit2 cmdliner utop re"
+USER_PACKAGES=$(cat ./opampack-upacks)
 
 git clone https://github.com/ocaml/opam-repository.git --depth=1
 
@@ -50,7 +50,7 @@ eval $(opam env --switch=opampack)
 
 # Find the complete list of necessary packages
 
-PACKAGES="alcotest angstrom astring b0 base base-bigarray base-bytes base-threads base-unix base64 bigstringaf bstr camlp-streams camlpdf cmdliner coin cppo crunch csexp csv domain-name dot-merlin-reader dune dune-build-info dune-configurator either emile ezxmlm fix fmt fpath ipaddr ke lambda-term logs lwt lwt_react macaddr menhir menhirCST menhirGLR menhirLib menhirSdk merlin merlin-lib mew mew_vi mrmime ocaml ocaml-base-compiler ocaml-config ocaml-makefile ocaml-options-vanilla ocaml-syntax-shims ocaml-version ocamlbuild ocamlfind ocamlformat ocamlformat-lib ocamlnet ocp-indent ocp-index ocplib-endian odig odoc odoc-parser ounit2 pecu prelude prettym ptime qcheck qcheck-core qcheck-ounit re react result rosetta seq sexplib0 stdio stdlib-shims topkg trie tyxml uchar unstrctrd utop uucp uuseg uutf uuuu xdg xmlm yojson yuscii zed"
+PACKAGES=$(cat ./opampack-packs)
 
 # In the repository, keep only the required packages:
 
