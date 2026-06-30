@@ -163,26 +163,30 @@ gen-man-page: opam-install
 ARCH_REPO_HOSTNAME = staff.lib.uchicago.edu
 ARCH_REPO_PATH = /data/web/dldc/open/repos/arch
 SSH_PATH = $(ARCH_REPO_HOSTNAME):$(ARCH_REPO_PATH)
-VER_NUM=0.1.42
+VER_NUM=0.1.43
 
-# upon version bump, this version number needs to be updated in four
-# places:
+# upon version increment, do the following steps slash update the version number in the following places:
 
 # - this makefile (i.e. the value of VER_NUM)
 # - Lib.Version.ver_num
 # - the PKGBUILD
 # - the debian changelog
+# - make sure the changelog mentions the current version of Debian, e.g. `attachment-converter (0.1.43-1~resolute) resolute`
+# - `date -R` to emit the current timestamp in the form the changelog wants
 # - the formula in the homebrew-attc repository (name of tarball in url field)
 # - the git tag for the new release
+# - if the set of opam third-party packages has changed since the last release, run `make opampack-upacks opampack-packs` to refresh the USER_PACKAGES and PACKAGES variables in OpamPack.sh
 # - check that latest Prelude is in debian directory; update with opam file from DLDC repo
 # - check that ubuntu_wsl/OpamPack.sh is copying the right Prelude path (e.g. not prelude.100.1 anymore)
-# - make sure USER_PACKAGES and PACKAGES variables in OpamPack.sh are up to date
+
 
 # also: make sure the prelude checksum in
 # ubuntu_wsl/prelude.100.7/opam is up to date
 
 # AND THEN update the sha checksum in the homebrew formula once the
 # new release tag is uploaded
+
+# to publish the package to the DLDC Arch Linux repo: `make arch-release`
 
 TEMP_DIR := $(shell mktemp -d)
 
