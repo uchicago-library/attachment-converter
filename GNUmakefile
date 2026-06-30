@@ -163,6 +163,10 @@ gen-man-page: opam-install
 ARCH_REPO_HOSTNAME = staff.lib.uchicago.edu
 ARCH_REPO_PATH = /data/web/dldc/open/repos/arch
 SSH_PATH = $(ARCH_REPO_HOSTNAME):$(ARCH_REPO_PATH)
+STAFF_LIB_HOSTNAME = $(ARCH_REPO_HOSTNAME)
+STAFF_LIB_PATH = /data/web/dldc/opam/packages/prelude
+PRELUDE_VER_NUM = 100.7
+PRELUDE_OPAM_PATH = $(STAFF_LIB_HOSTNAME):$(STAFF_LIB_PATH)/prelude.$(PRELUDE_VER_NUM)
 VER_NUM=0.1.44
 
 # upon version increment, do the following steps slash update the version number in the following places:
@@ -202,7 +206,7 @@ arch-release:
 		makepkg -Cc && \
 		repo-add -s dldc.db.tar.gz attc-$(VER_NUM)-1-x86_64.pkg.tar.zst && \
 		rsync -a * $(SSH_PATH) && \
-	rm -rf $(TEMP_DIR)
+		rm -rf $(TEMP_DIR)
 .PHONY: arch-release
 
 arch-remove:
@@ -226,6 +230,10 @@ opampack-packs:
 .PHONY: opampack-packs
 
 opampack: opampack-upacks opampack-packs
+
+prelude:
+	scp $(PRELUDE_OPAM_PATH)/opam ubuntu_wsl/prelude.$(PRELUDE_VER_NUM)
+.PHONY: prelude
 
 # This file is part of Attachment Converter.
 
