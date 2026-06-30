@@ -163,7 +163,7 @@ gen-man-page: opam-install
 ARCH_REPO_HOSTNAME = staff.lib.uchicago.edu
 ARCH_REPO_PATH = /data/web/dldc/open/repos/arch
 SSH_PATH = $(ARCH_REPO_HOSTNAME):$(ARCH_REPO_PATH)
-VER_NUM=0.1.43
+VER_NUM=0.1.44
 
 # upon version increment, do the following steps slash update the version number in the following places:
 
@@ -175,7 +175,7 @@ VER_NUM=0.1.43
 # - `date -R` to emit the current timestamp in the form the changelog wants
 # - the formula in the homebrew-attc repository (name of tarball in url field)
 # - the git tag for the new release
-# - if the set of opam third-party packages has changed since the last release, run `make opampack-upacks opampack-packs` to refresh the USER_PACKAGES and PACKAGES variables in OpamPack.sh
+# - if the set of opam third-party packages has changed since the last release, run `make opampack` to refresh the USER_PACKAGES and PACKAGES variables in OpamPack.sh
 # - check that latest Prelude is in debian directory; update with opam file from DLDC repo
 # - check that ubuntu_wsl/OpamPack.sh is copying the right Prelude path (e.g. not prelude.100.1 anymore)
 
