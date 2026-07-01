@@ -105,5 +105,5 @@ $ sudo apt update
 $ sudo apt install attc
 ```
 
-Ubuntu will prompt you to confirm that you accept our PPA's `gpg`
-public key the first time you add the PPA.
+Ubuntu will prompt the user to confirm that they accept our PPA's
+`gpg` public key the first time they add the PPA.
