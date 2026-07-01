@@ -1,7 +1,7 @@
 # Release checklist
 
 This is a guide for DLDC developers who would like to push out a fresh
-release of Attachment Converter.  See [Background](#background)
+release of Attachment Converter.  See [background](#background)
 section for more background.
 
 ## Updating the `attachment-converter` repository
@@ -114,5 +114,19 @@ Ubuntu will prompt the user to confirm that they accept our PPA's
 
 # Background
 
-text
+Publishing a new package to third-party repositories for our three
+target platforms is, on the whole, a bit of a song and dance.
+Creating a `homebrew` tap is quite simple, hosting your own additional
+Arch Linux repository takes a little more work, and creating your own
+Debian/Ubuntu PPA is quite labor intensive.  The purpose of this
+document is to guide the developer in the step by step process of
+publishing newly built packages for each of these platforms.
+
+Ideally, we would automate this entire process.  However, the process
+was clearly not designed with the idea of being scriptable in mind.
+So automating it will require some design and dev work, which would in
+principle like to return to in the future.  For now, we attempt to
+document the steps of the process in prose, as thoroughly as possible.
+
+## Further background
 
