@@ -74,7 +74,7 @@ $ sudo pacman -S attc
 - [ ] cd `attachment-converter-v0.1.44/ubuntu_wsl`
 - [ ] `./OpamPack.sh`
 - [ ] `cd ../..`
-- [ ] `tar czf attachment-converter_0.1.44.orig.tar.gz`
+- [ ] `tar czf attachment-converter_0.1.44.orig.tar.gz attachment-converter-v0.1.44`
 - [ ] it must be `attachment-converter_VER_NUM.orig.tar.gz` with an
       underscore (not a hyphen) and then the number with no preceding
       `v`
