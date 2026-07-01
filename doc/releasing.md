@@ -43,16 +43,64 @@ should be able to do the following on their machine to install `attc`:
 $ brew tap uchicago-library/attc
 $ brew install attc
 ```
-
 ## Arch Release
 
 From a machine that is capable of publishing to the DLDC Arch Linux
 software repository on `staff.lib`, run `make arch-release`.
 
+The user should be able to then install `attc` by first adding this to
+their `/etc/pacman.conf`:
+
+```ini
+[dldc]
+SigLevel = Optional TrustAll
+Server = http://dldc.lib.uchicago.edu/open/repos/arch
+```
+
+Then to install:
+
+```console
+$ sudo pacman -Syy
+$ sudo pacman -S attc
+```
 
 ## Ubuntu Release
 
 - [ ] enter the Ubuntu environment, running under `qemu`
-- wget command
-- 
+- [ ] cd `~/tmp`
+- [ ] `wget -c https://github.com/uchicago-library/attachment-converter/archive/v0.1.44/attachment-converter-v0.1.44.tar.gz`
+      (replace `0.1.44` with actual version number)
+- [ ] `tar xzvf attachment-converter-v0.1.44.tar.gz` (replace `0.1.44` with actual version number)
+- [ ] cd `attachment-converter-v0.1.44/ubuntu_wsl`
+- [ ] `./OpamPack.sh`
+- [ ] `cd ../..`
+- [ ] `tar czf attachment-converter_0.1.44.orig.tar.gz`
+- [ ] it must be `attachment-converter_VER_NUM.orig.tar.gz` with an
+      underscore (not a hyphen) and then the number with no preceding
+      `v`
+- [ ] `cd ..`
+- [ ] `gpg --list-keys` to display DLDC repo's public `gpg` key
+- [ ] `debuild -S -k"3EF45886DF1EF82B4782F5FBD331DB7453444E0E`
+- [ ] you will be prompted to enter the DLDC repo's private `gpg` key
+- [ ] `debuild` must be run from the root of the project
+- [ ] `cd ..`
+- [ ] `dput ppa:uchicago-dldc/attc attachment-converter_0.1.44-1~resolute_source.changes`
+- [ ] `dput` command must be run from one directory up from the project root
 
+Our account on Debian Launchpad is set up, and the UChicago DLDC `gpg`
+key is associated with that account. It takes Launchpad 1-2 hours to
+build the project.  It notifies you by email when you first upload it
+with `dput`.  If the job fails, it will send you an email
+notification.  If the job succeeds, you won't get a second email
+notification.
+
+The user should then be able to install `attc` by running the following commands:
+
+```console
+$ sudo add-apt repository ppa:uchicago-dldc/attc
+$ sudo apt update
+$ sudo apt install attc
+```
+
+Ubuntu will prompt you to confirm that you accept our PPA's `gpg`
+public key the first time you add the PPA.
