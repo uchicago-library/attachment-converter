@@ -4,7 +4,7 @@ This is a guide for DLDC developers who would like to push out a fresh
 release of Attachment Converter.  See [Background](#background)
 section for more background.
 
-## Creating the new version of `attc` in the `attachment-converter` repository
+## Updating the `attachment-converter` repository
 
 Prep the repository before creating a fresh release tag:
 
@@ -38,7 +38,7 @@ After creating the new release tag:
 - [ ] in the `homebrew-attc` repository, insert the new checksum into
       the `sha256` field of `Formula/attc.rb`
 
-## Homebrew Release
+## Homebrew release
 
 Nothing further is required for releasing to Homebrew.  The user
 should be able to do the following on their machine to install `attc`:
@@ -47,7 +47,7 @@ should be able to do the following on their machine to install `attc`:
 $ brew tap uchicago-library/attc
 $ brew install attc
 ```
-## Arch Release
+## Arch release
 
 From a machine that is capable of publishing to the DLDC Arch Linux
 software repository on `staff.lib`, run `make arch-release`.
@@ -71,7 +71,7 @@ $ sudo pacman -S attc
 The user will have to confirm that they accept the UChicago DLDC Arch
 Linux repository's `gpg` public key after they run `pacman -Syy`.
 
-## Ubuntu Release
+## Ubuntu release
 
 - [ ] enter the Ubuntu environment, running under `qemu`
 - [ ] cd `~/tmp`
