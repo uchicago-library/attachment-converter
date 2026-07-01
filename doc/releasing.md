@@ -64,6 +64,9 @@ $ sudo pacman -Syy
 $ sudo pacman -S attc
 ```
 
+The user will have to confirm that they accept the UChicago DLDC Arch
+Linux repository's `gpg` public key after they run `pacman -Syy`.
+
 ## Ubuntu Release
 
 - [ ] enter the Ubuntu environment, running under `qemu`
