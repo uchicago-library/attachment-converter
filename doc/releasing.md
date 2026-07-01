@@ -1,8 +1,12 @@
 # Release checklist
 
+This is a guide for DLDC developers who would like to push out a fresh
+release of Attachment Converter.  See (#background) for more
+background.
+
 ## Creating the new version of `attc` in the `attachment-converter` repository
 
-Prep the repository for creating a fresh release tag:
+Prep the repository before creating a fresh release tag:
 
 - [ ] create sandboxed switch and switch into it
 - [ ] run a build to update the `attachment-converter.opam` file
@@ -23,8 +27,8 @@ Create the new release tag:
 
 - [ ] create a new commit in this project with those changes
 - [ ] give that commit a release tag with the latest version
-- [ ] push the new commit up
-- [ ] push the new tag up
+- [ ] push the new commit up to `origin/main`
+- [ ] push the new tag up to `origin/main`
 
 After creating the new release tag:
 
@@ -107,3 +111,8 @@ $ sudo apt install attc
 
 Ubuntu will prompt the user to confirm that they accept our PPA's
 `gpg` public key the first time they add the PPA.
+
+# Background
+
+text
+
