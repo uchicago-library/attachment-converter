@@ -11,7 +11,7 @@ Prep the repository before creating a fresh release tag:
 - [ ] create sandboxed switch and switch into it
 - [ ] run a build to update the `attachment-converter.opam` file
 - [ ] bump `VER_NUM` Make variable in `GNUmakefile`
-- [ ] bump `pkgver` shell variable in `arch/PKGBUILD`
+- [ ] bump `pkgver` shell variable, line 5 of `arch/PKGBUILD`
 - [ ] bump version number in first line of `debian/changelog`
 - [ ] make sure the Debian changelog mentions the correct version of
       Debian (e.g. `resolute` vs. `jammy`)
@@ -34,7 +34,7 @@ After creating the new release tag:
 
 - [ ] get the new checksum by running `make arch-checksum`
 - [ ] insert the new checksum into the `sh256sums` field of
-      `arch/PKGBUILD`
+      `arch/PKGBUILD`, line 16
 - [ ] in the `homebrew-attc` repository, insert the new checksum into
       the `sha256` field of `Formula/attc.rb`
 
@@ -118,15 +118,44 @@ Publishing a new package to third-party repositories for our three
 target platforms is, on the whole, a bit of a song and dance.
 Creating a `homebrew` tap is quite simple, hosting your own additional
 Arch Linux repository takes a little more work, and creating your own
-Debian/Ubuntu PPA is quite labor intensive.  The purpose of this
-document is to guide the developer in the step by step process of
+Debian/Ubuntu PPA is quite labor-intensive.  The purpose of this
+document is to guide the developer in the step-by-step process of
 publishing newly built packages for each of these platforms.
 
-Ideally, we would automate this entire process.  However, the process
-was clearly not designed with the idea of being scriptable in mind.
-So automating it will require some design and dev work, which would in
-principle like to return to in the future.  For now, we attempt to
-document the steps of the process in prose, as thoroughly as possible.
+Ideally, we would automate the entire packaging process.  However, the
+packaging process was clearly not designed with the idea of being
+scriptable in mind, which means that automating it will require some
+design and dev work, and we'll need to schedule time for that.  For
+now, we attempt to document the steps of the process in prose, as
+thoroughly as possible.
 
 ## Further background
 
+This repository contains the following subdirectories:
+
+```
+arch/
+homebrew/
+debian/
+ubuntu_wsl/
+```
+
+Historically, the information in this document was dispersed over
+these four directories, with e.g. instructions on how to mint a new
+Arch release in the `arch/` directory.  Where applicable, the
+packaging and release instructions for each of these platforms have
+now been turned into a file called `faq.md` with background
+information only.  The packaging and release instructions exist in
+this centralized file, `releasing.md`.
+
+### Homebrew
+
+### Arch Linux
+
+The `arch/` directory contains only one file, the `PKGBUILD`.  This is
+the only file that is required to create an Arch Linux package.
+`makepkg -Cc`, when run in this directory, creates a
+`*x86_64.pkg.tar.zst` file, which is an Arch Linux package.  It is
+possible to add this package to a repository using Arch Linux's
+`repo-add` utility.  These steps are automated for our convenience in
+the `make arch-release` rule.
