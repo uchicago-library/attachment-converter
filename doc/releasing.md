@@ -80,7 +80,7 @@ $ sudo pacman -S attc
       `v`
 - [ ] `cd ..`
 - [ ] `gpg --list-keys` to display DLDC repo's public `gpg` key
-- [ ] `debuild -S -k"3EF45886DF1EF82B4782F5FBD331DB7453444E0E`
+- [ ] `debuild -S -k"3EF45886DF1EF82B4782F5FBD331DB7453444E0E"`
 - [ ] you will be prompted to enter the DLDC repo's private `gpg` key
 - [ ] `debuild` must be run from the root of the project
 - [ ] `cd ..`
