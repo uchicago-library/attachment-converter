@@ -52,3 +52,7 @@ software repository on `staff.lib`, run `make arch-release`.
 
 ## Ubuntu Release
 
+- [ ] enter the Ubuntu environment, running under `qemu`
+- wget command
+- 
+
