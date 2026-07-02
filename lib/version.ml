@@ -4,7 +4,7 @@
 (* Copyright 2026 Matt Teichman and Nathan Mull *)
 
 
-let ver_num = "0.1.49"
+let ver_num = "0.1.50"
 
 
 (* This file is part of Attachment Converter. *)
