@@ -167,7 +167,7 @@ STAFF_LIB_HOSTNAME = $(ARCH_REPO_HOSTNAME)
 STAFF_LIB_PATH = /data/web/dldc/opam/packages/prelude
 PRELUDE_VER_NUM = 100.7
 PRELUDE_OPAM_PATH = $(STAFF_LIB_HOSTNAME):$(STAFF_LIB_PATH)/prelude.$(PRELUDE_VER_NUM)
-VER_NUM = 0.1.47
+VER_NUM = 0.1.48
 DEBIAN_CODENAME = resolute
 DLDC_PUBLIC_KEY = 3EF45886DF1EF82B4782F5FBD331DB7453444E0E
 
@@ -207,10 +207,10 @@ release-tags:
 
 push-tags: release-tags
 	git push origin $(BRANCH)
-	git push origin $(BRANCH) --tags
+	git push origin $(BRANCH) v$(VER_NUM)
 .PHONY: push-tags
 
-prep-for-release: update-pkgbuild-version update-ocaml-vernum update-debian-changelog prelude opampack release-tags
+prep-for-release: update-pkgbuild-version update-ocaml-vernum update-debian-changelog prelude opampack push-tags
 
 arch-release: update-pkgbuild-checksum
 	mkdir -p $(TEMP_DIR)
