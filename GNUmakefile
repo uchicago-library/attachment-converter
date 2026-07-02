@@ -205,12 +205,13 @@ update-pkgbuild-checksum:
 
 CHECKSUM = $(shell curl -sL "https://github.com/uchicago-library/attachment-converter/archive/refs/tags/v$(VER_NUM).tar.gz" | sha256sum | cut -d " " -f 1)
 DEBIAN_DATE = $(shell date -R)
+FILES_TO_UPDATE = lib/version.ml arch/PKGBUILD debian/changelog ubuntu_wsl/prelude.$(PRELUDE_VER_NUM)/opam ubuntu_wsl/opampack-packs ubuntu_wsl/opampack-upacks
 
 checksum:
 	@echo $(CHECKSUM)
 .PHONY: checksum
 
-update-version-dot-ml:
+update-ocaml-vernum:
 	sed -i 's/let ver_num = \".*\"/let ver_num = \"$(VER_NUM)\"/' lib/version.ml
 .PHONY: update-version-dot-ml
 
@@ -219,7 +220,13 @@ update-debian-changelog:
 	sed -i "s/[A-Z][a-z][a-z], [0-9][0-9] [A-Z][a-z][a-z] [0-9][0-9][0-9].*/$(DEBIAN_DATE)/" debian/changelog
 .PHONY: update-debian-changelog
 
-update-version-numbers: update-pkgbuild-version update-version-dot-ml update-debian-changelog
+release-tags:
+	git add $(FILES_TO_UPDATE)
+	git commit -m "version $(VER_NUM) (testing automation; please ignore this commit)"
+# git tag -a v$(VER_NUM) -m 
+.PHONY: release-tags
+
+prep-for-release: update-pkgbuild-version update-ocaml-vernum update-debian-changelog prelude opampack
 
 arch-release:
 	scp arch/PKGBUILD $(TEMP_DIR)
