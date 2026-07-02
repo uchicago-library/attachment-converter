@@ -265,7 +265,7 @@ launchpad:
 		cd attachment-converter-$(VER_NUM) && \
 		debuild -S -k"$(DLDC_PUBLIC_KEY)" && \
 		cd .. && \
-		@echo $(PWD)
+		echo $(PWD)
 #&& \
 #		dput ppa:uchicago-dldc/attc attachment-converter_$(VER_NUM)-1~$(DEBIAN_CODENAME)_source.changes
 .PHONY: launchpad
