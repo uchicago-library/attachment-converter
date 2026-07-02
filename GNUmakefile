@@ -167,7 +167,8 @@ STAFF_LIB_HOSTNAME = $(ARCH_REPO_HOSTNAME)
 STAFF_LIB_PATH = /data/web/dldc/opam/packages/prelude
 PRELUDE_VER_NUM = 100.7
 PRELUDE_OPAM_PATH = $(STAFF_LIB_HOSTNAME):$(STAFF_LIB_PATH)/prelude.$(PRELUDE_VER_NUM)
-VER_NUM=0.1.44
+VER_NUM = 0.1.44
+DEBIAN_CODENAME = resolute
 
 # upon version increment, do the following steps slash update the version number in the following places:
 
@@ -194,9 +195,31 @@ VER_NUM=0.1.44
 
 TEMP_DIR := $(shell mktemp -d)
 
-arch-checksum:
-	curl -sL "https://github.com/uchicago-library/attachment-converter/archive/refs/tags/v$(VER_NUM).tar.gz" | sha256sum | cut -d " " -f 1
-.PHONY: arch-checksum
+update-pkgbuild-version:
+	sed -i 's/^pkgver=.*/pkgver=$(VER_NUM)/' arch/PKGBUILD
+.PHONY: update-pkgbuild-version
+
+update-pkgbuild-checksum:
+	sed -i "s/sha256sums=.*/sha256sums=('b63548f45d805c971fa7f6a6eb9c6097ce64ef2720883d8ceec021c425bf1b8a')/" arch/PKGBUILD
+.PHONY: update-pkgbuild-checksum
+
+CHECKSUM = $(shell curl -sL "https://github.com/uchicago-library/attachment-converter/archive/refs/tags/v$(VER_NUM).tar.gz" | sha256sum | cut -d " " -f 1)
+DEBIAN_DATE = $(shell date -R)
+
+checksum:
+	@echo $(CHECKSUM)
+.PHONY: checksum
+
+update-version-dot-ml:
+	sed -i 's/let ver_num = \".*\"/let ver_num = \"$(VER_NUM)\"/' lib/version.ml
+.PHONY: update-version-dot-ml
+
+update-debian-changelog:
+	sed -i "s/attachment-converter (.*) $(DEBIAN_CODENAME)/attachment-converter ($(VER_NUM)-1~$(DEBIAN_CODENAME)) $(DEBIAN_CODENAME)/" debian/changelog
+	sed -i "s/[A-Z][a-z][a-z], [0-9][0-9] [A-Z][a-z][a-z] [0-9][0-9][0-9].*/$(DEBIAN_DATE)/" debian/changelog
+.PHONY: update-debian-changelog
+
+update-version-numbers: update-pkgbuild-version update-version-dot-ml update-debian-changelog
 
 arch-release:
 	scp arch/PKGBUILD $(TEMP_DIR)
