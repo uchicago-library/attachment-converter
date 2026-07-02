@@ -213,6 +213,7 @@ push-tags: release-tags
 prep-for-release: update-pkgbuild-version update-ocaml-vernum update-debian-changelog prelude opampack push-tags
 
 arch-release: update-pkgbuild-checksum
+	mkdir -p $(TEMP_DIR)
 	scp arch/PKGBUILD $(TEMP_DIR)
 	scp $(SSH_PATH)/dldc.db.tar.gz $(TEMP_DIR) || true
 	scp $(SSH_PATH)/dldc.files.tar.gz $(TEMP_DIR) || true
@@ -224,6 +225,7 @@ arch-release: update-pkgbuild-checksum
 .PHONY: arch-release
 
 arch-remove:
+	mkdir -p $(TEMP_DIR)
 	scp $(SSH_PATH)/dldc.db.tar.gz $(TEMP_DIR)
 	scp $(SSH_PATH)/dldc.files.tar.gz $(TEMP_DIR)
 	repo-remove -s $(TEMP_DIR)/dldc.db.tar.gz attc
@@ -256,7 +258,7 @@ launchpad:
 		cd $(HOME)/tmp && \
 		wget -c https://github.com/uchicago-library/attachment-converter/archive/v$(VER_NUM)/attachment-converter-v$(VER_NUM).tar.gz && \
 		tar xzvf attachment-converter-v$(VER_NUM).tar.gz && \
-		cd attachment-converter-v$(VER_NUM)/ubuntu_wsl && \
+		cd attachment-converter-$(VER_NUM)/ubuntu_wsl && \
 		./OpamPack.sh && \
 		cd ../.. && \
 		tar czf attachment-converter_$(VER_NUM).orig.tar.gz attachment-converter-v$(VER_NUM) && \
