@@ -167,9 +167,9 @@ STAFF_LIB_HOSTNAME = $(ARCH_REPO_HOSTNAME)
 STAFF_LIB_PATH = /data/web/dldc/opam/packages/prelude
 PRELUDE_VER_NUM = 100.7
 PRELUDE_OPAM_PATH = $(STAFF_LIB_HOSTNAME):$(STAFF_LIB_PATH)/prelude.$(PRELUDE_VER_NUM)
-VER_NUM = 0.1.45
+VER_NUM = 0.1.46
 DEBIAN_CODENAME = resolute
-GPG_PUBLIC_KEY = 3EF45886DF1EF82B4782F5FBD331DB7453444E0E
+DLDC_PUBLIC_KEY = 3EF45886DF1EF82B4782F5FBD331DB7453444E0E
 
 TEMP_DIR := $(shell mktemp -d)
 
@@ -184,7 +184,7 @@ update-pkgbuild-checksum:
 CHECKSUM = $(shell curl -sL "https://github.com/uchicago-library/attachment-converter/archive/refs/tags/v$(VER_NUM).tar.gz" | sha256sum | cut -d " " -f 1)
 DEBIAN_DATE = $(shell date -R)
 FILES_TO_UPDATE = lib/version.ml arch/PKGBUILD debian/changelog ubuntu_wsl/prelude.$(PRELUDE_VER_NUM)/opam ubuntu_wsl/opampack-packs ubuntu_wsl/opampack-upacks
-BRANCH = 122-consolidate-packaging-and-release-documentation
+BRANCH = main
 
 checksum:
 	@echo $(CHECKSUM)
@@ -252,14 +252,19 @@ prelude:
 # warning: you need to be sitting at the computer to type the gpg
 # password for this rule unless you have gpg-agent set up
 launchpad:
-	mkdir -p $(HOME)/tmp
-	cd $(HOME)/tmp
-	wget -c https://github.com/uchicago-library/attachment-converter/archive/v$(VER_NUM)/attachment-converter-v$(VER_NUM).tar.gz
-	tar xzvf attachment-converter-v$(VER_NUM).tar.gz
-	cd attachment-converter-v$(VER_NUM)/ubuntu_wsl && ./OpamPack.sh
-	cd .. && tar czf attachment-converter_$(VER_NUM).orig.tar.gz attachment-converter-v$(VER_NUM)
-	debuild -S -k"$(GPG_PUBLIC_KEY)"
-	cd .. && dput ppa:uchicago-dldc/attc attachment-converter_$(VER_NUM)-1~$(DEBIAN_CODENAME)_source.changes
+	mkdir -p $(HOME)/tmp && \
+		cd $(HOME)/tmp && \
+		wget -c https://github.com/uchicago-library/attachment-converter/archive/v$(VER_NUM)/attachment-converter-v$(VER_NUM).tar.gz && \
+		tar xzvf attachment-converter-v$(VER_NUM).tar.gz && \
+		cd attachment-converter-v$(VER_NUM)/ubuntu_wsl && \
+		./OpamPack.sh && \
+		cd ../.. && \
+		tar czf attachment-converter_$(VER_NUM).orig.tar.gz attachment-converter-v$(VER_NUM) && \
+		debuild -S -k"$(DLDC_PUBLIC_KEY)" && \
+		cd .. &&\
+		@echo $(PWD)
+#&& \
+#		dput ppa:uchicago-dldc/attc attachment-converter_$(VER_NUM)-1~$(DEBIAN_CODENAME)_source.changes
 .PHONY: launchpad
 
 # This file is part of Attachment Converter.
