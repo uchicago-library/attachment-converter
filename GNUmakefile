@@ -210,7 +210,7 @@ push-tags: release-tags
 	git push origin $(BRANCH) --tags
 .PHONY: push-tags
 
-prep-for-release: update-pkgbuild-version update-ocaml-vernum update-debian-changelog prelude opampack push-tags
+prep-for-release: update-pkgbuild-version update-ocaml-vernum update-debian-changelog prelude opampack release-tags
 
 arch-release: update-pkgbuild-checksum
 	mkdir -p $(TEMP_DIR)
