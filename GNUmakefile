@@ -167,31 +167,9 @@ STAFF_LIB_HOSTNAME = $(ARCH_REPO_HOSTNAME)
 STAFF_LIB_PATH = /data/web/dldc/opam/packages/prelude
 PRELUDE_VER_NUM = 100.7
 PRELUDE_OPAM_PATH = $(STAFF_LIB_HOSTNAME):$(STAFF_LIB_PATH)/prelude.$(PRELUDE_VER_NUM)
-VER_NUM = 0.1.44
+VER_NUM = 0.1.45
 DEBIAN_CODENAME = resolute
-
-# upon version increment, do the following steps slash update the version number in the following places:
-
-# - this makefile (i.e. the value of VER_NUM)
-# - Lib.Version.ver_num
-# - the PKGBUILD
-# - the debian changelog
-# - make sure the changelog mentions the current version of Debian, e.g. `attachment-converter (0.1.43-1~resolute) resolute`
-# - `date -R` to emit the current timestamp in the form the changelog wants
-# - the formula in the homebrew-attc repository (name of tarball in url field)
-# - the git tag for the new release
-# - if the set of opam third-party packages has changed since the last release, run `make opampack` to refresh the USER_PACKAGES and PACKAGES variables in OpamPack.sh
-# - check that latest Prelude is in debian directory; update with opam file from DLDC repo
-# - check that ubuntu_wsl/OpamPack.sh is copying the right Prelude path (e.g. not prelude.100.1 anymore)
-
-
-# also: make sure the prelude checksum in
-# ubuntu_wsl/prelude.100.7/opam is up to date
-
-# AND THEN update the sha checksum in the homebrew formula once the
-# new release tag is uploaded
-
-# to publish the package to the DLDC Arch Linux repo: `make arch-release`
+GPG_PUBLIC_KEY = 3EF45886DF1EF82B4782F5FBD331DB7453444E0E
 
 TEMP_DIR := $(shell mktemp -d)
 
@@ -206,6 +184,7 @@ update-pkgbuild-checksum:
 CHECKSUM = $(shell curl -sL "https://github.com/uchicago-library/attachment-converter/archive/refs/tags/v$(VER_NUM).tar.gz" | sha256sum | cut -d " " -f 1)
 DEBIAN_DATE = $(shell date -R)
 FILES_TO_UPDATE = lib/version.ml arch/PKGBUILD debian/changelog ubuntu_wsl/prelude.$(PRELUDE_VER_NUM)/opam ubuntu_wsl/opampack-packs ubuntu_wsl/opampack-upacks
+BRANCH = 122-consolidate-packaging-and-release-documentation
 
 checksum:
 	@echo $(CHECKSUM)
@@ -223,12 +202,17 @@ update-debian-changelog:
 release-tags:
 	git add $(FILES_TO_UPDATE)
 	git commit -m "version $(VER_NUM) (testing automation; please ignore this commit)"
-# git tag -a v$(VER_NUM) -m 
+	git tag v$(VER_NUM)
 .PHONY: release-tags
 
-prep-for-release: update-pkgbuild-version update-ocaml-vernum update-debian-changelog prelude opampack
+push-tags: release-tags
+	git push origin $(BRANCH)
+	git push origin $(BRANCH) --tags
+.PHONY: push-tags
 
-arch-release:
+prep-for-release: update-pkgbuild-version update-ocaml-vernum update-debian-changelog prelude opampack push-tags
+
+arch-release: update-pkgbuild-checksum
 	scp arch/PKGBUILD $(TEMP_DIR)
 	scp $(SSH_PATH)/dldc.db.tar.gz $(TEMP_DIR) || true
 	scp $(SSH_PATH)/dldc.files.tar.gz $(TEMP_DIR) || true
@@ -250,13 +234,13 @@ arch-remove:
 .PHONY: arch-remove
 
 opampack-upacks:
-	opam show --just-file --field=depends ./attachment-converter.opam | sed '/"ocaml"/s/["{}> =]//g;/"dune"/s/.*/dune/;/{/d' | sed 's/"//g' | paste -sd ' ' > ubuntu_wsl/opampack-upacks
+	opam show --just-file --field=depends ./attachment-converter.opam | sed '/"ocaml"/s/["{}> =]//g;/"dune"/s/.*/dune/;/{/d' | sed 's/"//g' | paste -sd ' ' > ubuntu_wsl/$@
 .PHONY: opampack-upacks
 
 # note: this takes a minute or two to run, because it builds attc in a
 # fresh sandboxed switch
 opampack-packs:
-	opam switch remove --yes $(PWD) || true && make sandbox 1> /dev/null && eval $$(opam env) && opam list --short | paste -sd ' ' > ubuntu_wsl/opampack-packs
+	opam switch remove --yes $(PWD) || true && make sandbox 1> /dev/null && eval $$(opam env) && opam list --short | paste -sd ' ' > ubuntu_wsl/$@
 .PHONY: opampack-packs
 
 opampack: opampack-upacks opampack-packs
@@ -264,6 +248,19 @@ opampack: opampack-upacks opampack-packs
 prelude:
 	scp $(PRELUDE_OPAM_PATH)/opam ubuntu_wsl/prelude.$(PRELUDE_VER_NUM)
 .PHONY: prelude
+
+# warning: you need to be sitting at the computer to type the gpg
+# password for this rule unless you have gpg-agent set up
+launchpad:
+	mkdir -p $(HOME)/tmp
+	cd $(HOME)/tmp
+	wget -c https://github.com/uchicago-library/attachment-converter/archive/v$(VER_NUM)/attachment-converter-v$(VER_NUM).tar.gz
+	tar xzvf attachment-converter-v$(VER_NUM).tar.gz
+	cd attachment-converter-v$(VER_NUM)/ubuntu_wsl && ./OpamPack.sh
+	cd .. && tar czf attachment-converter_$(VER_NUM).orig.tar.gz attachment-converter-v$(VER_NUM)
+	debuild -S -k"$(GPG_PUBLIC_KEY)"
+	cd .. && dput ppa:uchicago-dldc/attc attachment-converter_$(VER_NUM)-1~$(DEBIAN_CODENAME)_source.changes
+.PHONY: launchpad
 
 # This file is part of Attachment Converter.
 
