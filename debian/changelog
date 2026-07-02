@@ -1,5 +1,5 @@
-attachment-converter (0.1.44-1~resolute) resolute; urgency=medium
+attachment-converter (0.1.45-1~resolute) resolute; urgency=medium
 
   * Initial release.
 
- -- Matt Teichman <teichman@uchicago.edu>  Thu, 02 Jul 2026 13:42:49 -0500
+ -- Matt Teichman <teichman@uchicago.edu>  Thu, 02 Jul 2026 14:00:42 -0500
