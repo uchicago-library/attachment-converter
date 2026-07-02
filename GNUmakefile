@@ -262,8 +262,9 @@ launchpad:
 		./OpamPack.sh && \
 		cd ../.. && \
 		tar czf attachment-converter_$(VER_NUM).orig.tar.gz attachment-converter-$(VER_NUM) && \
+		cd attachment-converter-$(VER_NUM) && \
 		debuild -S -k"$(DLDC_PUBLIC_KEY)" && \
-		cd .. &&\
+		cd .. && \
 		@echo $(PWD)
 #&& \
 #		dput ppa:uchicago-dldc/attc attachment-converter_$(VER_NUM)-1~$(DEBIAN_CODENAME)_source.changes
