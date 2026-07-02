@@ -261,7 +261,7 @@ launchpad:
 		cd attachment-converter-$(VER_NUM)/ubuntu_wsl && \
 		./OpamPack.sh && \
 		cd ../.. && \
-		tar czf attachment-converter_$(VER_NUM).orig.tar.gz attachment-converter-v$(VER_NUM) && \
+		tar czf attachment-converter_$(VER_NUM).orig.tar.gz attachment-converter-$(VER_NUM) && \
 		debuild -S -k"$(DLDC_PUBLIC_KEY)" && \
 		cd .. &&\
 		@echo $(PWD)
