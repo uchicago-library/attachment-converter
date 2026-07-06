@@ -13,7 +13,7 @@ makedepends=( 'opam' 'mercurial' )
 source=("https://github.com/uchicago-library/attachment-converter/archive/refs/tags/v${pkgver}.tar.gz")
 # update this sha 256 checksum with the command:
 # curl -sL "https://github.com/uchicago-library/attachment-converter/archive/refs/tags/v${pkgver}.tar.gz" | sha256sum | cut -d " " -f 1
-sha256sums=('3cb35b38bf336c2a4922a3583907f3cc893ade2b8da4df7eef7d3f094bca6f03')
+sha256sums=('8f8234e5dd845a7d28269a6606a79711f9f541d2502703c07322700a7f6d9bb8')
 
 build() {
 	cd ${srcdir}/attachment-converter-${pkgver}

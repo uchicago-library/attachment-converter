@@ -170,18 +170,18 @@ PRELUDE_OPAM_PATH = $(STAFF_LIB_HOSTNAME):$(STAFF_LIB_PATH)/prelude.$(PRELUDE_VE
 VER_NUM = 0.1.53
 DEBIAN_CODENAME = resolute
 DLDC_PUBLIC_KEY = 3EF45886DF1EF82B4782F5FBD331DB7453444E0E
-
 TEMP_DIR := $(shell mktemp -d)
+CHECKSUM = $(shell curl -sL "https://github.com/uchicago-library/attachment-converter/archive/refs/tags/v$(VER_NUM).tar.gz" | sha256sum | cut -d " " -f 1)
 
 update-pkgbuild-version:
 	sed -i 's/^pkgver=.*/pkgver=$(VER_NUM)/' arch/PKGBUILD
 .PHONY: update-pkgbuild-version
 
 update-pkgbuild-checksum:
-	sed -i "s/sha256sums=.*/sha256sums=('b63548f45d805c971fa7f6a6eb9c6097ce64ef2720883d8ceec021c425bf1b8a')/" arch/PKGBUILD
+	sed -i "s/sha256sums=.*/sha256sums=('$(CHECKSUM)')/" arch/PKGBUILD
 .PHONY: update-pkgbuild-checksum
 
-CHECKSUM = $(shell curl -sL "https://github.com/uchicago-library/attachment-converter/archive/refs/tags/v$(VER_NUM).tar.gz" | sha256sum | cut -d " " -f 1)
+
 DEBIAN_DATE = $(shell date -R)
 FILES_TO_UPDATE = lib/version.ml arch/PKGBUILD debian/changelog ubuntu_wsl/prelude.$(PRELUDE_VER_NUM)/opam ubuntu_wsl/opampack-packs ubuntu_wsl/opampack-upacks
 BRANCH = main
