@@ -14,6 +14,7 @@ module Application = struct
     | ImageMagick
     | GhostScript
     | Verapdf
+    | PdfToText
 end
 
 type t =
@@ -44,7 +45,11 @@ let linux : t list =
     { app = GhostScript;
       packageName = "ghostscript";
       executable = Exists "gs"
-    }
+    };
+    { app = PdfToText;
+      packageName = "poppler";
+      executable = Exists "pdftotext"
+    };
   ]
 
 let darwin : t list =
@@ -67,7 +72,11 @@ let darwin : t list =
     { app = GhostScript;
       packageName = "ghostscript";
       executable = Exists "gs"
-    }
+    };
+    { app = PdfToText;
+      packageName = "poppler";
+      executable = Exists "pdftotext"
+    };
   ]
 
 let toString pckglist =

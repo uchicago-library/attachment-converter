@@ -7,7 +7,7 @@ Build-Depends: debhelper-compat (=13), opam,  mercurial, pkg-config
 
 Package: attc
 Architecture: amd64 arm64
-Depends: ${shlibs:Depends}, ${misc:Depends}, pandoc, libreoffice, libvips-tools, ghostscript, imagemagick
+Depends: ${shlibs:Depends}, ${misc:Depends}, pandoc, libreoffice, libvips-tools, ghostscript, imagemagick, poppler-utils
 Description: Tool for converting email mailboxes to preservation formats
  Attachment Converter is an open-source command-line tool for
  digital archivists. Given an email mailbox in MBOX format, it will
