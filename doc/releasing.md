@@ -9,39 +9,33 @@ section for more background.
 Prep the repository before creating a fresh release tag:
 
 - [ ] create sandboxed switch and switch into it
-- [ ] run a build to update the `attachment-converter.opam` file
-- [ ] bump `VER_NUM` Make variable in `GNUmakefile`
-- [ ] bump `pkgver` shell variable, line 5 of `arch/PKGBUILD`
-- [ ] bump version number in first line of `debian/changelog`
-- [ ] make sure the Debian changelog mentions the correct version of
-      Debian (e.g. `resolute` vs. `jammy`)
-- [ ] `date -R` to update the Debian changelog timestamp
-- [ ] check that `PRELUDE_VER_NUM` is up to date in `GNUmakefile`
-- [ ] run `make prelude` to pull the latest Prelude `opam` file down
-- [ ] run `make opampack` to update package list files,
-      `ubuntu_wsl/opampack-packs` etc. (warning: this is slow)
-- [ ] update `Formula/attc.rb` in `homebrew-attc` repo, version number
-      of tarball in `url` field
+- [ ] run `dune build` to update the `attachment-converter.opam` file
+- [ ] update `VER_NUM` in `GNUmakefile` to a new version number of your choice
+- [ ] commit `GNUmakefile` and `attachment-converter.opam`
+- [ ] run `make prep-for-release`
 
-Create the new release tag:
-
-- [ ] create a new commit in this project with those changes
-- [ ] give that commit a release tag with the latest version
-- [ ] push the new commit up to `origin/main`
-- [ ] push the new tag up to `origin/main`
-
-After creating the new release tag:
-
-- [ ] get the new checksum by running `make arch-checksum`
-- [ ] insert the new checksum into the `sh256sums` field of
-      `arch/PKGBUILD`, line 16
-- [ ] in the `homebrew-attc` repository, insert the new checksum into
-      the `sha256` field of `Formula/attc.rb`
+`make prep-for-release` will update the version in `PKGBUILD`,
+`Lib.Version.ver_num`, and the version number in `debian/changelog`,
+then pull down the latest Prelude `opam` file, then generate fresh
+`opampack-packs` and `opampack-upacks` files.  *Warning: it will run
+`git` commands.*  It will commit all these changes, tag the commit
+with a release tag corresponding to `VER_NUM`, and push both the
+commit and the tags up to `origin/master`.  This should take about 3
+minutes, since generating fresh opampack files requires building a
+fresh switch.
 
 ## Homebrew release
 
-Nothing further is required for releasing to Homebrew.  The user
-should be able to do the following on their machine to install `attc`:
+First, update what needs to be updated in the `homebrew-attc` repository:
+
+- [ ] get the latest checksum by running `make arch-checksum`
+- [ ] update `Formula/attc.rb` in `homebrew-attc` repo, version number
+      of tarball in `url` field
+- [ ] in the `homebrew-attc` repository, insert the new checksum into
+      the `sha256` field of `Formula/attc.rb`
+
+With these changes, the user should be able to do the following on
+their machine to install `attc`:
 
 ```console
 $ brew tap uchicago-library/attc
@@ -73,35 +67,23 @@ Linux repository's `gpg` public key after they run `pacman -Syy`.
 
 ## Ubuntu release
 
+From a machine with an emulated Ubuntu environment, with `gpg` set up
+to use the UChicago DLDC private key:
+
 - [ ] enter the Ubuntu environment, running under `qemu`
-- [ ] cd `~/tmp`
-- [ ] `wget -c https://github.com/uchicago-library/attachment-converter/archive/v0.1.44/attachment-converter-v0.1.44.tar.gz`
-      (replace `0.1.44` with actual version number)
-- [ ] `tar xzvf attachment-converter-v0.1.44.tar.gz` (replace `0.1.44` with actual version number)
-- [ ] cd `attachment-converter-v0.1.44/ubuntu_wsl`
-- [ ] `./OpamPack.sh`
-- [ ] `cd ../..`
-- [ ] `tar czf attachment-converter_0.1.44.orig.tar.gz attachment-converter-v0.1.44`
-- [ ] it must be `attachment-converter_VER_NUM.orig.tar.gz` with an
-      underscore (not a hyphen) and then the number with no preceding
-      `v`
-- [ ] `cd ..`
-- [ ] `gpg --list-keys` to display DLDC repo's public `gpg` key
-- [ ] `debuild -S -k"3EF45886DF1EF82B4782F5FBD331DB7453444E0E"`
-- [ ] you will be prompted to enter the DLDC repo's private `gpg` key
-- [ ] `debuild` must be run from the root of the project
-- [ ] `cd ..`
-- [ ] `dput ppa:uchicago-dldc/attc attachment-converter_0.1.44-1~resolute_source.changes`
-- [ ] `dput` command must be run from one directory up from the project root
+- [ ] cd `/path/to/cloned/repo`
+- [ ] run `make launchpad`
 
-Our account on Debian Launchpad is set up, and the UChicago DLDC `gpg`
-key is associated with that account. It takes Launchpad 1-2 hours to
-build the project.  It notifies you by email when you first upload it
-with `dput`.  If the job fails, it will send you an email
-notification.  If the job succeeds, you won't get a second email
-notification.
+In the course of running `make launchpad`, you will be prompted to
+enter the UChicago DLDC's `gpg` key password.  Our account on Debian
+Launchpad is set up, and the UChicago DLDC `gpg` key is associated
+with that account. It takes Launchpad 1-2 hours to build the project.
+It notifies you by email when you first upload it with `dput`.  If the
+job fails, it will send you an email notification.  If the job
+succeeds, you won't get a second email notification.
 
-The user should then be able to install `attc` by running the following commands:
+The user should then be able to install `attc` by running the
+following commands:
 
 ```console
 $ sudo add-apt repository ppa:uchicago-dldc/attc
@@ -111,51 +93,3 @@ $ sudo apt install attc
 
 Ubuntu will prompt the user to confirm that they accept our PPA's
 `gpg` public key the first time they add the PPA.
-
-# Background
-
-Publishing a new package to third-party repositories for our three
-target platforms is, on the whole, a bit of a song and dance.
-Creating a `homebrew` tap is quite simple, hosting your own additional
-Arch Linux repository takes a little more work, and creating your own
-Debian/Ubuntu PPA is quite labor-intensive.  The purpose of this
-document is to guide the developer in the step-by-step process of
-publishing newly built packages for each of these platforms.
-
-Ideally, we would automate the entire packaging process.  However, the
-packaging process was clearly not designed with the idea of being
-scriptable in mind, which means that automating it will require some
-design and dev work, and we'll need to schedule time for that.  For
-now, we attempt to document the steps of the process in prose, as
-thoroughly as possible.
-
-## Further background
-
-This repository contains the following subdirectories:
-
-```
-arch/
-homebrew/
-debian/
-ubuntu_wsl/
-```
-
-Historically, the information in this document was dispersed over
-these four directories, with e.g. instructions on how to mint a new
-Arch release in the `arch/` directory.  Where applicable, the
-packaging and release instructions for each of these platforms have
-now been turned into a file called `faq.md` with background
-information only.  The packaging and release instructions exist in
-this centralized file, `releasing.md`.
-
-### Homebrew
-
-### Arch Linux
-
-The `arch/` directory contains only one file, the `PKGBUILD`.  This is
-the only file that is required to create an Arch Linux package.
-`makepkg -Cc`, when run in this directory, creates a
-`*x86_64.pkg.tar.zst` file, which is an Arch Linux package.  It is
-possible to add this package to a repository using Arch Linux's
-`repo-add` utility.  These steps are automated for our convenience in
-the `make arch-release` rule.
