@@ -167,7 +167,7 @@ STAFF_LIB_HOSTNAME = $(ARCH_REPO_HOSTNAME)
 STAFF_LIB_PATH = /data/web/dldc/opam/packages/prelude
 PRELUDE_VER_NUM = 100.7
 PRELUDE_OPAM_PATH = $(STAFF_LIB_HOSTNAME):$(STAFF_LIB_PATH)/prelude.$(PRELUDE_VER_NUM)
-VER_NUM = 0.1.50
+VER_NUM = 0.1.51
 DEBIAN_CODENAME = resolute
 DLDC_PUBLIC_KEY = 3EF45886DF1EF82B4782F5FBD331DB7453444E0E
 
@@ -221,7 +221,6 @@ arch-release: update-pkgbuild-checksum
 		makepkg -Cc && \
 		repo-add -s dldc.db.tar.gz attc-$(VER_NUM)-1-x86_64.pkg.tar.zst && \
 		rsync -a * $(SSH_PATH) && \
-		rm -rf $(TEMP_DIR)
 .PHONY: arch-release
 
 arch-remove:
@@ -232,7 +231,6 @@ arch-remove:
 	rsync -a $(TEMP_DIR)/dldc.db.tar.gz $(SSH_PATH)
 	rsync -a $(TEMP_DIR)/dldc.files.tar.gz $(SSH_PATH)
 	ssh $(ARCH_REPO_HOSTNAME) rm $(ARCH_REPO_PATH)/attc-$(VER_NUM)-1-x86_64.pkg.tar.zst
-	rm -rf $(TEMP_DIR)
 .PHONY: arch-remove
 
 opampack-upacks:
@@ -254,8 +252,8 @@ prelude:
 # warning: you need to be sitting at the computer to type the gpg
 # password for this rule unless you have gpg-agent set up
 launchpad:
-	mkdir -p $(HOME)/tmp && \
-		cd $(HOME)/tmp && \
+	mkdir -p $(TEMP_DIR) && \
+		cd $(TEMP_DIR) && \
 		wget -c https://github.com/uchicago-library/attachment-converter/archive/v$(VER_NUM)/attachment-converter-v$(VER_NUM).tar.gz && \
 		tar xzvf attachment-converter-v$(VER_NUM).tar.gz && \
 		cd attachment-converter-$(VER_NUM)/ubuntu_wsl && \
