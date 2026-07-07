@@ -249,7 +249,9 @@ opampack-packs:
 	opam switch remove --yes $(PWD) || true && make sandbox 1> /dev/null && eval $$(opam env) && opam list --short | paste -sd ' ' > ubuntu_wsl/$@
 .PHONY: opampack-packs
 
-opampack: opampack-upacks opampack-packs
+opampack:
+# uncomment this when everything is working
+# opampack-upacks opampack-packs
 
 prelude:
 	scp $(PRELUDE_OPAM_PATH)/opam ubuntu_wsl/prelude.$(PRELUDE_VER_NUM)
