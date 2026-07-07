@@ -168,7 +168,7 @@ STAFF_LIB_PATH = /data/web/dldc/opam/packages/prelude
 PRELUDE_VER_NUM = 100.7
 PRELUDE_OPAM_PATH = $(STAFF_LIB_HOSTNAME):$(STAFF_LIB_PATH)/prelude.$(PRELUDE_VER_NUM)
 VER_NUM = 0.2.1
-REVISION = 2
+REVISION = 3
 FULL_VER_NUM = $(VER_NUM)-$(REVISION)
 DEBIAN_CODENAME = resolute
 DLDC_PUBLIC_KEY = 3EF45886DF1EF82B4782F5FBD331DB7453444E0E
@@ -265,7 +265,7 @@ launchpad:
 		cd attachment-converter-$(FULL_VER_NUM)/ubuntu_wsl && \
 		./OpamPack.sh && \
 		cd ../.. && \
-		tar czf attachment-converter_$(FULL_VER_NUM).orig.tar.gz attachment-converter-$(FULL_VER_NUM) && \
+		tar czf attachment-converter_$(VER_NUM).orig.tar.gz attachment-converter-$(FULL_VER_NUM) && \
 		cd attachment-converter-$(FULL_VER_NUM) && \
 		debuild -S -k"$(DLDC_PUBLIC_KEY)" && \
 		cd .. && \
