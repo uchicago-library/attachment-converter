@@ -11,7 +11,6 @@ Prep the repository before creating a fresh release tag:
 - [ ] create sandboxed switch and switch into it
 - [ ] run `dune build` to update the `attachment-converter.opam` file
 - [ ] update `VER_NUM` in `GNUmakefile` to a new version number of your choice
-- [ ] update `REVISION` in `GNUmakefile` to a new revision number of your choice
 - [ ] commit `GNUmakefile` and `attachment-converter.opam`
 - [ ] run `make prep-for-release`
 

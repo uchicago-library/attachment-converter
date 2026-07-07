@@ -167,27 +167,21 @@ STAFF_LIB_HOSTNAME = $(ARCH_REPO_HOSTNAME)
 STAFF_LIB_PATH = /data/web/dldc/opam/packages/prelude
 PRELUDE_VER_NUM = 100.7
 PRELUDE_OPAM_PATH = $(STAFF_LIB_HOSTNAME):$(STAFF_LIB_PATH)/prelude.$(PRELUDE_VER_NUM)
-VER_NUM = 0.2.1
-REVISION = 8
-FULL_VER_NUM = $(VER_NUM)-$(REVISION)
+VER_NUM = 0.2.2
 DEBIAN_CODENAME = resolute
 DLDC_PUBLIC_KEY = 3EF45886DF1EF82B4782F5FBD331DB7453444E0E
+
 TEMP_DIR := $(shell mktemp -d)
-CHECKSUM = $(shell curl -sL "https://github.com/uchicago-library/attachment-converter/archive/refs/tags/v$(FULL_VER_NUM).tar.gz" | sha256sum | cut -d " " -f 1)
 
 update-pkgbuild-version:
 	sed -i 's/^pkgver=.*/pkgver=$(VER_NUM)/' arch/PKGBUILD
 .PHONY: update-pkgbuild-version
 
-update-pkgbuild-pkgrel:
-	sed -i 's/^pkgrel=.*/pkgrel=$(REVISION)/' arch/PKGBUILD
-.PHONY: update-pkgbuild-pkgrel
-
 update-pkgbuild-checksum:
-	sed -i "s/sha256sums=.*/sha256sums=('$(CHECKSUM)')/" arch/PKGBUILD
+	sed -i "s/sha256sums=.*/sha256sums=('b63548f45d805c971fa7f6a6eb9c6097ce64ef2720883d8ceec021c425bf1b8a')/" arch/PKGBUILD
 .PHONY: update-pkgbuild-checksum
 
-
+CHECKSUM = $(shell curl -sL "https://github.com/uchicago-library/attachment-converter/archive/refs/tags/v$(VER_NUM).tar.gz" | sha256sum | cut -d " " -f 1)
 DEBIAN_DATE = $(shell date -R)
 FILES_TO_UPDATE = lib/version.ml arch/PKGBUILD debian/changelog ubuntu_wsl/prelude.$(PRELUDE_VER_NUM)/opam ubuntu_wsl/opampack-packs ubuntu_wsl/opampack-upacks
 BRANCH = main
@@ -201,22 +195,22 @@ update-ocaml-vernum:
 .PHONY: update-version-dot-ml
 
 update-debian-changelog:
-	sed -i "s/attachment-converter (.*) $(DEBIAN_CODENAME)/attachment-converter ($(FULL_VER_NUM)~$(DEBIAN_CODENAME)) $(DEBIAN_CODENAME)/" debian/changelog
+	sed -i "s/attachment-converter (.*) $(DEBIAN_CODENAME)/attachment-converter ($(VER_NUM)-1~$(DEBIAN_CODENAME)) $(DEBIAN_CODENAME)/" debian/changelog
 	sed -i "s/[A-Z][a-z][a-z], [0-9][0-9] [A-Z][a-z][a-z] [0-9][0-9][0-9].*/$(DEBIAN_DATE)/" debian/changelog
 .PHONY: update-debian-changelog
 
 release-tags:
 	git add $(FILES_TO_UPDATE)
-	git commit -m "version $(FULL_VER_NUM) (testing automation; please ignore this commit)"
-	git tag v$(FULL_VER_NUM)
+	git commit -m "version $(VER_NUM) (testing automation; please ignore this commit)"
+	git tag v$(VER_NUM)
 .PHONY: release-tags
 
 push-tags: release-tags
 	git push origin $(BRANCH)
-	git push origin $(BRANCH) v$(FULL_VER_NUM)
+	git push origin $(BRANCH) v$(VER_NUM)
 .PHONY: push-tags
 
-prep-for-release: update-pkgbuild-version update-pkgbuild-pkgrel update-ocaml-vernum update-debian-changelog prelude opampack push-tags
+prep-for-release: update-pkgbuild-version update-ocaml-vernum update-debian-changelog prelude opampack push-tags
 
 arch-release: update-pkgbuild-checksum
 	mkdir -p $(TEMP_DIR)
@@ -225,8 +219,8 @@ arch-release: update-pkgbuild-checksum
 	scp $(SSH_PATH)/dldc.files.tar.gz $(TEMP_DIR) || true
 	cd $(TEMP_DIR) && \
 		makepkg -Cc && \
-		repo-add -s dldc.db.tar.gz attc-$(FULL_VER_NUM)-x86_64.pkg.tar.zst && \
-		rsync -a * $(SSH_PATH)
+		repo-add -s dldc.db.tar.gz attc-$(VER_NUM)-1-x86_64.pkg.tar.zst && \
+		rsync -a * $(SSH_PATH) && \
 .PHONY: arch-release
 
 arch-remove:
@@ -236,7 +230,7 @@ arch-remove:
 	repo-remove -s $(TEMP_DIR)/dldc.db.tar.gz attc
 	rsync -a $(TEMP_DIR)/dldc.db.tar.gz $(SSH_PATH)
 	rsync -a $(TEMP_DIR)/dldc.files.tar.gz $(SSH_PATH)
-	ssh $(ARCH_REPO_HOSTNAME) rm $(ARCH_REPO_PATH)/attc-$(FULL_VER_NUM)-x86_64.pkg.tar.zst
+	ssh $(ARCH_REPO_HOSTNAME) rm $(ARCH_REPO_PATH)/attc-$(VER_NUM)-1-x86_64.pkg.tar.zst
 .PHONY: arch-remove
 
 opampack-upacks:
@@ -249,35 +243,28 @@ opampack-packs:
 	opam switch remove --yes $(PWD) || true && make sandbox 1> /dev/null && eval $$(opam env) && opam list --short | paste -sd ' ' > ubuntu_wsl/$@
 .PHONY: opampack-packs
 
-opampack:
-# uncomment this when everything is working
-# opampack-upacks opampack-packs
+opampack: opampack-upacks opampack-packs
 
 prelude:
 	scp $(PRELUDE_OPAM_PATH)/opam ubuntu_wsl/prelude.$(PRELUDE_VER_NUM)
 .PHONY: prelude
-
-# set ORIG to empty string to create the *.orig.tar.gz file
-ORIG=-sd
 
 # warning: you need to be sitting at the computer to type the gpg
 # password for this rule unless you have gpg-agent set up
 launchpad:
 	mkdir -p $(TEMP_DIR) && \
 		cd $(TEMP_DIR) && \
-		wget -c https://github.com/uchicago-library/attachment-converter/archive/v$(FULL_VER_NUM)/attachment-converter-v$(FULL_VER_NUM).tar.gz && \
-		tar xzvf attachment-converter-v$(FULL_VER_NUM).tar.gz && \
-		cd attachment-converter-$(FULL_VER_NUM)/ubuntu_wsl && \
+		wget -c https://github.com/uchicago-library/attachment-converter/archive/v$(VER_NUM)/attachment-converter-v$(VER_NUM).tar.gz && \
+		tar xzvf attachment-converter-v$(VER_NUM).tar.gz && \
+		cd attachment-converter-$(VER_NUM)/ubuntu_wsl && \
 		./OpamPack.sh && \
 		cd ../.. && \
-		tar czf attachment-converter_$(VER_NUM).orig.tar.gz attachment-converter-$(FULL_VER_NUM) && \
-		cd attachment-converter-$(FULL_VER_NUM) && \
-		debuild -S $(ORIG) -k"$(DLDC_PUBLIC_KEY)" && \
+		tar czf attachment-converter_$(VER_NUM).orig.tar.gz attachment-converter-$(VER_NUM) && \
+		cd attachment-converter-$(VER_NUM) && \
+		debuild -S -k"$(DLDC_PUBLIC_KEY)" && \
 		cd .. && \
-		dput ppa:uchicago-dldc/attc attachment-converter_$(FULL_VER_NUM)~$(DEBIAN_CODENAME)_source.changes
+		dput ppa:uchicago-dldc/attc attachment-converter_$(VER_NUM)-1~$(DEBIAN_CODENAME)_source.changes
 .PHONY: launchpad
-
-
 
 # This file is part of Attachment Converter.
 

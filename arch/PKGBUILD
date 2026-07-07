@@ -2,29 +2,29 @@
 # Contributor: Ben Kim <benkim@uchicago.edu>
 pkgname=attc
 # update this upon version increment
-pkgver=0.2.1
-pkgrel=9
+pkgver=0.1.53
+pkgrel=1
 pkgdesc="Tool for batch-converting email attachments to preservation formats for archival purposes"
 arch=(x86_64)
 url="https://dldc.lib.uchicago.edu/open/attachment-converter/index.html"
 license=(GPL-3.0-or-later)
 depends=( 'libreoffice-fresh' 'pandoc' 'ghostscript' 'libvips' 'imagemagick' 'poppler' )
 makedepends=( 'opam' 'mercurial' )
-source=("https://github.com/uchicago-library/attachment-converter/archive/refs/tags/v${pkgver}-${pkgrel}.tar.gz")
+source=("https://github.com/uchicago-library/attachment-converter/archive/refs/tags/v${pkgver}.tar.gz")
 # update this sha 256 checksum with the command:
 # curl -sL "https://github.com/uchicago-library/attachment-converter/archive/refs/tags/v${pkgver}.tar.gz" | sha256sum | cut -d " " -f 1
-sha256sums=('02914486bbe9be05c348106b6850ff2b6e70d8b3f68b49d95748b487a4129b8b')
+sha256sums=('3cb35b38bf336c2a4922a3583907f3cc893ade2b8da4df7eef7d3f094bca6f03')
 
 build() {
-	cd ${srcdir}/attachment-converter-${pkgver}-${pkgrel}
+	cd ${srcdir}/attachment-converter-${pkgver}
 	make all gen-man-page
 }
 
 package() {
 	mkdir -p ${pkgdir}/usr/bin
 	mkdir -p ${pkgdir}/usr/lib/attachment-converter/scripts
-	cp ${srcdir}/attachment-converter-${pkgver}-${pkgrel}/conversion-scripts/*.sh ${pkgdir}/usr/lib/attachment-converter/scripts
-	mv ${srcdir}/attachment-converter-${pkgver}-${pkgrel}/_build/default/main.exe ${pkgdir}/usr/bin/attc
+	cp ${srcdir}/attachment-converter-${pkgver}/conversion-scripts/*.sh ${pkgdir}/usr/lib/attachment-converter/scripts
+	mv ${srcdir}/attachment-converter-${pkgver}/_build/default/main.exe ${pkgdir}/usr/bin/attc
 	mkdir -p ${pkgdir}/usr/share/man/man1
-	install ${srcdir}/attachment-converter-${pkgver}-${pkgrel}/doc/attc.1 ${pkgdir}/usr/share/man/man1
+	install ${srcdir}/attachment-converter-${pkgver}/doc/attc.1 ${pkgdir}/usr/share/man/man1
 }
