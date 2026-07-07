@@ -255,6 +255,8 @@ prelude:
 	scp $(PRELUDE_OPAM_PATH)/opam ubuntu_wsl/prelude.$(PRELUDE_VER_NUM)
 .PHONY: prelude
 
+SD=
+
 # warning: you need to be sitting at the computer to type the gpg
 # password for this rule unless you have gpg-agent set up
 launchpad:
@@ -267,7 +269,7 @@ launchpad:
 		cd ../.. && \
 		tar czf attachment-converter_$(VER_NUM).orig.tar.gz attachment-converter-$(FULL_VER_NUM) && \
 		cd attachment-converter-$(FULL_VER_NUM) && \
-		debuild -S -k"$(DLDC_PUBLIC_KEY)" && \
+		debuild -S $(SD) -k"$(DLDC_PUBLIC_KEY)" && \
 		cd .. && \
 		dput ppa:uchicago-dldc/attc attachment-converter_$(FULL_VER_NUM)~$(DEBIAN_CODENAME)_source.changes
 .PHONY: launchpad
