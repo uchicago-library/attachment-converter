@@ -207,7 +207,7 @@ update-debian-changelog:
 
 release-tags:
 	git add $(FILES_TO_UPDATE)
-	git commit -m "version $(VER_NUM) (testing automation; please ignore this commit)"
+	git commit -m "version $(FULL_VER_NUM) (testing automation; please ignore this commit)"
 	git tag v$(VER_NUM)
 .PHONY: release-tags
 
