@@ -273,8 +273,10 @@ launchpad:
 
 		cd attachment-converter-$(FULL_VER_NUM) && \
 		debuild -S $(ORIG) -k"$(DLDC_PUBLIC_KEY)" && \
-		cd .. && \
-		dput ppa:uchicago-dldc/attc attachment-converter_$(FULL_VER_NUM)~$(DEBIAN_CODENAME)_source.changes
+		cd ..
+		pwd
+# && \
+#		dput ppa:uchicago-dldc/attc attachment-converter_$(FULL_VER_NUM)~$(DEBIAN_CODENAME)_source.changes
 .PHONY: launchpad
 
 #		tar czf attachment-converter_$(VER_NUM).orig.tar.gz attachment-converter-$(FULL_VER_NUM) && \
