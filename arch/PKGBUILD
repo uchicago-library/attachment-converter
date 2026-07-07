@@ -3,7 +3,7 @@
 pkgname=attc
 # update this upon version increment
 pkgver=0.2.1
-pkgrel=5
+pkgrel=6
 pkgdesc="Tool for batch-converting email attachments to preservation formats for archival purposes"
 arch=(x86_64)
 url="https://dldc.lib.uchicago.edu/open/attachment-converter/index.html"
