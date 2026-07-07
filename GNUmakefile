@@ -225,7 +225,7 @@ arch-release: update-pkgbuild-checksum
 	scp $(SSH_PATH)/dldc.files.tar.gz $(TEMP_DIR) || true
 	cd $(TEMP_DIR) && \
 		makepkg -Cc && \
-		repo-add -s dldc.db.tar.gz attc-$(FULL_VER_NUM)-x86_64.pkg.tar.zst && \
+		repo-add -s dldc.db.tar.gz attc-$(VER_NUM)-x86_64.pkg.tar.zst && \
 		rsync -a * $(SSH_PATH)
 .PHONY: arch-release
 
