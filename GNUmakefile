@@ -168,7 +168,7 @@ STAFF_LIB_PATH = /data/web/dldc/opam/packages/prelude
 PRELUDE_VER_NUM = 100.7
 PRELUDE_OPAM_PATH = $(STAFF_LIB_HOSTNAME):$(STAFF_LIB_PATH)/prelude.$(PRELUDE_VER_NUM)
 VER_NUM = 0.2.1
-REVISION = 4
+REVISION = 5
 FULL_VER_NUM = $(VER_NUM)-$(REVISION)
 DEBIAN_CODENAME = resolute
 DLDC_PUBLIC_KEY = 3EF45886DF1EF82B4782F5FBD331DB7453444E0E
@@ -255,7 +255,8 @@ prelude:
 	scp $(PRELUDE_OPAM_PATH)/opam ubuntu_wsl/prelude.$(PRELUDE_VER_NUM)
 .PHONY: prelude
 
-SD=
+# set ORIG to empty string to create the *.orig.tar.gz file
+ORIG=-sd
 
 # warning: you need to be sitting at the computer to type the gpg
 # password for this rule unless you have gpg-agent set up
@@ -269,7 +270,7 @@ launchpad:
 		cd ../.. && \
 		tar czf attachment-converter_$(VER_NUM).orig.tar.gz attachment-converter-$(FULL_VER_NUM) && \
 		cd attachment-converter-$(FULL_VER_NUM) && \
-		debuild -S $(SD) -k"$(DLDC_PUBLIC_KEY)" && \
+		debuild -S $(ORIG) -k"$(DLDC_PUBLIC_KEY)" && \
 		cd .. && \
 		dput ppa:uchicago-dldc/attc attachment-converter_$(FULL_VER_NUM)~$(DEBIAN_CODENAME)_source.changes
 .PHONY: launchpad
