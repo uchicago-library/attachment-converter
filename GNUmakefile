@@ -7,8 +7,8 @@
 
 
 SHELL := bash
-.SHELLFLAGS := -eu -o pipefail -c #need this? pt 2
-.ONESHELL:
+# .SHELLFLAGS := -eu -o pipefail -c #need this? pt 2
+# .ONESHELL:
 .DELETE_ON_ERROR:
 MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
@@ -252,23 +252,46 @@ prelude:
 
 EXCLUDES = --exclude=".git" --exclude="*.maketrack"
 
+TARBALL_DIR = /home/teichman/tarballs
+SHARE_DIR = /mnt/sequent
+
 # warning: you need to be sitting at the computer to type the gpg
 # password for this rule unless you have gpg-agent set up
 launchpad:
 	mkdir -p $(TEMP_DIR) && \
-		cd $(TEMP_DIR) && \
-		cp -r $(PWD) ./attachment-converter-$(VER_NUM) && \
-		cd attachment-converter-$(VER_NUM)/ubuntu_wsl && \
-		opam clean -y -a -c -r && \
-		./OpamPack.sh && \
-		cd ../.. && \
-		tar czf attachment-converter_$(VER_NUM).orig.tar.gz $(EXCLUDES) attachment-converter-$(VER_NUM) && \
-		cd attachment-converter-$(VER_NUM) && \
-		debuild -S -k"$(DLDC_PUBLIC_KEY)" && \
-		cd .. && \
-		env TMPDIR=/var/tmp sbuild -A -d $(DEBIAN_CODENAME) attachment-converter_$(VER_NUM)-1~$(DEBIAN_CODENAME).dsc && \
-		dput ppa:uchicago-dldc/attc attachment-converter_$(VER_NUM)-1~$(DEBIAN_CODENAME)_source.changes
+	cd $(TEMP_DIR) && \
+	cp -r $(PWD) ./attachment-converter-$(VER_NUM) && \
+	cd attachment-converter-$(VER_NUM)/ubuntu_wsl && \
+	./OpamPack.sh && \
+	cd ../.. && \
+	tar czf attachment-converter_$(VER_NUM).orig.tar.gz $(EXCLUDES) attachment-converter-$(VER_NUM) && \
+	mkdir -p $(TARBALL_DIR) && \
+	cp attachment-converter_$(VER_NUM).orig.tar.gz $(TARBALL_DIR) && \
+	cp attachment-converter_$(VER_NUM).orig.tar.gz $(SHARE_DIR) && \
+	cd attachment-converter-$(VER_NUM) && \
+	debuild -S -k"$(DLDC_PUBLIC_KEY)" && \
+	cd .. && \
+	env TMPDIR=/var/tmp sbuild -A -d $(DEBIAN_CODENAME) attachment-converter_$(VER_NUM)-1~$(DEBIAN_CODENAME).dsc && \
+	dput ppa:uchicago-dldc/attc attachment-converter_$(VER_NUM)-1~$(DEBIAN_CODENAME)_source.changes
 .PHONY: launchpad
+
+launchpad-revision:
+	false && \
+	mkdir -p $(TEMP_DIR) && \
+	cd $(TEMP_DIR) && \
+	cp -r $(PWD) ./attachment-converter-$(VER_NUM) && \
+	cd attachment-converter-$(VER_NUM)/ubuntu_wsl && \
+	./OpamPack.sh && \
+	cd ../.. && \
+	cp $(TARBALL_DIR)/attachment-converter_$(VER_NUM).orig.tar.gz . && \
+	mkdir -p $(TARBALL_DIR) && \
+	cd attachment-converter-$(VER_NUM) && \
+	debuild -S -k"$(DLDC_PUBLIC_KEY)" && \
+	cd .. && \
+	env TMPDIR=/var/tmp sbuild -A -d $(DEBIAN_CODENAME) attachment-converter_$(VER_NUM)-1~$(DEBIAN_CODENAME).dsc && \
+	dput ppa:uchicago-dldc/attc attachment-converter_$(VER_NUM)-1~$(DEBIAN_CODENAME)_source.changes
+.PHONY: launchpad
+
 
 # This file is part of Attachment Converter.
 
