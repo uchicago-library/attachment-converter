@@ -250,21 +250,23 @@ prelude:
 	scp $(PRELUDE_OPAM_PATH)/opam ubuntu_wsl/prelude.$(PRELUDE_VER_NUM)
 .PHONY: prelude
 
+EXCLUDES = --exclude=".git" --exclude="*.maketrack"
+
 # warning: you need to be sitting at the computer to type the gpg
 # password for this rule unless you have gpg-agent set up
 launchpad:
 	mkdir -p $(TEMP_DIR) && \
 		cd $(TEMP_DIR) && \
-		wget -c https://github.com/uchicago-library/attachment-converter/archive/v$(VER_NUM)/attachment-converter-v$(VER_NUM).tar.gz && \
-		tar xzvf attachment-converter-v$(VER_NUM).tar.gz && \
+		cp -r $(PWD) ./attachment-converter-$(VER_NUM) && \
 		cd attachment-converter-$(VER_NUM)/ubuntu_wsl && \
 		./OpamPack.sh && \
 		cd ../.. && \
-		tar czf attachment-converter_$(VER_NUM).orig.tar.gz attachment-converter-$(VER_NUM) && \
+		tar czf attachment-converter_$(VER_NUM).orig.tar.gz $(EXCLUDES) attachment-converter-$(VER_NUM) && \
 		cd attachment-converter-$(VER_NUM) && \
 		debuild -S -k"$(DLDC_PUBLIC_KEY)" && \
-		cd .. && \
-		dput ppa:uchicago-dldc/attc attachment-converter_$(VER_NUM)-1~$(DEBIAN_CODENAME)_source.changes
+		cd .. 
+# && \
+# dput ppa:uchicago-dldc/attc attachment-converter_$(VER_NUM)-1~$(DEBIAN_CODENAME)_source.changes
 .PHONY: launchpad
 
 # This file is part of Attachment Converter.
