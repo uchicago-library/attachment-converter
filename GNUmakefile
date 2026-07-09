@@ -266,9 +266,8 @@ launchpad:
 		cd attachment-converter-$(VER_NUM) && \
 		debuild -S -k"$(DLDC_PUBLIC_KEY)" && \
 		cd .. && \
-		env TMPDIR=/var/tmp sbuild -A -d $(DEBIAN_CODENAME) attachment-converter_$(VER_NUM)-1~$(DEBIAN_CODENAME).dsc
-# && \
-# dput ppa:uchicago-dldc/attc attachment-converter_$(VER_NUM)-1~$(DEBIAN_CODENAME)_source.changes
+		env TMPDIR=/var/tmp sbuild -A -d $(DEBIAN_CODENAME) attachment-converter_$(VER_NUM)-1~$(DEBIAN_CODENAME).dsc && \
+		dput ppa:uchicago-dldc/attc attachment-converter_$(VER_NUM)-1~$(DEBIAN_CODENAME)_source.changes
 .PHONY: launchpad
 
 # This file is part of Attachment Converter.
