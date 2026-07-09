@@ -41,12 +41,9 @@ depends: [
   "camlp-streams"
   "ounit2"
   "cmdliner"
-  "utop"
   "re"
   "qtest" {dev}
-  "ocamlformat" {dev}
   "ocp-index" {dev}
-  "merlin" {dev}
   "odoc" {with-doc}
 ]
 build: [

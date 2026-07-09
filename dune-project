@@ -42,12 +42,9 @@ error messages getting logged to stderr.
   camlp-streams
   ounit2
   cmdliner
-  utop
   re
   (qtest :dev)
-  (ocamlformat :dev)
-  (ocp-index :dev)
-  (merlin :dev)))
+  (ocp-index :dev)))
 (cram enable)
 
 ; This file is part of Attachment Converter.
