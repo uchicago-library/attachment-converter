@@ -167,7 +167,8 @@ STAFF_LIB_HOSTNAME = $(ARCH_REPO_HOSTNAME)
 STAFF_LIB_PATH = /data/web/dldc/opam/packages/prelude
 PRELUDE_VER_NUM = 100.7
 PRELUDE_OPAM_PATH = $(STAFF_LIB_HOSTNAME):$(STAFF_LIB_PATH)/prelude.$(PRELUDE_VER_NUM)
-VER_NUM = 0.2.5
+VER_NUM = 0.2.6
+REVISION = 1
 DEBIAN_CODENAME = resolute
 DLDC_PUBLIC_KEY = 3EF45886DF1EF82B4782F5FBD331DB7453444E0E
 
@@ -195,20 +196,20 @@ update-ocaml-vernum:
 .PHONY: update-version-dot-ml
 
 update-debian-changelog:
-	sed -i "s/attachment-converter (.*) $(DEBIAN_CODENAME)/attachment-converter ($(VER_NUM)-1~$(DEBIAN_CODENAME)) $(DEBIAN_CODENAME)/" debian/changelog
+	sed -i "s/attachment-converter (.*) $(DEBIAN_CODENAME)/attachment-converter ($(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME)) $(DEBIAN_CODENAME)/" debian/changelog
 	sed -i "s/[A-Z][a-z][a-z], [0-9][0-9] [A-Z][a-z][a-z] [0-9][0-9][0-9].*/$(DEBIAN_DATE)/" debian/changelog
 .PHONY: update-debian-changelog
 
-release-tags:
-	git add $(FILES_TO_UPDATE)
-	git commit -m "version $(VER_NUM) (testing automation; please ignore this commit)"
-	git tag v$(VER_NUM)
-.PHONY: release-tags
+# release-tags:
+# 	git add $(FILES_TO_UPDATE)
+# 	git commit -m "version $(VER_NUM) (testing automation; please ignore this commit)"
+# 	git tag v$(VER_NUM)
+# .PHONY: release-tags
 
-push-tags: release-tags
-	git push origin $(BRANCH)
-	git push origin $(BRANCH) v$(VER_NUM)
-.PHONY: push-tags
+# push-tags: release-tags
+# 	git push origin $(BRANCH)
+# 	git push origin $(BRANCH) v$(VER_NUM)
+# .PHONY: push-tags
 
 prep-for-release: update-pkgbuild-version update-ocaml-vernum update-debian-changelog prelude opampack
 
@@ -219,7 +220,7 @@ arch-release: update-pkgbuild-checksum
 	scp $(SSH_PATH)/dldc.files.tar.gz $(TEMP_DIR) || true
 	cd $(TEMP_DIR) && \
 		makepkg -Cc && \
-		repo-add -s dldc.db.tar.gz attc-$(VER_NUM)-1-x86_64.pkg.tar.zst && \
+		repo-add -s dldc.db.tar.gz attc-$(VER_NUM)-$(REVISION)-x86_64.pkg.tar.zst && \
 		rsync -a * $(SSH_PATH) && \
 .PHONY: arch-release
 
@@ -230,7 +231,7 @@ arch-remove:
 	repo-remove -s $(TEMP_DIR)/dldc.db.tar.gz attc
 	rsync -a $(TEMP_DIR)/dldc.db.tar.gz $(SSH_PATH)
 	rsync -a $(TEMP_DIR)/dldc.files.tar.gz $(SSH_PATH)
-	ssh $(ARCH_REPO_HOSTNAME) rm $(ARCH_REPO_PATH)/attc-$(VER_NUM)-1-x86_64.pkg.tar.zst
+	ssh $(ARCH_REPO_HOSTNAME) rm $(ARCH_REPO_PATH)/attc-$(VER_NUM)-$(REVISION)-x86_64.pkg.tar.zst
 .PHONY: arch-remove
 
 opampack-upacks:
@@ -271,8 +272,8 @@ launchpad:
 	cd attachment-converter-$(VER_NUM) && \
 	debuild -S -k"$(DLDC_PUBLIC_KEY)" && \
 	cd .. && \
-	env TMPDIR=/var/tmp sbuild -A -d $(DEBIAN_CODENAME) attachment-converter_$(VER_NUM)-1~$(DEBIAN_CODENAME).dsc && \
-	dput ppa:uchicago-dldc/attc attachment-converter_$(VER_NUM)-1~$(DEBIAN_CODENAME)_source.changes
+	env TMPDIR=/var/tmp sbuild -A -d $(DEBIAN_CODENAME) attachment-converter_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME).dsc && \
+	dput ppa:uchicago-dldc/attc attachment-converter_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME)_source.changes
 .PHONY: launchpad
 
 launchpad-revision:
@@ -288,8 +289,8 @@ launchpad-revision:
 	cd attachment-converter-$(VER_NUM) && \
 	debuild -S -k"$(DLDC_PUBLIC_KEY)" && \
 	cd .. && \
-	env TMPDIR=/var/tmp sbuild -A -d $(DEBIAN_CODENAME) attachment-converter_$(VER_NUM)-1~$(DEBIAN_CODENAME).dsc && \
-	dput ppa:uchicago-dldc/attc attachment-converter_$(VER_NUM)-1~$(DEBIAN_CODENAME)_source.changes
+	env TMPDIR=/var/tmp sbuild -A -d $(DEBIAN_CODENAME) attachment-converter_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME).dsc && \
+	dput ppa:uchicago-dldc/attc attachment-converter_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME)_source.changes
 .PHONY: launchpad
 
 
