@@ -260,7 +260,7 @@ SHARE_DIR = /mnt/sequent
 launchpad:
 	mkdir -p $(TEMP_DIR) && \
 		sudo mkdir -p $(SHARE_DIR) && \
-		mountpoint -q $(SHARE_DIR) || sudo mount -t 9p -o trans=virtio,version=9p2000.L,rw,msize=262144,dfltuid=1158,dfltgid=11158 9p $(SHARE_DIR) && \
+		mountpoint -q $(SHARE_DIR) || sudo mount -t 9p -o trans=virtio,version=9p2000.L,rw,msize=262144 9p $(SHARE_DIR) && \
 		cd $(TEMP_DIR) && \
 		cp -r $(PWD) ./attachment-converter-$(VER_NUM) && \
 		cd attachment-converter-$(VER_NUM)/ubuntu_wsl && \
@@ -269,7 +269,7 @@ launchpad:
 		tar czf attachment-converter_$(VER_NUM).orig.tar.gz $(EXCLUDES) attachment-converter-$(VER_NUM) && \
 		mkdir -p $(TARBALL_DIR) && \
 		cp attachment-converter_$(VER_NUM).orig.tar.gz $(TARBALL_DIR) && \
-		cp attachment-converter_$(VER_NUM).orig.tar.gz $(SHARE_DIR) && \
+		sudo cp attachment-converter_$(VER_NUM).orig.tar.gz $(SHARE_DIR) && \
 		cd attachment-converter-$(VER_NUM) && \
 		debuild -S -k"$(DLDC_PUBLIC_KEY)" && \
 		cd .. && \
