@@ -196,8 +196,8 @@ update-ocaml-vernum:
 .PHONY: update-version-dot-ml
 
 update-debian-changelog:
-	sed -i "s/attachment-converter (.*) $(DEBIAN_CODENAME)/attachment-converter ($(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME)) $(DEBIAN_CODENAME)/" debian/changelog
-	sed -i "s/[A-Z][a-z][a-z], [0-9][0-9] [A-Z][a-z][a-z] [0-9][0-9][0-9].*/$(DEBIAN_DATE)/" debian/changelog
+	awk -i inplace '!found && /attachment-converter (.*) $(DEBIAN_CODENAME)/ { sub(/attachment-converter (.*) $(DEBIAN_CODENAME)/, "attachment-converter ($(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME)) $(DEBIAN_CODENAME)"); found=1 } { print }' debian/changelog
+	awk -i inplace  '!found && /[A-Z][a-z][a-z], [0-9][0-9] [A-Z][a-z][a-z] [0-9][0-9][0-9].*/ { sub(/[A-Z][a-z][a-z], [0-9][0-9] [A-Z][a-z][a-z] [0-9][0-9][0-9].*/, "$(DEBIAN_DATE)"); found=1 } { print }' debian/changelog
 .PHONY: update-debian-changelog
 
 # release-tags:
