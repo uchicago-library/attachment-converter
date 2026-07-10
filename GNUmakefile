@@ -259,21 +259,21 @@ SHARE_DIR = /mnt/sequent
 # password for this rule unless you have gpg-agent set up
 launchpad:
 	mkdir -p $(TEMP_DIR) && \
-	sudo mkdir -p $(SHARE_DIR) && \
-	sudo mount -t 9p -o trans=virtio 9p $(SHARE_DIR) && \
-	cd $(TEMP_DIR) && \
-	cp -r $(PWD) ./attachment-converter-$(VER_NUM) && \
-	cd attachment-converter-$(VER_NUM)/ubuntu_wsl && \
-	./OpamPack.sh && \
-	cd ../.. && \
-	tar czf attachment-converter_$(VER_NUM).orig.tar.gz $(EXCLUDES) attachment-converter-$(VER_NUM) && \
-	mkdir -p $(TARBALL_DIR) && \
-	cp attachment-converter_$(VER_NUM).orig.tar.gz $(TARBALL_DIR) && \
-	cp attachment-converter_$(VER_NUM).orig.tar.gz $(SHARE_DIR) && \
-	cd attachment-converter-$(VER_NUM) && \
-	debuild -S -k"$(DLDC_PUBLIC_KEY)" && \
-	cd .. && \
-	env TMPDIR=/var/tmp sbuild -A -d $(DEBIAN_CODENAME) attachment-converter_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME).dsc 
+		sudo mkdir -p $(SHARE_DIR) && \
+		sudo mount -t 9p -o trans=virtio 9p $(SHARE_DIR) && \
+		cd $(TEMP_DIR) && \
+		cp -r $(PWD) ./attachment-converter-$(VER_NUM) && \
+		cd attachment-converter-$(VER_NUM)/ubuntu_nwsl && \
+		./OpamPack.sh && \
+		cd ../.. && \
+		tar czf attachment-converter_$(VER_NUM).orig.tar.gz $(EXCLUDES) attachment-converter-$(VER_NUM) && \
+		mkdir -p $(TARBALL_DIR) && \
+		cp attachment-converter_$(VER_NUM).orig.tar.gz $(TARBALL_DIR) && \
+		cp attachment-converter_$(VER_NUM).orig.tar.gz $(SHARE_DIR) && \
+		cd attachment-converter-$(VER_NUM) && \
+		debuild -S -k"$(DLDC_PUBLIC_KEY)" && \
+		cd .. && \
+		env TMPDIR=/var/tmp sbuild -A -d $(DEBIAN_CODENAME) attachment-converter_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME).dsc 
 # && \
 # dput ppa:uchicago-dldc/attc attachment-converter_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME)_source.changes
 .PHONY: launchpad
