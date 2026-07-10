@@ -263,7 +263,7 @@ launchpad:
 		mountpoint -q $(SHARE_DIR) || sudo mount -t 9p -o trans=virtio 9p $(SHARE_DIR) && \
 		cd $(TEMP_DIR) && \
 		cp -r $(PWD) ./attachment-converter-$(VER_NUM) && \
-		cd attachment-converter-$(VER_NUM)/ubuntu_nwsl && \
+		cd attachment-converter-$(VER_NUM)/ubuntu_wsl && \
 		./OpamPack.sh && \
 		cd ../.. && \
 		tar czf attachment-converter_$(VER_NUM).orig.tar.gz $(EXCLUDES) attachment-converter-$(VER_NUM) && \
