@@ -260,7 +260,7 @@ SHARE_DIR = /mnt/sequent
 launchpad:
 	mkdir -p $(TEMP_DIR) && \
 		sudo mkdir -p $(SHARE_DIR) && \
-		mountpoint -q $(SHARE_DIR) || sudo mount -t 9p -o trans=virtio 9p $(SHARE_DIR) && \
+		mountpoint -q $(SHARE_DIR) || sudo mount -t 9p -o trans=virtio,version=9p2000.L,rw,msize=262144 9p $(SHARE_DIR) && \
 		cd $(TEMP_DIR) && \
 		cp -r $(PWD) ./attachment-converter-$(VER_NUM) && \
 		cd attachment-converter-$(VER_NUM)/ubuntu_wsl && \
