@@ -259,7 +259,7 @@ SHARE_DIR = /mnt/sequent
 # password for this rule unless you have gpg-agent set up
 launchpad:
 	mkdir -p $(TEMP_DIR) && \
-	mkdir -p $(SHARE_DIR) && \
+	sudo mkdir -p $(SHARE_DIR) && \
 	sudo mount -t 9p -o trans=virtio 9p $(SHARE_DIR) && \
 	cd $(TEMP_DIR) && \
 	cp -r $(PWD) ./attachment-converter-$(VER_NUM) && \
