@@ -104,8 +104,6 @@ eval $(opam env --switch=opampack)
 
 opam install -y --download-only $USER_PACKAGES
 
-du -h $OPAMROOT
-
 
 # Create a script to extract the =tar.gz= file and to install the packages.
 
