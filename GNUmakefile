@@ -283,10 +283,12 @@ launchpad-revision:
 	cd $(TEMP_DIR) && \
 	cp -r $(PWD) ./attachment-converter-$(VER_NUM) && \
 	cd attachment-converter-$(VER_NUM)/ubuntu_wsl && \
+	echo debug info for launchpad 1 && \
 	df -h && \
 	opam clean -a -c -s --logs -r && \
 	export OPAMKEEPBUILDDIR=false && \
 	./OpamPack.sh && \
+	echo debug info for launchpad 2 && \
 	df -h && \
 	cd ../.. && \
 	cp $(TARBALL_DIR)/attachment-converter_$(VER_NUM).orig.tar.gz . && \
