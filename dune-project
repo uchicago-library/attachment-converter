@@ -43,6 +43,7 @@ error messages getting logged to stderr.
   ounit2
   cmdliner
   re
+  utop
   (qtest :dev)
   (ocp-index :dev)))
 (cram enable)

@@ -42,6 +42,7 @@ depends: [
   "ounit2"
   "cmdliner"
   "re"
+  "utop"
   "qtest" {dev}
   "ocp-index" {dev}
   "odoc" {with-doc}
