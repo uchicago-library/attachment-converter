@@ -1,3 +1,9 @@
+attachment-converter (0.2.10-2~resolute) resolute; urgency=medium
+
+  * Testing out a fresh revision number
+
+ -- Matt Teichman <teichman@uchicago.edu>  Mon, 13 Jul 2026 16:24:20 -0500
+
 attachment-converter (0.2.10-1~resolute) resolute; urgency=medium
 
   * Initial release.

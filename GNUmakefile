@@ -211,7 +211,8 @@ update-debian-changelog:
 # 	git push origin $(BRANCH) v$(VER_NUM)
 # .PHONY: push-tags
 
-prep-for-release: update-pkgbuild-version update-ocaml-vernum update-debian-changelog prelude opampack
+prep-for-release: update-pkgbuild-version update-ocaml-vernum update-debian-changelog prelude
+# opampack
 
 arch-release: update-pkgbuild-checksum
 	mkdir -p $(TEMP_DIR)
