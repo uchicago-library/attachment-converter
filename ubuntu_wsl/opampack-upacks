@@ -1,1 +1,1 @@
-ocaml dune prelude ocamlbuild ocamlfind mrmime ocamlnet camlp-streams ounit2 cmdliner re
+ocaml dune prelude ocamlbuild ocamlfind mrmime ocamlnet camlp-streams ounit2 cmdliner utop re
