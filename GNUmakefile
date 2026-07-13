@@ -286,27 +286,29 @@ launchpad:
 .PHONY: launchpad
 
 launchpad-revision:
-	false && \
 	mkdir -p $(TEMP_DIR) && \
-	cd $(TEMP_DIR) && \
-	cp -r $(PWD) ./attachment-converter-$(VER_NUM) && \
-	cd attachment-converter-$(VER_NUM)/ubuntu_wsl && \
-	echo debug info for launchpad 1 && \
-	df -h && \
-	opam clean -a -c -s --logs -r && \
-	export OPAMKEEPBUILDDIR=false && \
-	./OpamPack.sh && \
-	echo debug info for launchpad 2 && \
-	df -h && \
-	cd ../.. && \
-	cp $(TARBALL_DIR)/attachment-converter_$(VER_NUM).orig.tar.gz . && \
-	mkdir -p $(TARBALL_DIR) && \
-	cd attachment-converter-$(VER_NUM) && \
-	debuild -S -k"$(DLDC_PUBLIC_KEY)" && \
-	cd .. && \
-	env TMPDIR=/var/tmp sbuild -A -d $(DEBIAN_CODENAME) attachment-converter_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME).dsc && \
-	dput ppa:uchicago-dldc/attc attachment-converter_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME)_source.changes && \
-	cp attc_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME)_amd64.deb ~
+		sudo mkdir -p $(SHARE_DIR) && \
+		mountpoint -q $(SHARE_DIR) || sudo mount -t 9p -o trans=virtio,version=9p2000.L,rw,msize=262144 9p $(SHARE_DIR) && \
+		cd $(TEMP_DIR) && \
+		cp -r $(PWD) ./attachment-converter-$(VER_NUM) && \
+		cd attachment-converter-$(VER_NUM)/ubuntu_wsl && \
+		echo debug info for launchpad 1 && \
+		df -h && \
+		opam clean -a -c -s --logs -r && \
+		export OPAMKEEPBUILDDIR=false && \
+		./OpamPack.sh && \
+		echo debug info for launchpad 2 && \
+		df -h && \
+		cd ../.. && \
+		mkdir -p $(TARBALL_DIR) && \
+		cp $(TARBALL_DIR)/attachment-converter_$(VER_NUM).orig.tar.gz . && \
+		cd attachment-converter-$(VER_NUM) && \
+		debuild -S -k"$(DLDC_PUBLIC_KEY)" && \
+		cd ..
+# && \
+# env TMPDIR=/var/tmp sbuild -A -d $(DEBIAN_CODENAME) attachment-converter_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME).dsc && \
+# dput ppa:uchicago-dldc/attc attachment-converter_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME)_source.changes && \
+# cp attc_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME)_amd64.deb ~
 .PHONY: launchpad
 
 # This file is part of Attachment Converter.
