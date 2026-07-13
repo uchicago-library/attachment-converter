@@ -283,9 +283,11 @@ launchpad-revision:
 	cd $(TEMP_DIR) && \
 	cp -r $(PWD) ./attachment-converter-$(VER_NUM) && \
 	cd attachment-converter-$(VER_NUM)/ubuntu_wsl && \
+	df -h && \
 	opam clean -a -c -s --logs -r && \
 	export OPAMKEEPBUILDDIR=false && \
 	./OpamPack.sh && \
+	df -h && \
 	cd ../.. && \
 	cp $(TARBALL_DIR)/attachment-converter_$(VER_NUM).orig.tar.gz . && \
 	mkdir -p $(TARBALL_DIR) && \
@@ -295,7 +297,6 @@ launchpad-revision:
 	env TMPDIR=/var/tmp sbuild -A -d $(DEBIAN_CODENAME) attachment-converter_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME).dsc && \
 	dput ppa:uchicago-dldc/attc attachment-converter_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME)_source.changes
 .PHONY: launchpad
-
 
 # This file is part of Attachment Converter.
 
