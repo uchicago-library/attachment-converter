@@ -247,7 +247,7 @@ prelude:
 	scp $(PRELUDE_OPAM_PATH)/opam ubuntu_wsl/prelude.$(PRELUDE_VER_NUM)
 .PHONY: prelude
 
-EXCLUDES = --exclude=".git" --exclude="*.maketrack"
+EXCLUDES = --exclude=".git" --exclude="*.maketrack" --exclude="_opam" --exclude="_build"
 
 TARBALL_DIR = /home/teichman/stuff/tarballs/debian/attc/$(VER_NUM)
 SHARE_DIR = /mnt/sequent
@@ -308,7 +308,7 @@ dist-publish:
 	mkdir -p $(TEMP_DIR) && \
 		cd $(TEMP_DIR) && \
 		cp -r $(PWD) ./attachment-converter-$(VER_NUM) && \
-		tar czf attachment-converter_$(VER_NUM)-$(REVISION).tar.gz $(EXCLUDES) attachment-converter-$(VER_NUM)
+		tar cvzf attachment-converter_$(VER_NUM)-$(REVISION).tar.gz $(EXCLUDES) attachment-converter-$(VER_NUM)
 		scp attachment-converter_$(VER_NUM)-$(REVISION).tar.gz $(DIST_DIR)
 .PHONY: dist-publish
 
