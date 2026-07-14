@@ -245,7 +245,7 @@ prelude:
 
 EXCLUDES = --exclude=".git" --exclude="*.maketrack"
 
-TARBALL_DIR = /home/teichman/tarballs/debian/attc/$(VER_NUM)
+TARBALL_DIR = /home/teichman/stuff/tarballs/debian/attc/$(VER_NUM)
 SHARE_DIR = /mnt/sequent
 
 # warning: you need to be sitting at the computer to type the gpg
