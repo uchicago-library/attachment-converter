@@ -300,8 +300,14 @@ launchpad-revision:
 .PHONY: launchpad
 
 dist-publish:
-	scp attc_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME)_amd64.deb $(DIST_DIR)
-	cp attachment-converter_$(VER_NUM).orig.tar.gz $(TARBALL_DIR)
+	scp $(TARBALL_DIR)/attc_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME)_amd64.deb $(DIST_DIR)
+	scp $(TARBALL_DIR)/attachment-converter_$(VER_NUM).orig.tar.gz $(DIST_DIR)
+	scp arch/PKGBUILD $(DIST_DIR)
+	mkdir -p $(TEMP_DIR) && \
+		cd $(TEMP_DIR) && \
+		cp -r $(PWD) ./attachment-converter-$(VER_NUM) && \
+		tar czf attachment-converter_$(VER_NUM)-$(REVISION).tar.gz $(EXCLUDES) attachment-converter-$(VER_NUM)
+		scp attachment-converter_$(VER_NUM)-$(REVISION).tar.gz $(DIST_DIR)
 .PHONY: dist-publish
 
 
