@@ -2,7 +2,7 @@
 # Contributor: Ben Kim <benkim@uchicago.edu>
 pkgname=attc
 pkgver=0.2.10
-pkgrel=3
+pkgrel=4
 pkgdesc="Tool for batch-converting email attachments to preservation formats for archival purposes"
 arch=(x86_64)
 url="https://dldc.lib.uchicago.edu/open/attachment-converter/index.html"
