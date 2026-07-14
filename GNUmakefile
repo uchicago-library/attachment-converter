@@ -203,10 +203,9 @@ update-debian-changelog:
 	awk -i inplace  '!found && /[A-Z][a-z][a-z], [0-9][0-9] [A-Z][a-z][a-z] [0-9][0-9][0-9].*/ { sub(/[A-Z][a-z][a-z], [0-9][0-9] [A-Z][a-z][a-z] [0-9][0-9][0-9].*/, "$(DEBIAN_DATE)"); found=1 } { print }' debian/changelog
 .PHONY: update-debian-changelog
 
-prep-for-release: update-pkgbuild-version update-ocaml-vernum update-debian-changelog prelude
-# opampack
+prep-for-release: update-pkgbuild-version update-ocaml-vernum prelude opampack
 
-arch-release: update-pkgbuild-checksum
+arch-release: update-pkgbuild-version update-pkgbuild-checksum dist-publish
 	mkdir -p $(TEMP_DIR)
 	scp arch/PKGBUILD $(TEMP_DIR)
 	scp $(SSH_PATH)/dldc.db.tar.gz $(TEMP_DIR) || true
@@ -253,7 +252,7 @@ DIST_DIR = $(DIST_HOST):$(DIST_PATH)
 
 # warning: you need to be sitting at the computer to type the gpg
 # password for this rule unless you have gpg-agent set up
-launchpad:
+launchpad: update-debian-changelog 
 	mkdir -p $(TEMP_DIR) && \
 		sudo mkdir -p $(SHARE_DIR) && \
 		mountpoint -q $(SHARE_DIR) || sudo mount -t 9p -o trans=virtio,version=9p2000.L,rw,msize=262144 9p $(SHARE_DIR) && \
@@ -277,7 +276,7 @@ launchpad:
 		cp attachment-converter_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME).debian.tar.xz $(TARBALL_DIR)
 .PHONY: launchpad
 
-launchpad-revision:
+launchpad-revision: update-debian-changelog 
 	mkdir -p $(TEMP_DIR) && \
 		sudo mkdir -p $(SHARE_DIR) && \
 		mountpoint -q $(SHARE_DIR) || sudo mount -t 9p -o trans=virtio,version=9p2000.L,rw,msize=262144 9p $(SHARE_DIR) && \
