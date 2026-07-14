@@ -171,7 +171,7 @@ STAFF_LIB_PATH = /data/web/dldc/opam/packages/prelude
 PRELUDE_VER_NUM = 100.7
 PRELUDE_OPAM_PATH = $(STAFF_LIB_HOSTNAME):$(STAFF_LIB_PATH)/prelude.$(PRELUDE_VER_NUM)
 VER_NUM = 0.2.10
-REVISION = 2
+REVISION = 3
 DEBIAN_CODENAME = resolute
 DLDC_PUBLIC_KEY = 3EF45886DF1EF82B4782F5FBD331DB7453444E0E
 
@@ -202,17 +202,6 @@ update-debian-changelog:
 	awk -i inplace '!found && /attachment-converter (.*) $(DEBIAN_CODENAME)/ { sub(/attachment-converter (.*) $(DEBIAN_CODENAME)/, "attachment-converter ($(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME)) $(DEBIAN_CODENAME)"); found=1 } { print }' debian/changelog
 	awk -i inplace  '!found && /[A-Z][a-z][a-z], [0-9][0-9] [A-Z][a-z][a-z] [0-9][0-9][0-9].*/ { sub(/[A-Z][a-z][a-z], [0-9][0-9] [A-Z][a-z][a-z] [0-9][0-9][0-9].*/, "$(DEBIAN_DATE)"); found=1 } { print }' debian/changelog
 .PHONY: update-debian-changelog
-
-# release-tags:
-# 	git add $(FILES_TO_UPDATE)
-# 	git commit -m "version $(VER_NUM) (testing automation; please ignore this commit)"
-# 	git tag v$(VER_NUM)
-# .PHONY: release-tags
-
-# push-tags: release-tags
-# 	git push origin $(BRANCH)
-# 	git push origin $(BRANCH) v$(VER_NUM)
-# .PHONY: push-tags
 
 prep-for-release: update-pkgbuild-version update-ocaml-vernum update-debian-changelog prelude
 # opampack
