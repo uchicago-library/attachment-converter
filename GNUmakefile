@@ -207,9 +207,9 @@ update-debian-changelog:
 	awk -i inplace  '!found && /[A-Z][a-z][a-z], [0-9][0-9] [A-Z][a-z][a-z] [0-9][0-9][0-9].*/ { sub(/[A-Z][a-z][a-z], [0-9][0-9] [A-Z][a-z][a-z] [0-9][0-9][0-9].*/, "$(DEBIAN_DATE)"); found=1 } { print }' debian/changelog
 .PHONY: update-debian-changelog
 
-prep-for-release: update-pkgbuild-version update-ocaml-vernum prelude opampack
+prep-for-release: update-pkgbuild-version update-pkgbuild-revision update-ocaml-vernum prelude opampack
 
-arch-release: dist-publish update-pkgbuild-checksum 
+arch-release: dist-publish update-pkgbuild-checksum
 	mkdir -p $(TEMP_DIR)
 	scp arch/PKGBUILD $(TEMP_DIR)
 	scp $(SSH_PATH)/dldc.db.tar.gz $(TEMP_DIR) || true
