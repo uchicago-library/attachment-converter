@@ -1,3 +1,9 @@
+attachment-converter (0.2.10-3~resolute) resolute; urgency=medium
+
+  * Testing automation infrastructure.
+
+ -- Matt Teichman <teichman@uchicago.edu>  Tue, 14 Jul 2026 09:48:33 -0500
+
 attachment-converter (0.2.10-2~resolute) resolute; urgency=medium
 
   * Testing out a fresh revision number
