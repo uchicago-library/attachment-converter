@@ -1,1 +1,8 @@
 extend-diff-ignore = "GNUmakefile"
+extend-diff-ignore = "README.org"
+extend-diff-ignore = "TODO"
+extend-diff-ignore = "^doc/"
+extend-diff-ignore = "^developer_notes/"
+extend-diff-ignore = "^arch/"
+extend-diff-ignore = "^homebrew/"
+extend-diff-ignore = "^ubuntu_wsl/"

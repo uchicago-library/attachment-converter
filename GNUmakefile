@@ -305,11 +305,12 @@ launchpad-revision:
 		cp $(TARBALL_DIR)/attachment-converter_$(VER_NUM).orig.tar.gz . && \
 		cd attachment-converter-$(VER_NUM) && \
 		debuild -S -sd -k"$(DLDC_PUBLIC_KEY)" && \
-		cd ..
-# && \
-# env TMPDIR=/var/tmp sbuild -A -d $(DEBIAN_CODENAME) attachment-converter_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME).dsc && \
-# dput ppa:uchicago-dldc/attc attachment-converter_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME)_source.changes && \
-# cp attc_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME)_amd64.deb ~
+		cd .. && \
+		env TMPDIR=/var/tmp sbuild -A -d $(DEBIAN_CODENAME) attachment-converter_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME).dsc && \
+		dput ppa:uchicago-dldc/attc attachment-converter_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME)_source.changes && \
+		cp attc_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME)_amd64.deb ~ && \
+		cp attachment-converter_$(VER_NUM).orig.tar.gz ~ && \
+		cp attachment-converter_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME).debian.tar.xz ~
 .PHONY: launchpad
 
 # This file is part of Attachment Converter.
