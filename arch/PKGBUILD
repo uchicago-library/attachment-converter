@@ -2,7 +2,7 @@
 # Contributor: Ben Kim <benkim@uchicago.edu>
 pkgname=attc
 pkgver=0.2.10
-pkgrel=1
+pkgrel=3
 pkgdesc="Tool for batch-converting email attachments to preservation formats for archival purposes"
 arch=(x86_64)
 url="https://dldc.lib.uchicago.edu/open/attachment-converter/index.html"
@@ -10,7 +10,7 @@ license=(GPL-3.0-or-later)
 depends=( 'libreoffice-fresh' 'pandoc' 'ghostscript' 'libvips' 'imagemagick' 'poppler' )
 makedepends=( 'opam' 'mercurial' )
 source=("https://dldc.lib.uchicago.edu/open/dist/attc/attachment-converter_${pkgver}-${pkgrel}.tar.gz")
-sha256sums=('3cb35b38bf336c2a4922a3583907f3cc893ade2b8da4df7eef7d3f094bca6f03')
+sha256sums=('b63548f45d805c971fa7f6a6eb9c6097ce64ef2720883d8ceec021c425bf1b8a')
 
 build() {
 	cd ${srcdir}/attachment-converter-${pkgver}

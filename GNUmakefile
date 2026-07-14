@@ -181,6 +181,10 @@ update-pkgbuild-version:
 	sed -i 's/^pkgver=.*/pkgver=$(VER_NUM)/' arch/PKGBUILD
 .PHONY: update-pkgbuild-version
 
+update-pkgbuild-revision:
+	sed -i 's/^pkgrel=.*/pkgrel=$(REVISION)/' arch/PKGBUILD
+.PHONY: update-pkgbuild-version
+
 update-pkgbuild-checksum:
 	sed -i "s/sha256sums=.*/sha256sums=('b63548f45d805c971fa7f6a6eb9c6097ce64ef2720883d8ceec021c425bf1b8a')/" arch/PKGBUILD
 .PHONY: update-pkgbuild-checksum
@@ -260,7 +264,7 @@ launchpad: update-debian-changelog
 		cp -r $(PWD) ./attachment-converter-$(VER_NUM) && \
 		cd attachment-converter-$(VER_NUM)/ubuntu_wsl && \
 		opam clean -a -c -s --logs -r && \
-		export OPAMKEEPBUILDDIR=false && \
+#		export OPAMKEEPBUILDDIR=false && \
 		./OpamPack.sh && \
 		cd ../.. && \
 		tar czf attachment-converter_$(VER_NUM).orig.tar.gz $(EXCLUDES) attachment-converter-$(VER_NUM) && \
@@ -284,7 +288,7 @@ launchpad-revision: update-debian-changelog
 		cp -r $(PWD) ./attachment-converter-$(VER_NUM) && \
 		cd attachment-converter-$(VER_NUM)/ubuntu_wsl && \
 		opam clean -a -c -s --logs -r && \
-		export OPAMKEEPBUILDDIR=false && \
+#		export OPAMKEEPBUILDDIR=false && \
 		./OpamPack.sh && \
 		cd ../.. && \
 		mkdir -p $(TARBALL_DIR) && \

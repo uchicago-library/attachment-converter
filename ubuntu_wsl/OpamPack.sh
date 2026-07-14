@@ -111,9 +111,14 @@ INSTALL_SCRIPT=install.sh
 
 cat << EOF > $INSTALL_SCRIPT
 #!/bin/bash
+echo debug disk usage for launchpad 1
+df -h
+export OPAMKEEPBUILDDIR=false
 export OPAMROOT=\$PWD/ubuntu_wsl/opamroot
 eval \$(opam env --root=\$PWD/ubuntu_wsl/opamroot)
 opam install -y --assume-depexts $USER_PACKAGES
+echo debug disk usage for launchpad 2
+df -h
 EOF
 chmod +x $INSTALL_SCRIPT
 
