@@ -109,13 +109,14 @@ shell-copy: os-deps.maketrack
 .PHONY: shell-copy
 
 opam-install::
-	eval $$(opam env)
-	$(call DUNE,build)
-	$(call DUNE,install)
+	@echo opam-install: print disk usage for debug purposes
+	df -h
+	eval $$(opam env) && \
+		$(call DUNE,build) && \
+		$(call DUNE,install)
 .PHONY: opam-install
 
 home-install: shell-copy opam-install
-	@eval `opam env`
 	echo "Installing to $(HOME_DESTDIR)/bin/attc..."
 	cp $(shell opam var bin)/attc $(HOME_DESTDIR)/bin
 	ls -lh $(HOME_DESTDIR)/bin/attc
@@ -131,6 +132,8 @@ home-install: shell-copy opam-install
 .PHONY: home-install
 
 install: shell-copy opam-install
+	@echo install: print disk usage for debug purposes
+	df -h
 	eval $$(opam env)
 	@echo Installing to $(DESTDIR)/bin/attc...
 	cd $(PROJECT_ROOT)
@@ -265,13 +268,9 @@ launchpad:
 		cd $(TEMP_DIR) && \
 		cp -r $(PWD) ./attachment-converter-$(VER_NUM) && \
 		cd attachment-converter-$(VER_NUM)/ubuntu_wsl && \
-		echo debug info for launchpad 1 && \
-		df -h && \
 		opam clean -a -c -s --logs -r && \
 		export OPAMKEEPBUILDDIR=false && \
 		./OpamPack.sh && \
-		echo debug info for launchpad 2 && \
-		df -h && \
 		cd ../.. && \
 		tar czf attachment-converter_$(VER_NUM).orig.tar.gz $(EXCLUDES) attachment-converter-$(VER_NUM) && \
 		mkdir -p $(TARBALL_DIR) && \
@@ -293,13 +292,9 @@ launchpad-revision:
 		cd $(TEMP_DIR) && \
 		cp -r $(PWD) ./attachment-converter-$(VER_NUM) && \
 		cd attachment-converter-$(VER_NUM)/ubuntu_wsl && \
-		echo debug info for launchpad 1 && \
-		df -h && \
 		opam clean -a -c -s --logs -r && \
 		export OPAMKEEPBUILDDIR=false && \
 		./OpamPack.sh && \
-		echo debug info for launchpad 2 && \
-		df -h && \
 		cd ../.. && \
 		mkdir -p $(TARBALL_DIR) && \
 		cp $(TARBALL_DIR)/attachment-converter_$(VER_NUM).orig.tar.gz . && \
