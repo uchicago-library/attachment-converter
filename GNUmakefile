@@ -205,7 +205,7 @@ update-debian-changelog:
 
 prep-for-release: update-pkgbuild-version update-ocaml-vernum prelude opampack
 
-arch-release: update-pkgbuild-version update-pkgbuild-checksum dist-publish
+arch-release: dist-publish update-pkgbuild-checksum 
 	mkdir -p $(TEMP_DIR)
 	scp arch/PKGBUILD $(TEMP_DIR)
 	scp $(SSH_PATH)/dldc.db.tar.gz $(TEMP_DIR) || true
