@@ -304,7 +304,7 @@ launchpad-revision:
 		mkdir -p $(TARBALL_DIR) && \
 		cp $(TARBALL_DIR)/attachment-converter_$(VER_NUM).orig.tar.gz . && \
 		cd attachment-converter-$(VER_NUM) && \
-		debuild -S -k"$(DLDC_PUBLIC_KEY)" && \
+		debuild -S -sd -k"$(DLDC_PUBLIC_KEY)" && \
 		cd ..
 # && \
 # env TMPDIR=/var/tmp sbuild -A -d $(DEBIAN_CODENAME) attachment-converter_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME).dsc && \
