@@ -171,7 +171,7 @@ STAFF_LIB_PATH = /data/web/dldc/opam/packages/prelude
 PRELUDE_VER_NUM = 100.7
 PRELUDE_OPAM_PATH = $(STAFF_LIB_HOSTNAME):$(STAFF_LIB_PATH)/prelude.$(PRELUDE_VER_NUM)
 VER_NUM = 0.2.10
-REVISION = 3
+REVISION = 4
 DEBIAN_CODENAME = resolute
 DLDC_PUBLIC_KEY = 3EF45886DF1EF82B4782F5FBD331DB7453444E0E
 
@@ -189,7 +189,8 @@ update-pkgbuild-checksum:
 	sed -i "s/sha256sums=.*/sha256sums=('b63548f45d805c971fa7f6a6eb9c6097ce64ef2720883d8ceec021c425bf1b8a')/" arch/PKGBUILD
 .PHONY: update-pkgbuild-checksum
 
-CHECKSUM = $(shell curl -sL "https://github.com/uchicago-library/attachment-converter/archive/refs/tags/v$(VER_NUM).tar.gz" | sha256sum | cut -d " " -f 1)
+TARBALL_URL = "https://dldc.lib.uchicago.edu/open/dist/attc/attachment-converter_$(VER_NUM)-$(REVISION).tar.gz"
+CHECKSUM = $(shell curl -sL $(TARBALL_URL) | sha256sum | cut -d " " -f 1)
 DEBIAN_DATE = $(shell date -R)
 FILES_TO_UPDATE = lib/version.ml arch/PKGBUILD debian/changelog ubuntu_wsl/prelude.$(PRELUDE_VER_NUM)/opam ubuntu_wsl/opampack-packs ubuntu_wsl/opampack-upacks
 BRANCH = main
