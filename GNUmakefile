@@ -300,8 +300,6 @@ launchpad-revision:
 .PHONY: launchpad
 
 dist-publish:
-	scp $(TARBALL_DIR)/attc_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME)_amd64.deb $(DIST_DIR)
-	scp $(TARBALL_DIR)/attachment-converter_$(VER_NUM).orig.tar.gz $(DIST_DIR)
 	scp arch/PKGBUILD $(DIST_DIR)
 	mkdir -p $(TEMP_DIR) && \
 		cd $(TEMP_DIR) && \
@@ -310,6 +308,10 @@ dist-publish:
 		scp attachment-converter_$(VER_NUM)-$(REVISION).tar.gz $(DIST_DIR)
 .PHONY: dist-publish
 
+debian-dist-publish: 
+	scp $(TARBALL_DIR)/attc_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME)_amd64.deb $(DIST_DIR)
+	scp $(TARBALL_DIR)/attachment-converter_$(VER_NUM).orig.tar.gz $(DIST_DIR)
+.PHONY: debian-dist-publish
 
 # This file is part of Attachment Converter.
 
