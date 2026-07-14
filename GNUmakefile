@@ -247,6 +247,9 @@ EXCLUDES = --exclude=".git" --exclude="*.maketrack"
 
 TARBALL_DIR = /home/teichman/stuff/tarballs/debian/attc/$(VER_NUM)
 SHARE_DIR = /mnt/sequent
+DIST_HOST = staff.lib.uchicago.edu
+DIST_PATH = /data/web/dldc/open/dist/attc
+DIST_DIR = $(DIST_HOST):$(DIST_PATH)
 
 # warning: you need to be sitting at the computer to type the gpg
 # password for this rule unless you have gpg-agent set up
@@ -269,9 +272,9 @@ launchpad:
 		cd .. && \
 		env TMPDIR=/var/tmp sbuild -A -d $(DEBIAN_CODENAME) attachment-converter_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME).dsc && \
 		dput ppa:uchicago-dldc/attc attachment-converter_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME)_source.changes
-		cp attc_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME)_amd64.deb ~ && \
-		cp attachment-converter_$(VER_NUM).orig.tar.gz ~ && \
-		cp attachment-converter_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME).debian.tar.xz ~
+		cp attc_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME)_amd64.deb $(TARBALL_DIR) && \
+		cp attachment-converter_$(VER_NUM).orig.tar.gz $(TARBALL_DIR) && \
+		cp attachment-converter_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME).debian.tar.xz $(TARBALL_DIR)
 .PHONY: launchpad
 
 launchpad-revision:
@@ -292,10 +295,15 @@ launchpad-revision:
 		cd .. && \
 		env TMPDIR=/var/tmp sbuild -A -d $(DEBIAN_CODENAME) attachment-converter_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME).dsc && \
 		dput ppa:uchicago-dldc/attc attachment-converter_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME)_source.changes && \
-		cp attc_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME)_amd64.deb ~ && \
-		cp attachment-converter_$(VER_NUM).orig.tar.gz ~ && \
-		cp attachment-converter_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME).debian.tar.xz ~
+		cp attc_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME)_amd64.deb $(TARBALL_DIR) && \
+		cp attachment-converter_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME).debian.tar.xz $(TARBALL_DIR)
 .PHONY: launchpad
+
+dist-publish:
+	scp attc_$(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME)_amd64.deb $(DIST_DIR)
+	cp attachment-converter_$(VER_NUM).orig.tar.gz $(TARBALL_DIR)
+.PHONY: dist-publish
+
 
 # This file is part of Attachment Converter.
 
