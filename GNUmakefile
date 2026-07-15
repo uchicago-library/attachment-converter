@@ -265,7 +265,6 @@ launchpad: update-debian-changelog
 		cp -r $(PWD) ./attachment-converter-$(VER_NUM) && \
 		cd attachment-converter-$(VER_NUM)/ubuntu_wsl && \
 		opam clean -a -c -s --logs -r && \
-#		export OPAMKEEPBUILDDIR=false && \
 		./OpamPack.sh && \
 		cd ../.. && \
 		tar czf attachment-converter_$(VER_NUM).orig.tar.gz $(EXCLUDES) attachment-converter-$(VER_NUM) && \
@@ -289,7 +288,6 @@ launchpad-revision: update-debian-changelog
 		cp -r $(PWD) ./attachment-converter-$(VER_NUM) && \
 		cd attachment-converter-$(VER_NUM)/ubuntu_wsl && \
 		opam clean -a -c -s --logs -r && \
-#		export OPAMKEEPBUILDDIR=false && \
 		./OpamPack.sh && \
 		cd ../.. && \
 		mkdir -p $(TARBALL_DIR) && \
