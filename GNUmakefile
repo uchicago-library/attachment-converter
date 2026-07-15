@@ -176,6 +176,11 @@ DEBIAN_CODENAME = resolute
 DLDC_PUBLIC_KEY = 3EF45886DF1EF82B4782F5FBD331DB7453444E0E
 
 TEMP_DIR := $(shell mktemp -d)
+TARBALL_URL = "https://dldc.lib.uchicago.edu/open/dist/attc/attachment-converter_$(VER_NUM)-$(REVISION).tar.gz"
+CHECKSUM = $(shell curl -sL $(TARBALL_URL) | sha256sum | cut -d " " -f 1)
+DEBIAN_DATE = $(shell date -R)
+FILES_TO_UPDATE = lib/version.ml arch/PKGBUILD debian/changelog ubuntu_wsl/prelude.$(PRELUDE_VER_NUM)/opam ubuntu_wsl/opampack-packs ubuntu_wsl/opampack-upacks
+BRANCH = main
 
 update-pkgbuild-version:
 	sed -i 's/^pkgver=.*/pkgver=$(VER_NUM)/' arch/PKGBUILD
@@ -186,14 +191,8 @@ update-pkgbuild-revision:
 .PHONY: update-pkgbuild-version
 
 update-pkgbuild-checksum:
-	sed -i "s/sha256sums=.*/sha256sums=('b63548f45d805c971fa7f6a6eb9c6097ce64ef2720883d8ceec021c425bf1b8a')/" arch/PKGBUILD
+	sed -i "s/sha256sums=.*/sha256sums=('$(CHECKSUM)')/" arch/PKGBUILD
 .PHONY: update-pkgbuild-checksum
-
-TARBALL_URL = "https://dldc.lib.uchicago.edu/open/dist/attc/attachment-converter_$(VER_NUM)-$(REVISION).tar.gz"
-CHECKSUM = $(shell curl -sL $(TARBALL_URL) | sha256sum | cut -d " " -f 1)
-DEBIAN_DATE = $(shell date -R)
-FILES_TO_UPDATE = lib/version.ml arch/PKGBUILD debian/changelog ubuntu_wsl/prelude.$(PRELUDE_VER_NUM)/opam ubuntu_wsl/opampack-packs ubuntu_wsl/opampack-upacks
-BRANCH = main
 
 checksum:
 	@echo $(CHECKSUM)
@@ -218,7 +217,8 @@ arch-release: dist-publish update-pkgbuild-checksum
 	cd $(TEMP_DIR) && \
 		makepkg -Cc && \
 		repo-add -s dldc.db.tar.gz attc-$(VER_NUM)-$(REVISION)-x86_64.pkg.tar.zst && \
-		rsync -a * $(SSH_PATH) && \
+		rm -rf attachment-converter-$(VER_NUM)
+		rsync -aP *.db *.sig *.tar.zst *.tar.gz *.old $(SSH_PATH)
 .PHONY: arch-release
 
 arch-remove:
