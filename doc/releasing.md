@@ -10,19 +10,49 @@ Prep the repository before creating a fresh release tag:
 
 - [ ] create sandboxed switch and switch into it
 - [ ] run `dune build` to update the `attachment-converter.opam` file
-- [ ] update `VER_NUM` in `GNUmakefile` to a new version number of your choice
+- [ ] (if it's an upstream version bump) update `VER_NUM` in `GNUmakefile` to a new version number of your choice
+- [ ] (if it's a revision bump) update `REVISION` in `GNUmakefile` to a new revision number of your choice
 - [ ] commit `GNUmakefile` and `attachment-converter.opam`
 - [ ] run `make prep-for-release`
+- [ ] review/commit the changes
+- [ ] push up to `main`
 
-`make prep-for-release` will update the version in `PKGBUILD`,
-`Lib.Version.ver_num`, and the version number in `debian/changelog`,
-then pull down the latest Prelude `opam` file, then generate fresh
-`opampack-packs` and `opampack-upacks` files.  *Warning: it will run
-`git` commands.*  It will commit all these changes, tag the commit
-with a release tag corresponding to `VER_NUM`, and push both the
-commit and the tags up to `origin/master`.  This should take about 3
-minutes, since generating fresh opampack files requires building a
-fresh switch.
+`make prep-for-release` will update the upstream version in
+`PKGBUILD`, update the revision in `PKGBUILD`, and
+`Lib.Version.ver_num`, then pull down the latest Prelude `opam` file,
+then generate fresh `opampack-packs` and `opampack-upacks` files.
+This should take about 3 minutes, since generating fresh opampack
+files requires building a fresh switch.
+
+## Arch release
+
+From a machine that is capable of publishing to the DLDC Arch Linux
+software repository on `staff.lib`, run `make arch-release`.  This
+rule will build the project in a `mktemp`-ed directory and copy all
+relevant files up to our DLDC Arch Linux repository.
+
+Note: `make arch-release` creates a general-purpose release tarball
+and `rsync`-s it over to `dldc.lib.uchicago.edu/open/dist/attc`, which
+will end up being the same tarball URL our `homebrew-attc` repository
+points to.  This means that we recommend updating the Homebrew formula
+*after* running `make arch-release`, whenever we are in control of the
+order in which those two things happen.
+
+The user should be able to then install `attc` by first adding this to
+their `/etc/pacman.conf`:
+
+```ini
+[dldc]
+SigLevel = Optional TrustAll
+Server = http://dldc.lib.uchicago.edu/open/repos/arch
+```
+
+Then to install:
+
+```console
+$ sudo pacman -Syy
+$ sudo pacman -S attc
+```
 
 ## Homebrew release
 
@@ -41,31 +71,17 @@ their machine to install `attc`:
 $ brew tap uchicago-library/attc
 $ brew install attc
 ```
-## Arch release
-
-From a machine that is capable of publishing to the DLDC Arch Linux
-software repository on `staff.lib`, run `make arch-release`.
-
-The user should be able to then install `attc` by first adding this to
-their `/etc/pacman.conf`:
-
-```ini
-[dldc]
-SigLevel = Optional TrustAll
-Server = http://dldc.lib.uchicago.edu/open/repos/arch
-```
-
-Then to install:
-
-```console
-$ sudo pacman -Syy
-$ sudo pacman -S attc
-```
 
 The user will have to confirm that they accept the UChicago DLDC Arch
 Linux repository's `gpg` public key after they run `pacman -Syy`.
 
 ## Ubuntu release
+
+Unfortunately, Debian forces us to follow two different fragile,
+byzantine workflows, depending on whether or not we are bumping the
+upstream version number or the revision number.
+
+### If you are bumping the upstream version number
 
 From a machine with an emulated Ubuntu environment, with `gpg` set up
 to use the UChicago DLDC private key:
