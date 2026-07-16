@@ -105,8 +105,8 @@ concludes by uploading the project to Debian launchpad, using Debian's
 The `make debian-dist-publish` rule copies these files to our public
 webspace at `dldc.lib.uchicago.edu/open/dist/attc`:
 
-- attachment-converter_0.2.10-4.tar.gz
-- attachment-converter_0.2.10.orig.tar.gz
+- `attc_0.2.10-4~resolute_amd64.deb`
+- `attachment-converter_0.2.10.orig.tar.gz`
 
 (With whatever the correct version and revision numbers are, of
 course.)
