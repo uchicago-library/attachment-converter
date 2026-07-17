@@ -54,6 +54,9 @@ $ sudo pacman -Syy
 $ sudo pacman -S attc
 ```
 
+The user will have to confirm that they accept the UChicago DLDC Arch
+Linux repository's `gpg` public key after they run `pacman -Syy`.
+
 ## Homebrew release
 
 First, update what needs to be updated in the `homebrew-attc` repository:
@@ -71,9 +74,6 @@ their machine to install `attc`:
 $ brew tap uchicago-library/attc
 $ brew install attc
 ```
-
-The user will have to confirm that they accept the UChicago DLDC Arch
-Linux repository's `gpg` public key after they run `pacman -Syy`.
 
 ## Ubuntu release
 
@@ -113,8 +113,6 @@ course.)
 
 ### If you are bumping the revision number
 
-TODO: this needs updating
-
 From a machine with an emulated Ubuntu environment, with `gpg` set up
 to use the UChicago DLDC private key:
 
@@ -136,8 +134,7 @@ previous section, copying these files to our public webspace at
 - `attc_0.2.10-4~resolute_amd64.deb`
 - `attachment-converter_0.2.10.orig.tar.gz`
 
-(With whatever the correct version and revision numbers are, of
-course.)
+(With whatever the correct version and revision numbers are.)
 
 ### The aftermath
 
