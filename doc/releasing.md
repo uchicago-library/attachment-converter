@@ -88,6 +88,7 @@ to use the UChicago DLDC private key:
 
 - [ ] enter the Ubuntu environment, running under `qemu`
 - [ ] cd `/path/to/cloned/repo`
+- [ ] pull down changes from `main`
 - [ ] run `make launchpad`
 - [ ] run `make debian-dist-publish`
 
@@ -118,6 +119,7 @@ to use the UChicago DLDC private key:
 
 - [ ] enter the Ubuntu environment, running under `qemu`
 - [ ] cd `/path/to/cloned/repo`
+- [ ] pull down changes from `main`
 - [ ] run `make launchpad-revision`
 - [ ] run `make debian-dist-publish`
 
