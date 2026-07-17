@@ -95,7 +95,7 @@ In the course of running `make launchpad`, you will first be prompted
 to enter the `sudo` password for the emulated ubuntu account.  Then,
 after a few minutes, when the rule runs the `debuild` utility, you
 will be prompted to enter the UChicago DLDC's `gpg` key password.
-After that, it is save to get up and make a coffee etc. while `make
+After that, it is safe to get up and make a coffee etc. while `make
 launchpad` runs in the background.  The whole process takes 10-15
 minutes, because this rule concludes by trying to build the entire
 project in a chroot using Debian's `sbuild` utility.  `make launchpad`
@@ -121,6 +121,7 @@ to use the UChicago DLDC private key:
 - [ ] enter the Ubuntu environment, running under `qemu`
 - [ ] cd `/path/to/cloned/repo`
 - [ ] run `make launchpad-revision`
+- [ ] run `make debian-dist-publish`
 
 As in the previous section, you will first be prompted to enter the
 `sudo` password for the emulated ubuntu account, then, 2-3 minutes
@@ -128,17 +129,27 @@ later, for the UChicago DLDC's `gpg` key password.  After that, the
 `make launchpad-revision` can be left to run in the background, and
 should take about 10-15 minutes to finish.
 
+The `make debian-dist-publish` rule behaves the same as in the
+previous section, copying these files to our public webspace at
+`dldc.lib.uchicago.edu/open/dist/attc`:
+
+- `attc_0.2.10-4~resolute_amd64.deb`
+- `attachment-converter_0.2.10.orig.tar.gz`
+
+(With whatever the correct version and revision numbers are, of
+course.)
+
 ### The aftermath
 
-Our account on Debian Launchpad is set up, and the UChicago DLDC `gpg`
-key is associated with that account. It takes Launchpad 1-2 hours to
-build the project.  It notifies you by email when you first upload it
-with `dput`.  If the job fails, it will send you an email
-notification.  If the job succeeds, you won't get a second email
-notification.
+The UChicago DLDC is set up with a PPA on Debian launchpad, with the
+UChicago DLDC `gpg` key as its public key and Matt Teichman as an
+admin.  It takes Launchpad 1-2 hours to build the project.  It
+notifies you by email when you first upload it with `dput`.  If the
+job fails, it will send you an email notification.  If the job
+succeeds, you won't get a second email notification.
 
-The user should then be able to install `attc` by running the
-following commands:
+Once Launchpad has built and deployed the package, the user should be
+able to install `attc` by running the following commands:
 
 ```console
 $ sudo add-apt repository ppa:uchicago-dldc/attc
