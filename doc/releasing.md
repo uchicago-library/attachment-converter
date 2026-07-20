@@ -60,9 +60,12 @@ Linux repository's `gpg` public key after they run `pacman -Syy`.
 
 First, update what needs to be updated in the `homebrew-attc` repository:
 
-- [ ] get the latest checksum by running `make arch-checksum`
-- [ ] update `Formula/attc.rb` in `homebrew-attc` repo, version number
-      of tarball in `url` field
+- [ ] from a Mac, run `make macos-binary-publish`
+- [ ] compute the latest tarball checksum by running `make
+      macos-checksum`
+- [ ] update `Formula/attc.rb` in `homebrew-attc` repo with the url
+      pointing at the macos binary tarball with the latest version and
+      revision number
 - [ ] in the `homebrew-attc` repository, insert the new checksum into
       the `sha256` field of `Formula/attc.rb`
 
@@ -71,6 +74,7 @@ their machine to install `attc`:
 
 ```console
 $ brew tap uchicago-library/attc
+$ brew trust --formula uchicago-library/attc/attc
 $ brew install attc
 ```
 
