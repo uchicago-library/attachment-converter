@@ -1,8 +1,7 @@
 # Release checklist
 
 This is a guide for DLDC developers who would like to push out a fresh
-release of Attachment Converter.  See [background](#background)
-section for more background.
+release of Attachment Converter.
 
 ## Updating the `attachment-converter` repository
 
