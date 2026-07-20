@@ -315,6 +315,19 @@ debian-dist-publish:
 	scp $(TARBALL_DIR)/attachment-converter_$(VER_NUM).orig.tar.gz $(DIST_DIR)
 .PHONY: debian-dist-publish
 
+macos-checksum:
+	@curl -sL "https://dldc.lib.uchicago.edu/open/dist/attc/attc-macos_$(VER_NUM)-$(REVISION).tar.gz" | shasum -a 256 | cut -d '-' -f 1 | xargs
+.PHONY: macos-checksum
+
+macos-binary-publish: build
+	cp -r conversion-scripts _build/default
+	cp -r doc _build/default
+	cd _build/default && \
+		cp main.exe attc && \
+		tar czf attc.tar.gz attc conversion-scripts doc && \
+		scp attc.tar.gz staff:/data/web/dldc/open/dist/attc/attc-macos_$(VER_NUM)-$(REVISION).tar.gz
+.PHONY: macos-binary-publish
+
 # This file is part of Attachment Converter.
 
 # Attachment Converter is free software: you can redistribute it
