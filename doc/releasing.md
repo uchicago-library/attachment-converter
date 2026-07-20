@@ -17,11 +17,11 @@ Prep the repository before creating a fresh release tag:
 - [ ] push up to `main`
 
 `make prep-for-release` will update the upstream version in
-`PKGBUILD`, update the revision in `PKGBUILD`, and
-`Lib.Version.ver_num`, then pull down the latest Prelude `opam` file,
-then generate fresh `opampack-packs` and `opampack-upacks` files.
-This should take about 3 minutes, since generating fresh opampack
-files requires building a fresh switch.
+`PKGBUILD`, update the revision in `PKGBUILD`, update the upstream
+version in `Lib.Version.ver_num`, then pull down the latest Prelude
+`opam` file, then generate fresh `opampack-packs` and
+`opampack-upacks` files.  This should take about 3 minutes, since
+generating fresh opampack files requires building a fresh switch.
 
 ## Arch release
 
