@@ -37,8 +37,8 @@ points to.  This means that we recommend updating the Homebrew formula
 *after* running `make arch-release`, whenever we are in control of the
 order in which those two things happen.
 
-The user should be able to then install `attc` by first adding this to
-their `/etc/pacman.conf`:
+After `make arch-release` is complete, the user should be able to
+install `attc` by first adding this to their `/etc/pacman.conf`:
 
 ```ini
 [dldc]
