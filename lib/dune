@@ -8,6 +8,10 @@
  (name lib)
  (libraries prelude mrmime threads netstring unix re))
 
+(toplevel
+ (name repl)
+ (libraries prelude etude lib))
+
 (env
  (dev ; make warnings non-fatal
   (flags

@@ -5,6 +5,8 @@
 
 
 let ver_num = "0.2.10"
+let revision = "4"
+let full_version = Printf.sprintf "%s-%s" ver_num revision
 
 
 (* This file is part of Attachment Converter. *)

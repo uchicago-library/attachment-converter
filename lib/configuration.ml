@@ -98,9 +98,9 @@ module ConvUtil = struct
     let paths =
       [ makefile_home_install_path;
         linux_multiuser_install_path;
-        "/opt/homebrew/Cellar/attc/" ^ Version.ver_num
+        "/opt/homebrew/Cellar/attc/" ^ Version.full_version
         ^ "/lib/";
-        "/usr/local/Cellar/attc/" ^ Version.ver_num
+        "/usr/local/Cellar/attc/" ^ Version.full_version
         ^ "/lib/" ;
       ]
     in
