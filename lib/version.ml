@@ -5,7 +5,7 @@
 
 
 let ver_num = "0.2.11"
-let revision = "1"
+let revision = "2"
 let full_version = Printf.sprintf "%s-%s" ver_num revision
 
 
