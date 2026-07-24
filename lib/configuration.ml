@@ -94,16 +94,16 @@ module ConvUtil = struct
   let linux_multiuser_install_path =
     "/usr/lib/attachment-converter/scripts/"
 
+  let paths =
+    [ makefile_home_install_path;
+      linux_multiuser_install_path;
+      "/opt/homebrew/Cellar/attc/" ^ Version.full_version
+      ^ "/libexec/";
+      "/usr/local/Cellar/attc/" ^ Version.full_version
+      ^ "/libexec/" ;
+    ]
+
   let default_script_dir () =
-    let paths =
-      [ makefile_home_install_path;
-        linux_multiuser_install_path;
-        "/opt/homebrew/Cellar/attc/" ^ Version.full_version
-        ^ "/libexec/";
-        "/usr/local/Cellar/attc/" ^ Version.full_version
-        ^ "/libexec/" ;
-      ]
-    in
     let rec find_path = function
       (* TODO: Integrate existing error handling
          functionality *)

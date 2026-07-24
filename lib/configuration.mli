@@ -32,6 +32,7 @@ module ConvUtil : sig
   val pandoc : t
   val vips : t
   val pdftotext : t
+  val paths : string list
 end
 
 module TransformData : sig
