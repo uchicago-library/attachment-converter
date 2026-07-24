@@ -202,12 +202,16 @@ update-ocaml-vernum:
 	sed -i 's/let ver_num = \".*\"/let ver_num = \"$(VER_NUM)\"/' lib/version.ml
 .PHONY: update-version-dot-ml
 
+update-ocaml-revision:
+	sed -i 's/let revision = \".*\"/let revision = \"$(REVISION)\"/' lib/version.ml
+.PHONY: update-version-dot-ml
+
 update-debian-changelog:
 	awk -i inplace '!found && /attachment-converter (.*) $(DEBIAN_CODENAME)/ { sub(/attachment-converter (.*) $(DEBIAN_CODENAME)/, "attachment-converter ($(VER_NUM)-$(REVISION)~$(DEBIAN_CODENAME)) $(DEBIAN_CODENAME)"); found=1 } { print }' debian/changelog
 	awk -i inplace  '!found && /[A-Z][a-z][a-z], [0-9][0-9] [A-Z][a-z][a-z] [0-9][0-9][0-9].*/ { sub(/[A-Z][a-z][a-z], [0-9][0-9] [A-Z][a-z][a-z] [0-9][0-9][0-9].*/, "$(DEBIAN_DATE)"); found=1 } { print }' debian/changelog
 .PHONY: update-debian-changelog
 
-prep-for-release: update-pkgbuild-version update-pkgbuild-revision update-ocaml-vernum prelude opampack
+prep-for-release: update-pkgbuild-version update-pkgbuild-revision update-ocaml-vernum update-ocaml-revision prelude opampack
 
 arch-release: dist-publish update-pkgbuild-checksum
 	mkdir -p $(TEMP_DIR)
