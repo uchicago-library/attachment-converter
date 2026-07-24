@@ -99,9 +99,9 @@ module ConvUtil = struct
       [ makefile_home_install_path;
         linux_multiuser_install_path;
         "/opt/homebrew/Cellar/attc/" ^ Version.full_version
-        ^ "/libexe/";
+        ^ "/libexec/";
         "/usr/local/Cellar/attc/" ^ Version.full_version
-        ^ "/libexe/" ;
+        ^ "/libexec/" ;
       ]
     in
     let rec find_path = function
