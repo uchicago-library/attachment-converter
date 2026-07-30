@@ -10,7 +10,7 @@
 
 (toplevel
  (name repl)
- (libraries prelude etude lib))
+ (libraries prelude lib))
 
 (env
  (dev ; make warnings non-fatal
