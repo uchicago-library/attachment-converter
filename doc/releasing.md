@@ -74,7 +74,7 @@ their machine to install `attc`:
 
 ```console
 $ brew tap uchicago-library/attc
-$ brew trust --formula uchicago-library/attc/attc
+$ brew trust uchicago-library/attc
 $ brew install attc
 ```
 
@@ -115,7 +115,7 @@ webspace at `dldc.lib.uchicago.edu/open/dist/attc`:
 (With whatever the correct version and revision numbers are, of
 course.)
 
-### If you are bumping the revision number
+### If you are bumping the revision number only
 
 From a machine with an emulated Ubuntu environment, with `gpg` set up
 to use the UChicago DLDC private key:
@@ -154,7 +154,7 @@ Once Launchpad has built and deployed the package, the user should be
 able to install `attc` by running the following commands:
 
 ```console
-$ sudo add-apt repository ppa:uchicago-dldc/attc
+$ sudo add-apt-repository ppa:uchicago-dldc/attc
 $ sudo apt update
 $ sudo apt install attc
 ```
