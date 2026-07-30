@@ -10,7 +10,7 @@ license=(GPL-3.0-or-later)
 depends=( 'libreoffice-fresh' 'pandoc' 'ghostscript' 'libvips' 'imagemagick' 'poppler' )
 makedepends=( 'opam' 'mercurial' )
 source=("https://dldc.lib.uchicago.edu/open/dist/attc/attachment-converter_${pkgver}-${pkgrel}.tar.gz")
-sha256sums=('96da1ca63d31f5af61b8eadc4ac169388f108b2dc5f525dd5e0d311c7318a730')
+sha256sums=('99f4f2202ebae30d61987cccf82152209e4026cdcce7df22d5413e914c59519d')
 
 build() {
 	cd ${srcdir}/attachment-converter-${pkgver}
