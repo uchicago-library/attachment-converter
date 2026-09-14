@@ -223,11 +223,16 @@ module Mrmime_parsetree = struct
   let to_string = Serialize.(make >> to_string)
 
   let to_string_line_feed ?(line_feed = Line_feed.Unix) tree
-      =
+    =
+    let blank_line =
+      match line_feed with
+      | Dos -> "\r\n"
+      | Unix -> "\n"
+    in
     let preliminary_output = to_string tree in
     match line_feed with
-    | Unix -> Line_feed.remove_crs preliminary_output
-    | Dos -> preliminary_output
+    | Unix -> Line_feed.remove_crs preliminary_output ^ blank_line
+    | Dos -> preliminary_output ^ blank_line
 
   let header = fst
 
@@ -477,13 +482,19 @@ module Ocamlnet_parsetree = struct
       | Dos -> Some true
       | Unix -> Some false
     in
+    let blank_line =
+      match line_feed with
+      | Dos -> "\r\n"
+      | Unix -> "\n"
+    in
     let channel_writer ch =
       Netmime_channels.write_mime_message ?crlf ch tree
     in
     Netchannels.with_out_obj_channel
       (new Netchannels.output_buffer buf)
       channel_writer ;
-    Stdlib.Buffer.contents buf
+    Buffer.add_string buf blank_line ;
+    Stdlib.Buffer.contents buf 
 
   let header = fst
 
