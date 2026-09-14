@@ -22,7 +22,7 @@ opam-installs:
 
 pkg-opam-install::
 	eval $$(opam env --switch=opampack --root=$(PROJECT_ROOT)/ubuntu_wsl/opamroot --set-switch --set-root)
-	opam exec --verbose --switch=opampack --root=$(PROJECT_ROOT)/ubuntu_wsl/opamroot -- dune build --root=$(PROJECT_ROOT) --no-config
+	opam exec --verbose --switch=opampack --root=$(PROJECT_ROOT)/ubuntu_wsl/opamroot -- dune build -j 1 --root=$(PROJECT_ROOT) --no-config
 .PHONY: pkg-opam-install
 
 override_dh_auto_build: opam-installs pkg-opam-install
