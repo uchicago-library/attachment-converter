@@ -1,7 +1,7 @@
 # Maintainer: Matt Teichman <teichman@uchicago.edu>
 # Contributor: Ben Kim <benkim@uchicago.edu>
 pkgname=attc
-pkgver=0.2.12
+pkgver=0.2.13
 pkgrel=1
 pkgdesc="Tool for batch-converting email attachments to preservation formats for archival purposes"
 arch=(x86_64)
